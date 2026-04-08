@@ -1,0 +1,248 @@
+import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { 
+    ChevronLeft, CreditCard, MapPin, 
+    ShieldCheck, Package, ShoppingBag,
+    CheckCircle, AlertCircle
+} from 'lucide-react';
+import apiClient from '../services/apiClient';
+
+const CheckoutPage: React.FC = () => {
+    const location = useLocation();
+    const navigate = useNavigate();
+    const { product, quantity } = location.state || {};
+
+    const [loading, setLoading] = useState(false);
+    const [success, setSuccess] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    // Form State
+    const [address, setAddress] = useState('');
+    const [city, setCity] = useState('');
+    const [state, setState] = useState('');
+    const [pincode, setPincode] = useState('');
+
+    useEffect(() => {
+        if (!product || !quantity) {
+            navigate('/catalog');
+        }
+    }, [product, quantity, navigate]);
+
+    if (!product) return null;
+
+    const unitPrice = product.garagePrice || product.price || 0;
+    const subtotal = unitPrice * quantity;
+    const shippingFee = 750; // Matching mobile constant
+    const total = subtotal + shippingFee;
+
+    const handlePlaceOrder = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!address || !city || !state || !pincode) {
+            setError('Please complete all shipping details.');
+            return;
+        }
+
+        setLoading(true);
+        setError(null);
+
+        try {
+            const response = await apiClient.post('/orders/checkout', {
+                items: [{ productId: product.id, quantity }],
+                shippingAddress: address,
+                city,
+                state,
+                pincode
+            });
+
+            setSuccess(true);
+            setTimeout(() => {
+                navigate(`/order/${response.data.id}`);
+            }, 2000);
+        } catch (err: any) {
+            console.error('Checkout failed:', err);
+            setError(err.response?.data?.message || 'Transaction failed. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (success) {
+        return (
+            <div className="min-h-screen bg-[#08080C] flex items-center justify-center p-8">
+                <div className="max-w-md w-full text-center space-y-8 animate-in zoom-in-95 duration-500">
+                    <div className="h-24 w-24 bg-green-500 text-black rounded-[2rem] flex items-center justify-center mx-auto shadow-2xl shadow-green-500/20">
+                        <CheckCircle size={48} />
+                    </div>
+                    <div className="space-y-4">
+                        <h2 className="text-3xl font-black italic uppercase tracking-tighter text-white">Payment <span className="text-green-500">Verified!</span></h2>
+                        <p className="text-gray-400 font-medium tracking-wide">Your order has been transmitted to the merchant. Redirecting to receipt...</p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="min-h-screen bg-[#08080C] text-white font-inter">
+            {/* Header */}
+            <div className="p-8 md:p-12 border-b border-white/5 bg-[#08080C]/80 backdrop-blur-xl fixed top-0 w-full z-40">
+                <div className="max-w-6xl mx-auto flex items-center justify-between">
+                    <div className="flex items-center gap-6">
+                        <button onClick={() => navigate(-1)} className="h-12 w-12 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center hover:bg-primary transition-all">
+                            <ChevronLeft size={20} />
+                        </button>
+                        <div>
+                            <h1 className="text-2xl font-black italic uppercase tracking-tighter text-white">Secure <span className="text-primary italic">Checkout</span></h1>
+                            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500 italic">Mad Garage Order Gateway</p>
+                        </div>
+                    </div>
+                    <div className="hidden md:flex items-center gap-3 bg-white/5 px-6 py-3 rounded-2xl border border-white/10">
+                        <ShieldCheck size={16} className="text-green-500" />
+                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">256-Bit SSL Encryption</span>
+                    </div>
+                </div>
+            </div>
+
+            <div className="max-w-6xl mx-auto p-8 pt-48 md:pt-56 pb-20">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+                    {/* Left: Form */}
+                    <div className="lg:col-span-7 space-y-12">
+                        <div className="space-y-8">
+                            <div className="flex items-center gap-4">
+                                <div className="h-8 w-8 bg-primary/10 text-primary rounded-xl flex items-center justify-center">
+                                    <MapPin size={16} />
+                                </div>
+                                <h3 className="text-xs font-black uppercase tracking-[0.3em] text-white">Shipping Protocol</h3>
+                            </div>
+
+                            <form onSubmit={handlePlaceOrder} id="checkout-form" className="space-y-8 p-10 bg-[#121216] rounded-[3rem] border border-white/5">
+                                <div className="flex flex-col">
+                                    <label className="text-[10px] font-black uppercase text-gray-500 mb-3 ml-2">Full Delivery Address</label>
+                                    <input 
+                                        required 
+                                        type="text" 
+                                        placeholder="Flat No, Building, Area"
+                                        className="bg-white/5 border border-white/10 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all" 
+                                        value={address}
+                                        onChange={e => setAddress(e.target.value)}
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="flex flex-col">
+                                        <label className="text-[10px] font-black uppercase text-gray-500 mb-3 ml-2">City</label>
+                                        <input 
+                                            required 
+                                            type="text" 
+                                            placeholder="Mumbai"
+                                            className="bg-white/5 border border-white/10 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all" 
+                                            value={city}
+                                            onChange={e => setCity(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <label className="text-[10px] font-black uppercase text-gray-500 mb-3 ml-2">State</label>
+                                        <input 
+                                            required 
+                                            type="text" 
+                                            placeholder="Maharashtra"
+                                            className="bg-white/5 border border-white/10 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all" 
+                                            value={state}
+                                            onChange={e => setState(e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-col">
+                                    <label className="text-[10px] font-black uppercase text-gray-500 mb-3 ml-2">Pincode</label>
+                                    <input 
+                                        required 
+                                        type="text" 
+                                        placeholder="400001"
+                                        className="bg-white/5 border border-white/10 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all w-full md:w-1/2" 
+                                        value={pincode}
+                                        onChange={e => setPincode(e.target.value)}
+                                    />
+                                </div>
+                            </form>
+                        </div>
+
+                        <div className="p-8 bg-green-500/5 border border-green-500/10 rounded-[2.5rem] flex items-center gap-6">
+                             <div className="h-12 w-12 bg-green-500 text-black rounded-[1.2rem] flex items-center justify-center shrink-0">
+                                <CreditCard size={24} />
+                             </div>
+                             <div>
+                                <p className="text-[10px] font-black uppercase text-green-500 tracking-widest">Payment Security</p>
+                                <p className="text-[11px] text-gray-400 mt-1 font-medium italic italic">"Your financial profile is never stored. All transactions are settled via MAD-SAFE bank integration."</p>
+                             </div>
+                        </div>
+
+                        {error && (
+                            <div className="p-6 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-4 text-red-500 animate-shake">
+                                <AlertCircle size={20} />
+                                <p className="text-xs font-black uppercase tracking-widest">{error}</p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Right: Summary */}
+                    <div className="lg:col-span-5">
+                        <div className="sticky top-56 space-y-8">
+                            <div className="flex items-center gap-4">
+                                <div className="h-8 w-8 bg-white/5 text-gray-400 rounded-xl flex items-center justify-center">
+                                    <Package size={16} />
+                                </div>
+                                <h3 className="text-xs font-black uppercase tracking-[0.3em] text-white">Order Summary</h3>
+                            </div>
+
+                            <div className="bg-[#121216] p-10 rounded-[3rem] border border-white/10 space-y-10 relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-[60px] -mr-16 -mt-16" />
+                                
+                                {/* Product card in summary */}
+                                <div className="flex items-center gap-6 relative z-10 pb-10 border-b border-white/5">
+                                    <div className="h-24 w-24 bg-black rounded-2xl overflow-hidden border border-white/10 p-4">
+                                        <img 
+                                            src={product.imageUrl ? (product.imageUrl.startsWith('http') ? product.imageUrl : `http://127.0.0.1:8080${product.imageUrl}`) : 'https://via.placeholder.com/100'} 
+                                            alt={product.partName}
+                                            className="w-full h-full object-contain"
+                                        />
+                                    </div>
+                                    <div>
+                                        <h4 className="text-sm font-black italic uppercase tracking-tighter text-white leading-tight">{product.partName || product.name}</h4>
+                                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mt-2">{quantity} Units</p>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4 relative z-10">
+                                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-gray-500">
+                                        <span>Subtotal</span>
+                                        <span className="text-white">₹{subtotal.toLocaleString()}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-gray-500">
+                                        <span>Logistics & Handling</span>
+                                        <span className="text-white">₹{shippingFee.toLocaleString()}</span>
+                                    </div>
+                                    <div className="pt-6 mt-6 border-t border-white/10 flex justify-between items-center">
+                                        <span className="text-xs font-black uppercase tracking-[0.2em] text-white italic">Total Amount</span>
+                                        <span className="text-3xl font-black italic text-primary tracking-tighter uppercase leading-none">₹{total.toLocaleString()}</span>
+                                    </div>
+                                </div>
+
+                                <button 
+                                    form="checkout-form"
+                                    type="submit"
+                                    disabled={loading}
+                                    className="w-full bg-primary text-white py-6 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 hover:bg-red-700 transition-all shadow-2xl shadow-red-500/20 active:scale-95 disabled:opacity-50"
+                                >
+                                    {loading ? 'Processing Transaction...' : 'Place Order'} <ShoppingBag size={18} />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default CheckoutPage;

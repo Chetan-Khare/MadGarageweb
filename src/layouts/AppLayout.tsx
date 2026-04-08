@@ -1,0 +1,182 @@
+import React, { useState } from 'react';
+import { Outlet, Link, useNavigate } from 'react-router-dom';
+import { ShoppingCart, Search, Menu, Phone, Download, Instagram, Facebook, Twitter, LayoutDashboard, User, ShieldCheck, Zap } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+
+const AppLayout: React.FC = () => {
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+      navigate(`/catalog?q=${encodeURIComponent(searchTerm.trim())}`);
+    }
+  };
+  return (
+    <div className="min-h-screen flex flex-col font-inter bg-app-bg-light">
+      {/* Header / Navbar */}
+      <header className="sticky top-0 z-50 bg-app-bg-dark text-white border-b border-primary/20 backdrop-blur-md bg-opacity-95">
+        <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
+          {/* Logo */}
+          <Link to="/" className="flex items-center gap-3 shrink-0">
+            <img src="/logo.png" alt="MAD GARAGE" className="h-10 aspect-square object-contain rounded-full overflow-hidden" />
+            <span className="text-2xl font-black italic tracking-tighter text-primary hidden sm:block">MAD GARAGE</span>
+          </Link>
+
+          {/* Search Bar - Desktop-friendly */}
+          <form 
+            onSubmit={handleSearch}
+            className="hidden md:flex flex-1 max-w-2xl bg-white/10 rounded-full items-center pl-4 pr-1 py-1 border border-white/10 focus-within:border-primary/50 transition-all group"
+          >
+            <Search size={18} className="text-gray-400 group-focus-within:text-primary transition-colors" />
+            <input 
+              type="text" 
+              placeholder="Search for car parts (e.g. Brake Pads, Turbos)..." 
+              className="bg-transparent border-none outline-none flex-1 px-3 text-sm font-medium placeholder:text-gray-500"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <button 
+                type="submit"
+                className="bg-primary text-white h-10 px-6 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-black hover:text-primary transition-all shadow-lg shadow-red-500/10 active:scale-95"
+            >
+                Search
+            </button>
+          </form>
+
+          {/* Right Actions */}
+          <nav className="flex items-center gap-6">
+            <Link to="/request-part" className="hidden lg:block text-sm font-bold uppercase tracking-wider hover:text-primary transition-colors">Request Part</Link>
+            <Link to="/chat" className="hidden lg:block text-sm font-bold uppercase tracking-wider text-primary flex items-center gap-2 hover:bg-primary/5 px-3 py-1 rounded-lg transition-all animate-pulse duration-2000">MAD GARAGE AI</Link>
+            
+            {isAuthenticated ? (
+              <div className="flex items-center gap-3">
+                <Link 
+                  to="/profile" 
+                  className="h-10 w-10 flex items-center justify-center bg-white/5 border border-white/10 rounded-full text-gray-400 hover:text-primary transition-all shadow-lg"
+                  title="My Profile"
+                >
+                  <User size={18} />
+                </Link>
+                <Link to="/user-dashboard" className="flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full border border-primary/20 hover:bg-primary hover:text-white transition-all group">
+                  <LayoutDashboard size={14} />
+                  <span className="text-[10px] font-black uppercase tracking-widest">Dash</span>
+                </Link>
+              </div>
+            ) : (
+              <Link to="/login" className="bg-primary text-white px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-red-700 transition-all shadow-lg shadow-red-500/20">
+                Sign In
+              </Link>
+            )}
+
+            <div className="relative cursor-pointer group">
+              <ShoppingCart size={24} className="group-hover:text-primary transition-colors" />
+              <span className="absolute -top-2 -right-2 bg-primary text-white text-[10px] font-black h-5 w-5 flex items-center justify-center rounded-full border-2 border-app-bg-dark">
+                0
+              </span>
+            </div>
+            
+            <Menu size={24} className="md:hidden" />
+          </nav>
+        </div>
+      </header>
+
+      {/* Main Content Area */}
+      <main className="flex-grow">
+        <Outlet />
+      </main>
+
+      {/* Footer */}
+      <footer className="bg-app-bg-dark text-gray-400 pt-16 pb-8 border-t border-white/5">
+        <div className="container mx-auto px-4 mb-20 grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="flex items-center gap-6 p-8 bg-white/5 border border-white/10 rounded-[2.5rem] group hover:border-primary/30 transition-all shadow-2xl">
+                <div className="h-14 w-14 bg-primary text-white rounded-2xl flex items-center justify-center shrink-0 shadow-lg shadow-red-500/20 group-hover:scale-110 transition-transform">
+                    <ShieldCheck size={28} />
+                </div>
+                <div>
+                    <h4 className="text-white text-sm font-black italic uppercase tracking-tighter">Certified <span className="text-primary italic">Parts</span></h4>
+                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mt-1">100% Genuine Performance Spares</p>
+                </div>
+            </div>
+            <div className="flex items-center gap-6 p-8 bg-white/5 border border-white/10 rounded-[2.5rem] group hover:border-primary/30 transition-all shadow-2xl">
+                <div className="h-14 w-14 bg-primary text-white rounded-2xl flex items-center justify-center shrink-0 shadow-lg shadow-red-500/20 group-hover:scale-110 transition-transform">
+                    <Zap size={28} />
+                </div>
+                <div>
+                    <h4 className="text-white text-sm font-black italic uppercase tracking-tighter">Precision <span className="text-primary italic">Fitment</span></h4>
+                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mt-1">AI-matched for your vehicle</p>
+                </div>
+            </div>
+            <div className="flex items-center gap-6 p-8 bg-white/5 border border-white/10 rounded-[2.5rem] group hover:border-primary/30 transition-all shadow-2xl">
+                <div className="h-14 w-14 bg-primary text-white rounded-2xl flex items-center justify-center shrink-0 shadow-lg shadow-red-500/20 group-hover:scale-110 transition-transform">
+                    <Search size={28} />
+                </div>
+                <div>
+                    <h4 className="text-white text-sm font-black italic uppercase tracking-tighter">Hard-to-Find <span className="text-primary italic">Spares</span></h4>
+                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mt-1">Global sourcing at your service</p>
+                </div>
+            </div>
+        </div>
+
+        <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 border-b border-white/5 pb-12">
+          <div className="flex flex-col gap-6">
+            <div className="flex items-center gap-3">
+              <img src="/logo.png" alt="MAD GARAGE" className="h-8 aspect-square object-contain rounded-full overflow-hidden grayscale opacity-50 hover:grayscale-0 hover:opacity-100 transition-all" />
+              <h2 className="text-white text-xl font-black italic">MAD GARAGE</h2>
+            </div>
+            <p className="text-sm leading-relaxed mb-6">
+              Precision engineered auto parts for performance enthusiasts. AI-driven fitment, expert craftsmanship, and the largest selection of custom components.
+            </p>
+            <div className="flex gap-4">
+              <Instagram size={20} className="hover:text-primary cursor-pointer" />
+              <Facebook size={20} className="hover:text-primary cursor-pointer" />
+              <Twitter size={20} className="hover:text-primary cursor-pointer" />
+            </div>
+          </div>
+
+          {/* Links */}
+          <div className="flex flex-col gap-3">
+            <h3 className="text-white font-bold uppercase tracking-widest text-xs mb-3">Quick Links</h3>
+            {['Home', 'Catalog', 'Garage Dashboard', 'Special Offers', 'Privacy Policy'].map(item => (
+              <a key={item} href="#" className="text-sm hover:text-white transition-colors">{item}</a>
+            ))}
+          </div>
+
+          {/* Contact */}
+          <div className="flex flex-col gap-3">
+            <h3 className="text-white font-bold uppercase tracking-widest text-xs mb-3">Contact Us</h3>
+            <p className="text-sm flex items-center gap-2">
+              <Phone size={14} className="text-primary" /> +91 98765 43210
+            </p>
+            <p className="text-sm">Sector 45, Gurgaon, Haryana, India</p>
+            <p className="text-sm">support@madgarage.com</p>
+          </div>
+
+          {/* Apps */}
+          <div>
+            <h3 className="text-white font-bold uppercase tracking-widest text-xs mb-3">Download Our App</h3>
+            <p className="text-xs mb-4">Get the best experience on mobile.</p>
+            <div className="flex flex-col gap-3">
+              <div className="bg-white/5 border border-white/10 rounded-lg p-2 flex items-center gap-3 cursor-pointer hover:bg-white/10 transition-all">
+                <Download size={20} className="text-primary" />
+                <span className="text-[10px] font-black uppercase tracking-tighter line-clamp-1">App Store</span>
+              </div>
+              <div className="bg-white/5 border border-white/10 rounded-lg p-2 flex items-center gap-3 cursor-pointer hover:bg-white/10 transition-all">
+                <Download size={20} className="text-primary" />
+                <span className="text-[10px] font-black uppercase tracking-tighter line-clamp-1">Google Play</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <p className="text-center text-[10px] font-medium tracking-widest uppercase py-8 opacity-50">
+          © 2026 Mad Garage Performance Inc. Powered by AI Precision.
+        </p>
+      </footer>
+    </div>
+  );
+};
+
+export default AppLayout;
