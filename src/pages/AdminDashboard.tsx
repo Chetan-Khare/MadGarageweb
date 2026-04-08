@@ -195,7 +195,7 @@ const AdminDashboard: React.FC = () => {
                 {/* Metrics Grid */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                     <StatCard onClick={() => navigate('/admin/users')} icon={<Users />} value={stats?.totalUsers || 0} label="Total Users" />
-                    <StatCard icon={<Package />} value={stats?.totalProducts || 0} label="Parts DB" />
+                    <StatCard onClick={() => navigate('/admin/parts-db')} icon={<Package />} value={stats?.totalProducts || 0} label="Parts DB" />
                     <StatCard icon={<TrendingUp />} value={`₹${((stats?.totalRevenue || 0) / 1000).toFixed(1)}k`} label="Gross Income" />
                     <StatCard onClick={() => navigate('/admin/requests')} icon={<FileText />} value="VIEW" label="Active Requests" />
                 </div>

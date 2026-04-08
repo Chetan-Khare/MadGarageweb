@@ -6,11 +6,18 @@ import {
     CheckCircle, AlertCircle
 } from 'lucide-react';
 import apiClient from '../services/apiClient';
+import { useCart } from '../context/CartContext';
 
 const CheckoutPage: React.FC = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const { product, quantity } = location.state || {};
+    const { cart, subtotal: cartSubtotal, clearCart } = useCart();
+    
+    // Support both single product "Buy Now" and "Cart Checkout"
+    const { product: buyNowProduct, quantity: buyNowQuantity } = location.state || {};
+    
+    // Final product list for checkout
+    const checkoutItems = buyNowProduct ? [{ ...buyNowProduct, quantity: buyNowQuantity }] : cart;
 
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
@@ -23,16 +30,15 @@ const CheckoutPage: React.FC = () => {
     const [pincode, setPincode] = useState('');
 
     useEffect(() => {
-        if (!product || !quantity) {
-            navigate('/catalog');
+        if (checkoutItems.length === 0) {
+            navigate('/cart');
         }
-    }, [product, quantity, navigate]);
+    }, [checkoutItems, navigate]);
 
-    if (!product) return null;
+    if (checkoutItems.length === 0) return null;
 
-    const unitPrice = product.garagePrice || product.price || 0;
-    const subtotal = unitPrice * quantity;
-    const shippingFee = 750; // Matching mobile constant
+    const subtotal = buyNowProduct ? (buyNowProduct.garagePrice || buyNowProduct.price || 0) * buyNowQuantity : cartSubtotal;
+    const shippingFee = checkoutItems.length > 0 ? 750 : 0;
     const total = subtotal + shippingFee;
 
     const handlePlaceOrder = async (e: React.FormEvent) => {
@@ -47,13 +53,17 @@ const CheckoutPage: React.FC = () => {
 
         try {
             const response = await apiClient.post('/orders/checkout', {
-                items: [{ productId: product.id, quantity }],
+                items: checkoutItems.map(item => ({ 
+                    productId: item.id, 
+                    quantity: item.quantity 
+                })),
                 shippingAddress: address,
                 city,
                 state,
                 pincode
             });
 
+            if (!buyNowProduct) clearCart(); // Clear cart only if this was a cart checkout
             setSuccess(true);
             setTimeout(() => {
                 navigate(`/order/${response.data.id}`);
@@ -198,19 +208,26 @@ const CheckoutPage: React.FC = () => {
                             <div className="bg-[#121216] p-10 rounded-[3rem] border border-white/10 space-y-10 relative overflow-hidden">
                                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-[60px] -mr-16 -mt-16" />
                                 
-                                {/* Product card in summary */}
-                                <div className="flex items-center gap-6 relative z-10 pb-10 border-b border-white/5">
-                                    <div className="h-24 w-24 bg-black rounded-2xl overflow-hidden border border-white/10 p-4">
-                                        <img 
-                                            src={product.imageUrl ? (product.imageUrl.startsWith('http') ? product.imageUrl : `http://127.0.0.1:8080${product.imageUrl}`) : 'https://via.placeholder.com/100'} 
-                                            alt={product.partName}
-                                            className="w-full h-full object-contain"
-                                        />
-                                    </div>
-                                    <div>
-                                        <h4 className="text-sm font-black italic uppercase tracking-tighter text-white leading-tight">{product.partName || product.name}</h4>
-                                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mt-2">{quantity} Units</p>
-                                    </div>
+                                {/* Checkout items in summary */}
+                                <div className="space-y-6 relative z-10 pb-10 border-b border-white/5 max-h-[300px] overflow-y-auto scrollbar-hide">
+                                    {checkoutItems.map(item => (
+                                        <div key={item.id} className="flex items-center gap-6">
+                                            <div className="h-20 w-20 bg-black rounded-2xl overflow-hidden border border-white/10 p-3 shrink-0">
+                                                <img 
+                                                    src={item.imageUrl ? (item.imageUrl.startsWith('http') ? item.imageUrl : `http://127.0.0.1:8080${item.imageUrl}`) : 'https://via.placeholder.com/100'} 
+                                                    alt={item.name}
+                                                    className="w-full h-full object-contain"
+                                                />
+                                            </div>
+                                            <div className="flex-1">
+                                                <h4 className="text-xs font-black italic uppercase tracking-tighter text-white leading-tight line-clamp-1">{item.name}</h4>
+                                                <div className="flex justify-between items-center mt-2">
+                                                    <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">{item.quantity} Units</p>
+                                                    <p className="text-[10px] font-black text-white italic">₹{(item.price * item.quantity).toLocaleString()}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
 
                                 <div className="space-y-4 relative z-10">

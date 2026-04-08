@@ -151,6 +151,32 @@ const ProductEditModal: React.FC<ProductEditModalProps> = ({
                             </select>
                         </div>
                     </div>
+
+                    <div className="flex flex-col p-6 bg-primary/5 border border-primary/10 rounded-2xl gap-4">
+                        <div className="flex items-center justify-between">
+                            <label className="text-[10px] font-black uppercase text-primary tracking-widest">Administrative Quality Override</label>
+                            <button 
+                                type="button"
+                                onClick={() => setEditingProduct({ ...editingProduct, isManualRating: !editingProduct.isManualRating })}
+                                className={`h-6 w-12 rounded-full transition-all relative ${editingProduct.isManualRating ? 'bg-primary' : 'bg-white/10'}`}
+                            >
+                                <div className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-all ${editingProduct.isManualRating ? 'left-7' : 'left-1'}`} />
+                            </button>
+                        </div>
+                        <div className="flex flex-col">
+                            <label className="text-[10px] font-black uppercase text-gray-500 mb-3 ml-2">Manual Quality Rating (0 - 5.0)</label>
+                            <input 
+                                type="number" 
+                                step="0.1" 
+                                min="0" 
+                                max="5" 
+                                disabled={!editingProduct.isManualRating}
+                                className={`bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold outline-none focus:border-primary transition-all ${editingProduct.isManualRating ? 'text-primary' : 'text-gray-600 opacity-50'}`} 
+                                value={editingProduct.rating || 0} 
+                                onChange={e => setEditingProduct({ ...editingProduct, rating: Number(e.target.value) })} 
+                            />
+                        </div>
+                    </div>
                 </div>
 
                 <div className="p-10 bg-white/5 flex gap-4">

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { 
   ShoppingBag, Clock, Heart, Settings, 
   LogOut, Search, ChevronRight, Zap, 
-  ShieldCheck, Package, MapPin, User
+  ShieldCheck, Package, MapPin, User, ShoppingCart
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
@@ -42,13 +42,12 @@ const CustomerDashboard: React.FC = () => {
                 </div>
 
                 <nav className="flex-1 p-6 space-y-2">
-                    <SidebarLink icon={<ShoppingBag size={18}/>} label="Shop Parts" onClick={() => navigate('/catalog')} />
-                    <SidebarLink icon={<Package size={18}/>} label="My Orders" active />
-                    <SidebarLink icon={<Heart size={18}/>} label="Wishlist" />
+                    <SidebarLink icon={<ShoppingBag size={18}/>} label="Shop Parts" onClick={() => navigate('/')} />
+                    <SidebarLink icon={<Package size={18}/>} label="My Orders" onClick={() => navigate('/orders')} />
+                    <SidebarLink icon={<Heart size={18}/>} label="Wishlist" onClick={() => navigate('/wishlist')} />
                     <SidebarLink icon={<Zap size={18}/>} label="Garage AI" onClick={() => navigate('/chat')} />
                     <div className="pt-10 mb-4 pb-2 border-b border-white/5 mx-2 text-[10px] font-black uppercase tracking-widest text-gray-600">Preferences</div>
-                    <SidebarLink icon={<User size={18}/>} label="Profile" onClick={() => navigate('/profile')} />
-                    <SidebarLink icon={<Settings size={18}/>} label="Account Settings" onClick={() => navigate('/profile')} />
+                    <SidebarLink icon={<User size={18}/>} label="Profile & Settings" onClick={() => navigate('/profile')} />
                 </nav>
 
                 <div className="p-6 border-t border-white/5">
@@ -68,10 +67,17 @@ const CustomerDashboard: React.FC = () => {
                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Ready for your next build?</p>
                     </div>
 
-                    <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-4">
+                        <button 
+                            onClick={() => navigate('/')}
+                            className="flex items-center gap-2 bg-gray-50 text-app-bg-dark px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border border-gray-100 hover:bg-primary hover:text-white transition-all shadow-sm group"
+                        >
+                            <ShoppingCart size={14} className="group-hover:text-white" />
+                            Return to Shop
+                        </button>
                         <button 
                             onClick={() => navigate('/profile')}
-                            className="h-12 w-12 bg-app-bg-dark rounded-2xl flex items-center justify-center text-primary font-black italic shadow-lg border border-primary/20 hover:scale-105 transition-all"
+                            className="h-12 w-12 bg-app-bg-dark rounded-2xl flex items-center justify-center text-primary font-black italic shadow-lg border border-primary/20 hover:scale-105 transition-all outline-none"
                         >
                             {user?.name?.[0] || 'C'}
                         </button>
@@ -79,13 +85,6 @@ const CustomerDashboard: React.FC = () => {
                 </header>
 
                 <div className="p-6 md:p-12 space-y-12 max-w-7xl mx-auto w-full">
-                    {/* Quick Stats */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        <StatusCard icon={<Package className="text-blue-500" />} label="Active Orders" value={orders.filter(o => o.status !== 'DELIVERED').length} />
-                        <StatusCard icon={<ShieldCheck className="text-green-500" />} label="Verified Fits" value="12" />
-                        <StatusCard icon={<Clock className="text-primary" />} label="Service Due" value="15 Days" />
-                    </div>
-
                     {/* Recent Orders */}
                     <section className="space-y-6">
                         <div className="flex items-center justify-between px-2">
@@ -107,7 +106,11 @@ const CustomerDashboard: React.FC = () => {
                                             </div>
                                             <div>
                                                 <p className="text-[10px] font-black uppercase text-gray-400">Order #{order.id}</p>
-                                                <h4 className="text-md font-black text-app-bg-dark italic uppercase">Performance Part Order</h4>
+                                                <h4 className="text-md font-black text-app-bg-dark italic uppercase">
+                                                    {order.items && order.items.length > 0 
+                                                        ? `${order.items[0].productName}${order.items.length > 1 ? ` + ${order.items.length - 1} more` : ''}` 
+                                                        : 'Performance Part Order'}
+                                                </h4>
                                                 <p className="text-[10px] font-medium text-gray-500 mt-1">{new Date(order.createdAt).toLocaleDateString()} • ₹{order.grandTotal.toLocaleString()}</p>
                                             </div>
                                         </div>

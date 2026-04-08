@@ -218,9 +218,15 @@ const AdminInventoryManagement: React.FC = () => {
                                     onClick={() => navigate(`/product/${p.id}`, { state: { product: p } })}
                                 >
                                     <h3 className="text-sm font-black italic uppercase tracking-tighter text-white leading-tight group-hover:text-primary transition-colors">{p.partName || p.name}</h3>
-                                    <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mt-2 flex items-center gap-2">
-                                        <Sparkles size={10} className="text-blue-500" /> {p.sellerName || 'Direct Vendor'}
-                                    </p>
+                                    <div className="flex items-center justify-between mt-2">
+                                        <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                                            <Sparkles size={10} className="text-blue-500" /> {p.sellerName || 'Direct Vendor'}
+                                        </p>
+                                        <div className="flex items-center gap-2">
+                                            {p.isManualRating && <span className="text-[6px] font-black bg-primary/20 text-primary px-1.5 py-0.5 rounded uppercase tracking-tighter border border-primary/20">Verified</span>}
+                                            <span className="text-[10px] font-black italic text-primary uppercase tracking-tighter">{p.rating || '4.5'}/5.0</span>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div className="flex items-center justify-between pt-4 border-t border-white/5">
                                     <p className="text-lg font-black italic tracking-tighter text-white uppercase">₹{(p.price || 0).toLocaleString()}</p>

@@ -2,14 +2,18 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { 
   ChevronLeft, ShoppingBag, Star, ShieldCheck, 
-  Zap, ArrowRight, Minus, Plus, Info
+  Zap, ArrowRight, Minus, Plus, Info, Heart
 } from 'lucide-react';
 import apiClient, { BASE_URL } from '../services/apiClient';
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
+import { useWishlist } from '../context/WishlistContext';
 
 const ProductDetailsPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, role } = useAuth();
+    const { addToCart } = useCart();
+    const { isInWishlist, toggleWishlist } = useWishlist();
     const navigate = useNavigate();
     const location = useLocation();
     const passedProduct = location.state?.product;
@@ -46,7 +50,8 @@ const ProductDetailsPage: React.FC = () => {
         <button onClick={() => navigate('/')} className="text-primary font-bold hover:underline uppercase tracking-widest text-xs">Return to Garage</button>
     </div>;
 
-    const price = product.garagePrice || product.price || 0;
+    const isGarage = role === 'ROLE_GARAGE';
+    const activePrice = isGarage && product.garagePrice ? product.garagePrice : (product.price || 0);
 
     return (
         <div className="min-h-screen bg-white font-inter">
@@ -93,33 +98,71 @@ const ProductDetailsPage: React.FC = () => {
                             <div className="absolute top-0 right-0 w-48 h-48 bg-primary/10 rounded-full blur-[80px] -mr-24 -mt-24" />
                             
                             <div className="relative z-10">
-                                <p className="text-[10px] font-black uppercase text-gray-500 tracking-widest mb-2">Member Price</p>
-                                <div className="flex items-baseline gap-4">
-                                    <h2 className="text-5xl font-black italic text-white tracking-tighter">₹{price.toLocaleString()}</h2>
-                                    {product.originalPrice && product.originalPrice > price && (
-                                        <span className="text-gray-600 line-through font-bold text-lg italic">₹{product.originalPrice.toLocaleString()}</span>
+                                <p className="text-[10px] font-black uppercase text-gray-500 tracking-widest mb-2">
+                                    {isGarage ? 'Wholesale Member Price' : 'Member Price'}
+                                </p>
+                                <div className="flex flex-col gap-1">
+                                    <div className="flex items-baseline gap-4">
+                                        <h2 className="text-5xl font-black italic text-white tracking-tighter">₹{activePrice.toLocaleString()}</h2>
+                                        {isGarage && product.garagePrice && product.price > product.garagePrice && (
+                                            <span className="text-gray-600 line-through font-bold text-lg italic">₹{product.price.toLocaleString()}</span>
+                                        )}
+                                    </div>
+                                    {isGarage && product.garagePrice && product.price > product.garagePrice && (
+                                        <p className="text-[10px] font-black text-primary uppercase tracking-widest">
+                                            Exclusive {Math.round(((product.price - product.garagePrice) / product.price) * 100)}% Garage Savings Applied
+                                        </p>
                                     )}
                                 </div>
                             </div>
 
-                            <div className="relative z-10 flex flex-col sm:flex-row items-center gap-6">
+                             <div className="relative z-10 flex flex-col sm:flex-row items-center gap-4">
                                 <div className="flex bg-white/5 border border-white/10 p-1.5 rounded-2xl items-center gap-4">
                                     <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="h-10 w-10 flex items-center justify-center text-gray-400 hover:text-white transition-all"><Minus size={16}/></button>
                                     <span className="text-lg font-black text-white italic min-w-8 text-center">{quantity}</span>
                                     <button onClick={() => setQuantity(quantity + 1)} className="h-10 w-10 flex items-center justify-center text-gray-400 hover:text-white transition-all"><Plus size={16}/></button>
                                 </div>
-                                <button 
-                                    onClick={() => {
-                                        if (!isAuthenticated) {
-                                            navigate('/login', { state: { from: location } });
-                                            return;
-                                        }
-                                        navigate('/checkout', { state: { product, quantity } });
-                                    }}
-                                    className="flex-1 w-full bg-primary text-white h-16 rounded-2xl font-black uppercase tracking-[0.2em] text-xs flex items-center justify-center gap-3 hover:scale-[1.05] active:scale-[0.95] transition-all shadow-xl shadow-red-500/30"
-                                >
-                                    Initialize Order <ShoppingBag size={20} />
-                                </button>
+                                <div className="flex flex-1 gap-3 w-full">
+                                    <button 
+                                        onClick={() => {
+                                            addToCart(product, quantity);
+                                            // Optional: visual feedback or navigate to /cart
+                                            navigate('/cart');
+                                        }}
+                                        className="flex-1 bg-white/5 text-white border border-white/10 h-16 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 hover:bg-white/10 transition-all"
+                                    >
+                                        Add to Cart <ShoppingBag size={18} />
+                                    </button>
+                                    <button 
+                                        onClick={() => {
+                                            if (!isAuthenticated) {
+                                                navigate('/login', { state: { from: location } });
+                                                return;
+                                            }
+                                            addToCart(product, quantity);
+                                            navigate('/checkout');
+                                        }}
+                                        className="flex-1 bg-primary text-white h-16 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 hover:scale-[1.05] active:scale-[0.95] transition-all shadow-xl shadow-red-500/30"
+                                    >
+                                        Buy Now <Zap size={18} />
+                                    </button>
+                                    <button 
+                                        onClick={() => {
+                                            if (!isAuthenticated) {
+                                                navigate('/login', { state: { from: location } });
+                                                return;
+                                            }
+                                            toggleWishlist(product);
+                                        }}
+                                        className={`h-16 w-16 rounded-2xl flex items-center justify-center transition-all border shadow-lg ${
+                                            isInWishlist(product.id)
+                                                ? 'bg-primary text-white border-primary'
+                                                : 'bg-white/5 text-gray-400 border-white/10 hover:text-primary hover:border-primary'
+                                        }`}
+                                    >
+                                        <Heart size={20} fill={isInWishlist(product.id) ? 'currentColor' : 'none'} />
+                                    </button>
+                                </div>
                             </div>
                         </div>
 

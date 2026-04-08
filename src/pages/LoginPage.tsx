@@ -103,9 +103,9 @@ const LoginPage: React.FC = () => {
         } else if (role === 'ROLE_SELLER') {
             navigate('/seller');
         } else if (role === 'ROLE_GARAGE') {
-            navigate('/dashboard'); // Garage and Customer both go to /dashboard (App-like view)
+            navigate('/dashboard'); 
         } else {
-            navigate('/dashboard');
+            navigate('/'); // Standard customers go to Home
         }
     } else {
         setError('Authentication failed. No secure token received.');

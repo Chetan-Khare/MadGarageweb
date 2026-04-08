@@ -23,19 +23,28 @@ import CatalogPage from './pages/CatalogPage';
 import ProfilePage from './pages/ProfilePage';
 import CheckoutPage from './pages/CheckoutPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import ScrollToTop from './components/ScrollToTop';
 import { useAuth } from './context/AuthContext';
+import { CartProvider } from './context/CartContext';
+import { WishlistProvider } from './context/WishlistContext';
+import CartPage from './pages/CartPage';
+import OrdersPage from './pages/OrdersPage';
+import WishlistPage from './pages/WishlistPage';
 
 function App() {
   const { role } = useAuth();
 
   return (
-    <Routes>
+    <CartProvider>
+      <WishlistProvider>
+        <ScrollToTop />
+        <Routes>
       {/* Public Routes with Layout */}
       <Route path="/" element={<AppLayout />}>
         <Route index element={<HomePage />} />
         <Route path="request-part" element={<PartRequestPage />} />
-        <Route path="catalog" element={<CatalogPage />} />
         <Route path="product/:id" element={<ProductDetailsPage />} />
+        <Route path="cart" element={<CartPage />} />
       </Route>
 
       {/* Auth Routes - No Main Layout */}
@@ -50,7 +59,11 @@ function App() {
         <Route path="/admin/users" element={<AdminUserManagement />} />
         <Route path="/admin/inventory" element={<AdminInventoryManagement />} />
         <Route path="/admin/orders" element={<AdminOrderManagement />} />
+        <Route path="/admin/parts-db" element={<CatalogPage />} />
       </Route>
+
+      {/* Redirects */}
+      <Route path="/catalog" element={<Navigate to="/" replace />} />
       
       {/* Seller Specific Routes */}
       <Route element={<ProtectedRoute allowedRoles={['ROLE_SELLER']} />}>
@@ -67,6 +80,8 @@ function App() {
         <Route path="/order/:id" element={<OrderDetailsPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/orders" element={<OrdersPage />} />
+        <Route path="/wishlist" element={<WishlistPage />} />
       </Route>
 
       {/* Garage Protected Routes */}
@@ -88,7 +103,9 @@ function App() {
              <Navigate to="/dashboard" replace />
          } />
       </Route>
-    </Routes>
+          </Routes>
+        </WishlistProvider>
+      </CartProvider>
   );
 }
 

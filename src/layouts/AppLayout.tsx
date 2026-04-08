@@ -1,17 +1,21 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useNavigate } from 'react-router-dom';
-import { ShoppingCart, Search, Menu, Phone, Download, Instagram, Facebook, Twitter, LayoutDashboard, User, ShieldCheck, Zap } from 'lucide-react';
+import { ShoppingCart, Search, Menu, Phone, Download, Instagram, Facebook, Twitter, LayoutDashboard, User, ShieldCheck, Zap, Heart, LogOut, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
+import { useWishlist } from '../context/WishlistContext';
 
 const AppLayout: React.FC = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, logout } = useAuth();
+  const { totalItems: cartCount } = useCart();
+  const { totalItems: wishlistCount } = useWishlist();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchTerm.trim()) {
-      navigate(`/catalog?q=${encodeURIComponent(searchTerm.trim())}`);
+      navigate(`/?q=${encodeURIComponent(searchTerm.trim())}`);
     }
   };
   return (
@@ -38,6 +42,16 @@ const AppLayout: React.FC = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => { setSearchTerm(''); navigate('/'); }}
+                className="p-2 text-gray-500 hover:text-primary transition-colors"
+                title="Clear search"
+              >
+                <X size={16} />
+              </button>
+            )}
             <button 
                 type="submit"
                 className="bg-primary text-white h-10 px-6 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-black hover:text-primary transition-all shadow-lg shadow-red-500/10 active:scale-95"
@@ -64,6 +78,13 @@ const AppLayout: React.FC = () => {
                   <LayoutDashboard size={14} />
                   <span className="text-[10px] font-black uppercase tracking-widest">Dash</span>
                 </Link>
+                <button 
+                  onClick={() => { logout(); navigate('/'); }}
+                  className="h-10 w-10 flex items-center justify-center bg-white/5 border border-white/10 rounded-full text-gray-400 hover:text-primary transition-all shadow-lg"
+                  title="Logout"
+                >
+                  <LogOut size={16} />
+                </button>
               </div>
             ) : (
               <Link to="/login" className="bg-primary text-white px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-red-700 transition-all shadow-lg shadow-red-500/20">
@@ -71,11 +92,24 @@ const AppLayout: React.FC = () => {
               </Link>
             )}
 
-            <div className="relative cursor-pointer group">
-              <ShoppingCart size={24} className="group-hover:text-primary transition-colors" />
-              <span className="absolute -top-2 -right-2 bg-primary text-white text-[10px] font-black h-5 w-5 flex items-center justify-center rounded-full border-2 border-app-bg-dark">
-                0
-              </span>
+            <div className="flex items-center gap-4">
+              <Link to="/wishlist" className="relative cursor-pointer group p-2">
+                <Heart size={22} className="group-hover:text-primary transition-colors" />
+                {wishlistCount > 0 && (
+                  <span className="absolute top-0 right-0 bg-primary text-white text-[10px] font-black h-5 w-5 flex items-center justify-center rounded-full border-2 border-app-bg-dark">
+                    {wishlistCount}
+                  </span>
+                )}
+              </Link>
+              
+              <Link to="/cart" className="relative cursor-pointer group p-2">
+                <ShoppingCart size={22} className="group-hover:text-primary transition-colors" />
+                {cartCount > 0 && (
+                  <span className="absolute top-0 right-0 bg-primary text-white text-[10px] font-black h-5 w-5 flex items-center justify-center rounded-full border-2 border-app-bg-dark">
+                    {cartCount}
+                  </span>
+                )}
+              </Link>
             </div>
             
             <Menu size={24} className="md:hidden" />
@@ -136,13 +170,14 @@ const AppLayout: React.FC = () => {
             </div>
           </div>
 
-          {/* Links */}
-          <div className="flex flex-col gap-3">
-            <h3 className="text-white font-bold uppercase tracking-widest text-xs mb-3">Quick Links</h3>
-            {['Home', 'Catalog', 'Garage Dashboard', 'Special Offers', 'Privacy Policy'].map(item => (
-              <a key={item} href="#" className="text-sm hover:text-white transition-colors">{item}</a>
-            ))}
-          </div>
+            <div className="flex flex-col gap-3">
+              <h3 className="text-white font-bold uppercase tracking-widest text-xs mb-3">Quick Links</h3>
+              <Link to="/" className="text-sm hover:text-white transition-colors">Home</Link>
+              <Link to="/catalog" className="text-sm hover:text-white transition-colors">Catalog</Link>
+              <Link to="/user-dashboard" className="text-sm hover:text-white transition-colors">My Dashboard</Link>
+              <Link to="/request-part" className="text-sm hover:text-white transition-colors">Request Part</Link>
+              <a href="#" className="text-sm hover:text-white transition-colors">Privacy Policy</a>
+            </div>
 
           {/* Contact */}
           <div className="flex flex-col gap-3">
