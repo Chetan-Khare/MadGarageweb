@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import apiClient from '../services/apiClient';
+import { useAuth } from './AuthContext';
 
 export interface WishlistItem {
   id: number;       // maps to productId from the API
@@ -26,7 +27,7 @@ const WishlistContext = createContext<WishlistContextType | undefined>(undefined
 const GUEST_KEY = 'madgarage_wishlist_guest';
 
 /** Returns true when the user has a valid JWT in localStorage */
-const isAuthenticated = () => !!localStorage.getItem('token');
+// No longer using raw localStorage helper, using useAuth state instead
 
 /** Maps a raw product object (from catalog click) to a WishlistItem */
 const toWishlistItem = (product: any): WishlistItem => ({
@@ -53,10 +54,11 @@ const fromApiItem = (item: any): WishlistItem => ({
 export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const { isAuthenticated } = useAuth();
 
   // ── Load wishlist on mount ───────────────────────────────────────────────
   const reloadWishlist = useCallback(async () => {
-    if (isAuthenticated()) {
+    if (isAuthenticated) {
       setLoading(true);
       try {
         const { data } = await apiClient.get('/wishlist');
@@ -80,18 +82,18 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   useEffect(() => {
     reloadWishlist();
-  }, [reloadWishlist]);
+  }, [reloadWishlist, isAuthenticated]);
 
   // Persist guest wishlist to localStorage whenever it changes
   useEffect(() => {
-    if (!isAuthenticated()) {
+    if (!isAuthenticated) {
       localStorage.setItem(GUEST_KEY, JSON.stringify(wishlist));
     }
   }, [wishlist]);
 
   // ── Toggle ───────────────────────────────────────────────────────────────
   const toggleWishlist = async (product: any) => {
-    if (isAuthenticated()) {
+    if (isAuthenticated) {
       try {
         const { data } = await apiClient.post(`/wishlist/${product.id}`);
         if (data.added) {
@@ -114,7 +116,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   // ── Remove ───────────────────────────────────────────────────────────────
   const removeFromWishlist = async (id: number) => {
-    if (isAuthenticated()) {
+    if (isAuthenticated) {
       try {
         await apiClient.delete(`/wishlist/${id}`);
       } catch {

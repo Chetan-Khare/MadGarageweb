@@ -3,7 +3,8 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { 
   Search, Filter, ChevronRight, Zap, 
   ShoppingBag, SlidersHorizontal, Plus, Heart,
-  Cpu, Activity, Database, Boxes, ShieldAlert
+  Cpu, Activity, Database, Boxes, ShieldAlert,
+  ShieldCheck
 } from 'lucide-react';
 import apiClient from '../services/apiClient';
 import { useCart } from '../context/CartContext';
@@ -110,7 +111,7 @@ const CatalogPage: React.FC = () => {
                             Admin <span className="text-white">Parts DB</span>
                         </h1>
                         <div className="flex items-center gap-6 text-[10px] font-bold text-gray-500 uppercase tracking-widest bg-white/5 px-4 py-2 rounded-lg border border-white/5 self-start">
-                            <span className="flex items-center gap-2"><Database size={12} /> {products.length} Node Entries</span>
+                            <span className="flex items-center gap-2"><Database size={12} /> {filteredProducts.length} Node Entries</span>
                             <span className="flex items-center gap-2"><Activity size={12} /> System Status: Optimal</span>
                         </div>
                     </div>
@@ -211,11 +212,13 @@ const CatalogPage: React.FC = () => {
                                         <div className="bg-white/5 p-2 rounded-lg border border-white/5">
                                             <div className="flex items-center justify-between mb-1">
                                                 <p className="text-[7px] font-black text-gray-600 uppercase tracking-widest">Part Quality</p>
+                                            </div>
+                                            <div className="flex items-center gap-1.5">
+                                                <p className="text-xs font-mono font-black text-primary truncate">{product.rating || '4.5'}/5.0 RATING</p>
                                                 {product.isManualRating && (
-                                                    <span className="text-[6px] font-black bg-primary/20 text-primary px-1.5 py-0.5 rounded uppercase tracking-tighter border border-primary/20">Verified</span>
+                                                    <ShieldCheck size={10} className="text-primary shrink-0" />
                                                 )}
                                             </div>
-                                            <p className="text-xs font-mono font-black text-primary">{product.rating || '4.5'}/5.0 RATING</p>
                                         </div>
                                         <div className="bg-white/5 p-2 rounded-lg border border-white/5">
                                             <p className="text-[7px] font-black text-gray-600 uppercase tracking-widest">Protocol</p>

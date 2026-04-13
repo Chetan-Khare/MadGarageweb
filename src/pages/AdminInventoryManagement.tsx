@@ -15,7 +15,7 @@ const AdminInventoryManagement: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('ALL');
-    const [filterStatus, setFilterStatus] = useState<'ALL' | 'FLAGGED' | 'VERIFIED'>('ALL');
+    const [filterStatus, setFilterStatus] = useState<'ALL' | 'FLAGGED' | 'APPROVED'>('ALL');
 
     const [showModal, setShowModal] = useState(false);
     const [editingProduct, setEditingProduct] = useState<any | null>(null);
@@ -99,7 +99,7 @@ const AdminInventoryManagement: React.FC = () => {
 
         let matchesStatus = true;
         if (filterStatus === 'FLAGGED') matchesStatus = p.flagged;
-        else if (filterStatus === 'VERIFIED') matchesStatus = !p.flagged;
+        else if (filterStatus === 'APPROVED') matchesStatus = !p.flagged;
 
         return matchesSearch && matchesCategory && matchesStatus;
     });
@@ -172,12 +172,12 @@ const AdminInventoryManagement: React.FC = () => {
                         active={filterStatus === 'FLAGGED'}
                     />
                     <InvStat
-                        label="Verified Listings"
+                        label="Approved Listings"
                         val={products.filter(p => !p.flagged).length}
                         icon={<ShieldCheck size={14} />}
                         color="text-green-500"
-                        onClick={() => setFilterStatus(filterStatus === 'VERIFIED' ? 'ALL' : 'VERIFIED')}
-                        active={filterStatus === 'VERIFIED'}
+                        onClick={() => setFilterStatus(filterStatus === 'APPROVED' ? 'ALL' : 'APPROVED')}
+                        active={filterStatus === 'APPROVED'}
                     />
                 </div>
 
@@ -223,7 +223,6 @@ const AdminInventoryManagement: React.FC = () => {
                                             <Sparkles size={10} className="text-blue-500" /> {p.sellerName || 'Direct Vendor'}
                                         </p>
                                         <div className="flex items-center gap-2">
-                                            {p.isManualRating && <span className="text-[6px] font-black bg-primary/20 text-primary px-1.5 py-0.5 rounded uppercase tracking-tighter border border-primary/20">Verified</span>}
                                             <span className="text-[10px] font-black italic text-primary uppercase tracking-tighter">{p.rating || '4.5'}/5.0</span>
                                         </div>
                                     </div>

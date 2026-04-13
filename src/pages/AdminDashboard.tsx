@@ -28,6 +28,8 @@ const AdminDashboard: React.FC = () => {
 
     // New User Form State
     const [newUser, setNewUser] = useState({
+        firstName: '',
+        lastName: '',
         email: '',
         password: '',
         phone: '',
@@ -110,15 +112,17 @@ const AdminDashboard: React.FC = () => {
     const handleCreateUser = async (e: React.FormEvent) => {
         e.preventDefault();
         setFormError(''); setFormSuccess('');
+        
+        if (!newUser.firstName || !newUser.lastName || !newUser.email || !newUser.password) {
+            setFormError('All major identity fields are required.');
+            return;
+        }
+
         setCreatingUser(true);
         try {
-            await apiClient.post('/admin/users', {
-                ...newUser,
-                firstName: 'New',
-                lastName: newUser.role.replace('ROLE_', '')
-            });
+            await apiClient.post('/admin/users', newUser);
             setFormSuccess(`${newUser.role} account provisioned!`);
-            setNewUser({ ...newUser, email: '', password: '', phone: '' });
+            setNewUser({ ...newUser, firstName: '', lastName: '', email: '', password: '', phone: '' });
             fetchAnalytics();
         } catch (err: any) {
             setFormError(err.response?.data || 'Provisioning failed.');
@@ -175,8 +179,12 @@ const AdminDashboard: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-6">
-                    <button onClick={() => setIsDark(!isDark)} className="h-12 w-12 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center text-primary hover:bg-white/10 transition-all">
-                        {isDark ? <Activity size={20} className="text-yellow-500" /> : <Activity size={20} className="text-blue-500" />}
+                    <button 
+                        onClick={() => navigate('/profile')} 
+                        className="h-12 w-12 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center text-primary hover:bg-white/10 hover:border-primary/50 transition-all group shadow-lg shadow-primary/5"
+                        title="Profile Access"
+                    >
+                        <Fingerprint size={22} className="group-hover:scale-110 transition-transform" />
                     </button>
                     <div className="text-right hidden sm:block">
                         <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Master Admin</p>
@@ -328,6 +336,22 @@ const AdminDashboard: React.FC = () => {
                             </div>
 
                             <div className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <input
+                                        type="text"
+                                        placeholder="First Name"
+                                        className="w-full bg-black/40 border border-white/5 p-4 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
+                                        value={newUser.firstName}
+                                        onChange={e => setNewUser({ ...newUser, firstName: e.target.value })}
+                                    />
+                                    <input
+                                        type="text"
+                                        placeholder="Last Name"
+                                        className="w-full bg-black/40 border border-white/5 p-4 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
+                                        value={newUser.lastName}
+                                        onChange={e => setNewUser({ ...newUser, lastName: e.target.value })}
+                                    />
+                                </div>
                                 <input
                                     type="email"
                                     placeholder="Operator Email"

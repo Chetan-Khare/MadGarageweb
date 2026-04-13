@@ -19,6 +19,7 @@ import AIChatPage from './pages/AIChatPage';
 import AddProductPage from './pages/AddProductPage';
 import ProductDetailsPage from './pages/ProductDetailsPage';
 import OrderDetailsPage from './pages/OrderDetailsPage';
+import OrderLookupPage from './pages/OrderLookupPage';
 import CatalogPage from './pages/CatalogPage';
 import ProfilePage from './pages/ProfilePage';
 import CheckoutPage from './pages/CheckoutPage';
@@ -77,6 +78,7 @@ function App() {
       {/* Global AI Chat & Global Order Details (Requires Auth) */}
       <Route element={<ProtectedRoute />}>
         <Route path="/chat" element={<AIChatPage />} />
+        <Route path="/order" element={<OrderLookupPage />} />
         <Route path="/order/:id" element={<OrderDetailsPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/checkout" element={<CheckoutPage />} />

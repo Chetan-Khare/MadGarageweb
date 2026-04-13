@@ -261,7 +261,7 @@ const AddProductPage: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-2 bg-green-500/10 px-4 py-2 rounded-xl border border-green-500/20 text-green-500">
                         <ShieldCheck size={14} />
-                        <span className="text-[10px] font-black uppercase tracking-widest">Verified Merchant</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest">Official Merchant</span>
                     </div>
                 </div>
 
@@ -336,22 +336,44 @@ const AddProductPage: React.FC = () => {
                                             onChange={e => setFormData({...formData, price: e.target.value})}
                                         />
                                     </div>
-                                    <input 
-                                        required
-                                        type="number"
-                                        placeholder="Stock Qty"
-                                        className="w-full bg-black/40 border border-white/5 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
-                                        value={formData.stockQuantity}
-                                        onChange={e => setFormData({...formData, stockQuantity: e.target.value})}
-                                    />
+                                    <div>
+                                        <input 
+                                            required
+                                            type="number"
+                                            placeholder="Stock Qty"
+                                            className="w-full bg-black/40 border border-white/5 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all disabled:opacity-50"
+                                            value={formData.stockQuantity}
+                                            onChange={e => setFormData({...formData, stockQuantity: e.target.value})}
+                                            disabled={['USED', 'REFURBISHED'].includes(formData.condition)}
+                                        />
+                                        {['USED', 'REFURBISHED'].includes(formData.condition) && <p className="text-[8px] font-black uppercase text-orange-500 mt-2 ml-2 tracking-widest leading-tight">Locked to 1 unit</p>}
+                                    </div>
                                 </div>
-                                <select 
-                                    className="w-full bg-black/40 border border-white/5 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary appearance-none transition-all"
-                                    value={formData.category}
-                                    onChange={e => setFormData({...formData, category: e.target.value})}
-                                >
-                                    {PART_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                                </select>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <select 
+                                        className="w-full bg-black/40 border border-white/5 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary appearance-none transition-all"
+                                        value={formData.condition}
+                                        onChange={e => {
+                                            const isUnique = ['USED', 'REFURBISHED'].includes(e.target.value);
+                                            setFormData({
+                                                ...formData, 
+                                                condition: e.target.value,
+                                                stockQuantity: isUnique ? '1' : formData.stockQuantity
+                                            });
+                                        }}
+                                    >
+                                        <option value="NEW">New</option>
+                                        <option value="REFURBISHED">Refurbished</option>
+                                        <option value="USED">Used</option>
+                                    </select>
+                                    <select 
+                                        className="w-full bg-black/40 border border-white/5 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary appearance-none transition-all"
+                                        value={formData.category}
+                                        onChange={e => setFormData({...formData, category: e.target.value})}
+                                    >
+                                        {PART_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                                    </select>
+                                </div>
                             </div>
                         </div>
                         <div className="mt-8 space-y-4">
@@ -505,7 +527,7 @@ const AddProductPage: React.FC = () => {
                             <>{editProduct ? 'SAVE CATALOG UPDATES' : 'PUBLISH TO GLOBAL MARKET'} <ArrowUpRight className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" size={20} /></>
                         )}
                     </button>
-                    <p className="text-[9px] font-black text-center uppercase text-gray-600 tracking-[0.5em] pb-12">Mad Garage Forge Protocol // Authorization Verified</p>
+                    <p className="text-[9px] font-black text-center uppercase text-gray-600 tracking-[0.5em] pb-12">Mad Garage Forge Protocol // Authorization Approved</p>
                 </form>
             </div>
         </div>

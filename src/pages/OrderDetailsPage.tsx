@@ -199,9 +199,20 @@ const OrderDetailsPage: React.FC = () => {
 
                         {/* Actions */}
                         <div className="flex flex-wrap gap-4 pt-12 border-t border-gray-100">
-                            <ActionBtn icon={<Printer size={16}/>} label="Print Manifest" />
-                            <ActionBtn icon={<Share2 size={16}/>} label="Share Receipt" />
-                            <ActionBtn icon={<HelpCircle size={16}/>} label="Tech Support" primary />
+                            <ActionBtn icon={<Printer size={16}/>} label="Print Manifest" onClick={() => window.print()} />
+                            <ActionBtn icon={<Share2 size={16}/>} label="Share Receipt" onClick={() => {
+                                if (navigator.share) {
+                                    navigator.share({
+                                        title: `Mad Garage Order #${order.id}`,
+                                        text: `Check out my order receipt from Mad Garage.`,
+                                        url: window.location.href
+                                    }).catch(console.error);
+                                } else {
+                                    navigator.clipboard.writeText(window.location.href);
+                                    alert('Order link copied to clipboard!');
+                                }
+                            }} />
+                            <ActionBtn icon={<HelpCircle size={16}/>} label="Tech Support" primary onClick={() => navigate('/chat')} />
                         </div>
                     </div>
                 </div>
@@ -226,8 +237,8 @@ const TrackItem: React.FC<{ icon: React.ReactNode, label: string, sub: string, a
     </div>
 );
 
-const ActionBtn: React.FC<{ icon: React.ReactNode, label: string, primary?: boolean }> = ({ icon, label, primary }) => (
-    <button className={`flex items-center gap-2 px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${primary ? 'bg-primary text-white hover:bg-red-700 shadow-lg shadow-red-500/20' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}>
+const ActionBtn: React.FC<{ icon: React.ReactNode, label: string, primary?: boolean, onClick?: () => void }> = ({ icon, label, primary, onClick }) => (
+    <button onClick={onClick} className={`flex items-center gap-2 px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${primary ? 'bg-primary text-white hover:bg-red-700 shadow-lg shadow-red-500/20' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}>
         {icon} {label}
     </button>
 );

@@ -103,7 +103,7 @@ const LoginPage: React.FC = () => {
         } else if (role === 'ROLE_SELLER') {
             navigate('/seller');
         } else if (role === 'ROLE_GARAGE') {
-            navigate('/dashboard'); 
+            navigate('/'); // Redirect Garage to Marketplace
         } else {
             navigate('/'); // Standard customers go to Home
         }

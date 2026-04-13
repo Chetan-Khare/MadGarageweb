@@ -85,7 +85,7 @@ const ProductDetailsPage: React.FC = () => {
                                 <span className="text-primary text-[10px] font-black uppercase tracking-[0.3em] font-black">{product.brand || 'MAD GARAGE'}</span>
                                 <div className="h-4 w-px bg-gray-200" />
                                 <div className="flex items-center gap-1 text-yellow-500">
-                                    <Star size={12} fill="currentColor" /> <span className="text-[10px] font-black">4.8</span>
+                                    <Star size={12} fill="currentColor" /> <span className="text-[10px] font-black">{product.rating || '4.5'}</span>
                                 </div>
                             </div>
                             <h1 className="text-4xl md:text-5xl font-black italic text-app-bg-dark uppercase tracking-tighter leading-none text-wrap break-words">
@@ -215,7 +215,7 @@ const ProductDetailsPage: React.FC = () => {
                              </div>
                              <div>
                                 <p className="text-[10px] font-black uppercase text-green-700 tracking-widest">Fitment Guaranteed</p>
-                                <p className="text-[11px] text-green-600 font-bold">Verified compatible with your 6-step vehicle profile.</p>
+                                <p className="text-[11px] text-green-600 font-bold">Compatible with your 6-step vehicle profile.</p>
                              </div>
                         </div>
                     </div>

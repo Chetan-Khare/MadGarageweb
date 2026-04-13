@@ -1,0 +1,395 @@
+import React, { useState, useEffect } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import {
+  Search, ChevronRight, Zap, ChevronDown, ChevronUp, ShoppingBag,
+  Plus, Heart, X, Target, ShieldCheck
+} from 'lucide-react';
+import apiClient from '../services/apiClient';
+import { useCart } from '../context/CartContext';
+import { useWishlist } from '../context/WishlistContext';
+import { useAuth } from '../context/AuthContext';
+
+interface MarketplaceProps {
+  isGarage?: boolean;
+}
+
+const Marketplace: React.FC<MarketplaceProps> = ({ isGarage = false }) => {
+  const [searchParams] = useSearchParams();
+  const q = searchParams.get('q');
+  const navigate = useNavigate();
+  const { addToCart } = useCart();
+  const { toggleWishlist, isInWishlist } = useWishlist();
+  const { user, role } = useAuth();
+
+  const effectiveIsGarage = isGarage || role === 'ROLE_GARAGE';
+
+  const [makes, setMakes] = useState<string[]>([]);
+  const [models, setModels] = useState<string[]>([]);
+  const [years, setYears] = useState<string[]>([]);
+  const [fuels, setFuels] = useState<string[]>([]);
+  const [trims, setTrims] = useState<string[]>([]);
+  const [engines, setEngines] = useState<any[]>([]);
+  const [selectedMake, setSelectedMake] = useState('');
+  const [selectedModel, setSelectedModel] = useState('');
+  const [selectedYear, setSelectedYear] = useState('');
+  const [selectedFuel, setSelectedFuel] = useState('');
+  const [selectedTrim, setSelectedTrim] = useState('');
+  const [selectedEngine, setSelectedEngine] = useState('');
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState(q || '');
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedCondition, setSelectedCondition] = useState('ALL');
+  const [showVehicleFilters, setShowVehicleFilters] = useState(false);
+
+  const categories = ['All', 'Engine', 'Brakes', 'Suspension', 'Exhaust', 'Electrical', 'Exterior'];
+
+  useEffect(() => {
+    fetchMakes();
+    fetchProducts();
+  }, [selectedCategory, selectedCondition, effectiveIsGarage]);
+
+  useEffect(() => {
+    if (q) setSearchTerm(q);
+  }, [q]);
+
+  const fetchMakes = async () => {
+    try {
+      const res = await apiClient.get('/vehicles/makes');
+      setMakes(res.data);
+    } catch (err) { console.error('Error fetching makes'); }
+  };
+
+  const handleMakeChange = async (make: string) => {
+    setSelectedMake(make);
+    setSelectedModel(''); setSelectedYear(''); setSelectedFuel(''); setSelectedTrim(''); setSelectedEngine('');
+    setModels([]); setYears([]); setFuels([]); setTrims([]); setEngines([]);
+    if (make) {
+      try {
+        const res = await apiClient.get(`/vehicles/models?make=${make}`);
+        setModels(res.data);
+      } catch (e) { console.error(e); }
+    }
+  };
+
+  const handleModelChange = async (model: string) => {
+    setSelectedModel(model);
+    setSelectedYear(''); setSelectedFuel(''); setSelectedTrim(''); setSelectedEngine('');
+    if (model) {
+      try {
+        const res = await apiClient.get(`/vehicles/years?make=${selectedMake}&model=${model}`);
+        setYears(res.data.map((y: any) => y.toString()));
+      } catch (e) { console.error(e); }
+    }
+  };
+
+  const handleYearChange = async (year: string) => {
+    setSelectedYear(year);
+    setSelectedFuel(''); setSelectedTrim(''); setSelectedEngine('');
+    if (year) {
+      try {
+        const res = await apiClient.get(`/vehicles/fuels?make=${selectedMake}&model=${selectedModel}&year=${year}`);
+        setFuels(res.data);
+      } catch (e) { console.error(e); }
+    }
+  };
+
+  const handleFuelChange = async (fuel: string) => {
+    setSelectedFuel(fuel);
+    setSelectedTrim(''); setSelectedEngine('');
+    if (fuel) {
+      try {
+        const res = await apiClient.get(`/vehicles/trims?make=${selectedMake}&model=${selectedModel}&year=${selectedYear}&fuel=${fuel}`);
+        setTrims(res.data);
+      } catch (e) { console.error(e); }
+    }
+  };
+
+  const handleTrimChange = async (trim: string) => {
+    setSelectedTrim(trim);
+    setSelectedEngine('');
+    if (trim) {
+      try {
+        const res = await apiClient.get(`/vehicles/engines?make=${selectedMake}&model=${selectedModel}&year=${selectedYear}&fuel=${selectedFuel}&trim=${trim}`);
+        setEngines(res.data);
+      } catch (e) { console.error(e); }
+    }
+  };
+
+  const fetchProducts = async () => {
+    setLoading(true);
+    try {
+      const params: any = {};
+      if (selectedEngine) params.engineId = selectedEngine;
+      if (selectedCategory !== 'All') params.category = selectedCategory;
+      
+      const endpoint = effectiveIsGarage ? '/products/garage' : '/products';
+      const response = await apiClient.get(endpoint, { params });
+      setProducts(response.data);
+    } catch (error) {
+      console.error('Failed to fetch products:', error);
+      // Demo fallback
+      setProducts([
+        { id: 1, name: 'Brembo Racing Pads', price: 12500, garagePrice: 10500, category: 'Brakes', brand: 'Brembo', condition: 'NEW' },
+        { id: 2, name: 'Garrett G-Series Turbo', price: 145000, garagePrice: 132000, category: 'Engine', brand: 'Garrett', condition: 'NEW' },
+        { id: 3, name: 'HKS Hi-Power Exhaust', price: 65000, garagePrice: 58000, category: 'Exhaust', brand: 'HKS', condition: 'NEW' }
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFindParts = () => {
+    fetchProducts();
+    document.getElementById('marketplace-section')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const filteredProducts = products.filter((p: any) => {
+    if (p.flagged) return false;
+    const name = (p.partName || p.name || '').toLowerCase();
+    const matchesSearch = name.includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === 'All' || p.category === selectedCategory;
+    const matchesCondition = selectedCondition === 'ALL' || p.condition === selectedCondition;
+    return matchesSearch && matchesCategory && matchesCondition;
+  });
+
+  return (
+    <div className="flex flex-col w-full">
+      {/* Hero / Fitment Section */}
+      <section className={`relative transition-all duration-700 ${effectiveIsGarage ? 'py-10' : 'min-h-[750px] flex items-center justify-center pt-20 pb-10'} bg-app-bg-dark overflow-hidden`}>
+        <div className="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_50%_0%,rgba(223,35,36,0.3)_0%,transparent_70%)]" />
+        <div className="container mx-auto px-4 relative z-10 text-center">
+          {!effectiveIsGarage && (
+            <>
+              <div className="flex justify-center mb-8">
+                <img src="/logo.png" alt="MAD GARAGE" className="h-24 aspect-square object-contain rounded-full overflow-hidden brightness-110 drop-shadow-[0_0_15px_rgba(223,35,36,0.3)]" />
+              </div>
+              <h1 className="text-6xl md:text-8xl font-black italic tracking-tighter text-white mb-6 uppercase">
+                Built for <span className="text-primary italic">SPEED.</span>
+              </h1>
+              <p className="text-xl md:text-2xl text-gray-400 font-medium max-w-3xl mx-auto mb-12 leading-relaxed">
+                Premium performance parts for the serious enthusiast.
+              </p>
+            </>
+          )}
+
+          {effectiveIsGarage && (
+            <div className="mb-10 text-left">
+              <h2 className="text-3xl font-black italic text-white uppercase tracking-tighter">
+                Workshop <span className="text-primary">Catalog</span>
+              </h2>
+              <p className="text-sm text-gray-400 font-bold uppercase tracking-widest mt-2 opacity-60">Elite Wholesale Access Enabled</p>
+            </div>
+          )}
+
+          <div className="max-w-6xl mx-auto space-y-4">
+            <button
+              onClick={() => setShowVehicleFilters(!showVehicleFilters)}
+              className={`w-full flex items-center justify-between p-6 md:p-8 rounded-[2.5rem] border transition-all ${selectedEngine ? 'bg-primary/5 border-primary/20 shadow-xl' : 'bg-white border-gray-100 shadow-2xl hover:bg-gray-50'}`}
+            >
+              <div className="flex items-center gap-6">
+                <div className={`h-12 w-12 rounded-2xl flex items-center justify-center ${selectedEngine ? 'bg-primary text-white' : 'bg-gray-100 text-gray-400'}`}>
+                  <Zap size={24} />
+                </div>
+                <div className="text-left">
+                  <h3 className={`text-sm md:text-base font-black uppercase tracking-widest ${selectedEngine ? 'text-primary italic' : 'text-app-bg-dark'}`}>
+                    {selectedEngine ? `${selectedYear} ${selectedMake} ${selectedModel} ${selectedTrim}` : 'Identify Your Build'}
+                  </h3>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Select vehicle for precision fitment matching</p>
+                </div>
+              </div>
+              {showVehicleFilters ? <ChevronUp size={24} /> : <ChevronDown size={24} />}
+            </button>
+            
+            {showVehicleFilters && (
+              <div className="bg-white p-8 md:p-12 rounded-[2.8rem] border border-gray-100 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 text-left">
+                  <SelectField label="Make" value={selectedMake} options={makes} onChange={handleMakeChange} />
+                  <SelectField label="Model" value={selectedModel} options={models} onChange={handleModelChange} disabled={!selectedMake} />
+                  <SelectField label="Year" value={selectedYear} options={years} onChange={handleYearChange} disabled={!selectedModel} />
+                  <SelectField label="Fuel" value={selectedFuel} options={fuels} onChange={handleFuelChange} disabled={!selectedYear} />
+                  <SelectField label="Trim" value={selectedTrim} options={trims} onChange={handleTrimChange} disabled={!selectedFuel} />
+                  <SelectField label="Engine" value={selectedEngine} options={engines.map((e: any) => ({ value: e.id, label: `${e.engineCode} - ${e.horsepower}HP` }))} onChange={(v) => setSelectedEngine(v)} disabled={!selectedTrim} />
+                </div>
+                <div className="mt-10 flex flex-col md:flex-row items-center justify-between gap-6 pt-10 border-t border-gray-50">
+                  <button
+                    onClick={() => { setSelectedMake(''); setSelectedModel(''); setSelectedYear(''); setSelectedFuel(''); setSelectedTrim(''); setSelectedEngine(''); }}
+                    className="text-[10px] font-black uppercase text-primary tracking-widest flex items-center gap-2 hover:underline"
+                  >
+                    <X size={14} /> Clear Vehicle Profile
+                  </button>
+                  <button
+                    onClick={handleFindParts}
+                    disabled={!selectedEngine}
+                    className="w-full md:w-auto bg-primary text-white h-16 px-12 rounded-2xl font-black uppercase text-xs flex items-center justify-center gap-3 hover:bg-red-700 transition-all shadow-xl disabled:opacity-50 disabled:pointer-events-none"
+                  >
+                    Sync Fitment <ChevronRight size={20} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* Marketplace Grid Section */}
+      <section id="marketplace-section" className={`py-20 ${effectiveIsGarage ? 'bg-app-bg-light' : 'bg-white'}`}>
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between mb-12">
+            <h2 className={`text-4xl font-black italic uppercase tracking-tighter flex items-center gap-4 ${effectiveIsGarage ? 'text-app-bg-dark' : 'text-app-bg-dark'}`}>
+              Marketplace <div className="h-1 w-20 bg-primary/20"></div>
+            </h2>
+            {effectiveIsGarage && (
+              <div className="text-right hidden sm:block">
+                <p className="text-[10px] font-black uppercase text-primary tracking-widest">Garage Exclusive Pricing</p>
+                <p className="text-xs font-black text-gray-400 uppercase tracking-tighter">Wholesale Tier 1 Active</p>
+              </div>
+            )}
+          </div>
+
+          <div className="mb-12 flex flex-col md:flex-row items-center justify-between gap-8 py-6 border-b border-gray-100 sticky top-16 z-30 bg-white/95 backdrop-blur-md px-4 rounded-2xl shadow-sm">
+            <div className={`flex flex-col lg:flex-row items-center gap-6 w-full justify-between`}>
+              <div className="flex bg-gray-50 p-1 rounded-xl border border-gray-100 overflow-x-auto max-w-full">
+                {categories.map(cat => (
+                  <button
+                    key={cat}
+                    onClick={() => setSelectedCategory(cat)}
+                    className={`px-4 py-2 text-[10px] font-black uppercase rounded-lg transition-all whitespace-nowrap ${selectedCategory === cat ? 'bg-app-bg-dark text-white shadow-lg' : 'text-gray-400 hover:text-app-bg-dark'}`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+              <div className="flex bg-gray-50 p-1 rounded-xl border border-gray-100">
+                {['ALL', 'NEW', 'REFURBISHED', 'USED'].map(cond => (
+                  <button
+                    key={cond}
+                    onClick={() => setSelectedCondition(cond)}
+                    className={`px-4 py-2 text-[9px] font-black uppercase rounded-lg transition-all ${selectedCondition === cond ? 'bg-primary text-white' : 'text-gray-400 hover:text-primary'}`}
+                  >
+                    {cond}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="py-40 flex flex-col items-center gap-4">
+              <div className="h-12 w-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest animate-pulse">Scanning Global Inventory...</p>
+            </div>
+          ) : filteredProducts.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+              {filteredProducts.map((product: any) => (
+                <div
+                  key={product.id}
+                  className="group bg-white rounded-[2.5rem] border border-gray-100 shadow-xl flex flex-col overflow-hidden hover:translate-y-[-8px] transition-all duration-500 cursor-pointer"
+                  onClick={() => navigate(`/product/${product.id}`, { state: { product } })}
+                >
+                  <div className="aspect-square bg-gray-50 flex items-center justify-center p-8 relative overflow-hidden">
+                    <img
+                      src={product.imageUrl ? (product.imageUrl.startsWith('http') ? product.imageUrl : `http://127.0.0.1:8080${product.imageUrl}`) : 'https://via.placeholder.com/300'}
+                      alt={product.partName || product.name}
+                      className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-700"
+                      onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                        (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?q=80&w=400&auto=format&fit=crop';
+                      }}
+                    />
+                    <div className="absolute top-4 left-4 z-10 flex gap-2">
+                      {product.condition && (
+                        <span className="bg-primary/90 backdrop-blur-md text-white text-[8px] font-black uppercase px-3 py-1.5 rounded-full shadow-lg">
+                          {product.condition}
+                        </span>
+                      )}
+                      <span className="bg-app-bg-dark/80 backdrop-blur-md text-white text-[8px] font-black uppercase px-3 py-1.5 rounded-full shadow-lg">{product.category}</span>
+                    </div>
+                  </div>
+                  <div className="p-8 flex flex-col flex-1">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-[9px] font-black uppercase text-primary tracking-widest">{product.brand || 'MAD GARAGE'}</span>
+                      <span className="text-gray-300">•</span>
+                      <span className="text-[9px] font-black uppercase text-gray-400 tracking-widest">Available Now</span>
+                    </div>
+                    <h3 className="text-xl font-black italic text-app-bg-dark uppercase tracking-tighter leading-tight mb-6 group-hover:text-primary transition-colors line-clamp-2">
+                      {product.partName || product.name || product.deviceName}
+                    </h3>
+                    <div className="mt-auto pt-6 border-t border-gray-50 flex items-center justify-between">
+                      <div>
+                        {effectiveIsGarage && product.price && <p className="text-[10px] text-gray-400 line-through font-bold decoration-primary/40">₹{product.price.toLocaleString()}</p>}
+                        <p className="text-2xl font-black italic text-app-bg-dark tracking-tighter">
+                          Rs.{(effectiveIsGarage ? (product.garagePrice || product.price || 0) : (product.price || 0)).toLocaleString()}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={(e: React.MouseEvent) => { 
+                            e.stopPropagation(); 
+                            if (!user) {
+                              navigate('/login');
+                              return;
+                            }
+                            toggleWishlist(product); 
+                          }}
+                          className={`h-12 w-12 rounded-2xl flex items-center justify-center transition-all shadow-lg border ${isInWishlist(product.id) ? 'bg-primary text-white border-primary' : 'bg-gray-50 text-app-bg-dark border-gray-100 hover:bg-primary/5 hover:text-primary'}`}
+                        >
+                          <Heart size={20} fill={isInWishlist(product.id) ? 'currentColor' : 'none'} />
+                        </button>
+                        <div
+                          className="h-12 w-12 bg-app-bg-dark text-white rounded-2xl flex items-center justify-center hover:bg-primary transition-all shadow-lg cursor-pointer"
+                          onClick={(e: React.MouseEvent) => { e.stopPropagation(); addToCart(product); }}
+                        >
+                          <Plus size={20} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-40 text-center space-y-8 bg-gray-50 rounded-[3rem] border border-dashed border-gray-200">
+              <ShoppingBag size={64} className="mx-auto text-gray-200" />
+              <div>
+                <h2 className="text-2xl font-black italic text-app-bg-dark uppercase">No results in this build configuration</h2>
+                <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest mt-2">Try adjusting your filters or contact support for custom sourcing</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+    </div>
+  );
+};
+
+const SelectField: React.FC<{
+  label: string;
+  value: string;
+  options: any[];
+  onChange: (v: string) => void;
+  disabled?: boolean;
+}> = ({ label, value, options, onChange, disabled }) => (
+  <div className={`flex flex-col ${disabled ? 'opacity-40 pointer-events-none' : ''}`}>
+    <label className="text-[10px] font-black uppercase text-gray-400 mb-2 ml-2 tracking-widest">{label}</label>
+    <div className="relative">
+      <select
+        className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl text-xs font-black uppercase tracking-widest text-app-bg-dark outline-none focus:border-primary transition-all appearance-none cursor-pointer"
+        value={value}
+        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onChange(e.target.value)}
+        disabled={disabled}
+      >
+        <option value="">Select {label}</option>
+        {options.map((opt) => (
+          <option key={typeof opt === 'string' ? opt : opt.value} value={typeof opt === 'string' ? opt : opt.value}>
+            {typeof opt === 'string' ? opt : opt.label}
+          </option>
+        ))}
+      </select>
+      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+        <ChevronRight size={14} className="rotate-90" />
+      </div>
+    </div>
+  </div>
+);
+
+export default Marketplace;

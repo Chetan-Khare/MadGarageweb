@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Plus, Edit2, Trash2, Search, ArrowLeft, 
-  Package, ShoppingBag, CheckCircle, RefreshCcw,
-  X, Image as ImageIcon, Sparkles, Filter, AlertTriangle
+import {
+    Plus, Edit2, Trash2, Search, ArrowLeft,
+    Package, ShoppingBag, CheckCircle, RefreshCcw,
+    X, Image as ImageIcon, Sparkles, Filter, AlertTriangle
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import apiClient from '../services/apiClient';
@@ -26,7 +26,7 @@ const SellerInventory: React.FC = () => {
         if (location.state?.autoEdit) {
             openEdit(location.state.autoEdit);
         }
-    }, [location.state, products]); // Products dependency ensures we don't open until list is ready if needed, though openEdit works with the passed object
+    }, [location.state, products]);
 
     const fetchInventory = async () => {
         setLoading(true);
@@ -36,11 +36,7 @@ const SellerInventory: React.FC = () => {
             setProducts(inventory);
         } catch (err) {
             console.error(err);
-            // Fallback
-            setProducts([
-                { id: 1, partName: 'Brembo Ceramic Pads', price: 4500, category: 'Brakes', condition: 'NEW', stockQuantity: 12 },
-                { id: 2, partName: 'Air Filter K&N', price: 2800, category: 'Engine', condition: 'REFURBISHED', stockQuantity: 5 },
-            ]);
+            setProducts([]);
         } finally {
             setLoading(false);
         }
@@ -62,19 +58,24 @@ const SellerInventory: React.FC = () => {
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSaving(true);
-        
+
         const requestBody: any = {
             sku: editingProduct.sku || `SKU-${Date.now()}`,
             brand: editingProduct.brand || 'MAD GARAGE',
             partName: editingProduct.partName || editingProduct.name,
             category: editingProduct.category,
             price: editingProduct.price,
-            description: editingProduct.description || 'Verified performance component.',
+            description: editingProduct.description || 'Performance component.',
             stockQuantity: editingProduct.stockQuantity || editingProduct.stock,
             condition: editingProduct.condition,
             fitmentCategory: editingProduct.fitmentCategory || 'UNIVERSAL',
             vehicleIds: editingProduct.fittedVehicles ? editingProduct.fittedVehicles.map((v: any) => v.id) : [],
-            base64Images: base64Image ? [base64Image] : []
+            base64Images: base64Image ? [base64Image] : [],
+            isManualRating: editingProduct.isManualRating,
+            rating: editingProduct.rating,
+            sellerResponse: editingProduct.sellerResponse,
+            flagged: editingProduct.flagged,
+            flagReason: editingProduct.flagReason
         };
 
         try {
@@ -111,7 +112,6 @@ const SellerInventory: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-app-bg-light font-inter">
-            {/* Control Header */}
             <div className="bg-white border-b border-gray-100 p-8 md:px-12 flex flex-col md:flex-row items-center justify-between gap-6 fixed top-0 w-full z-40">
                 <div className="flex items-center gap-6">
                     <button onClick={() => navigate('/seller')} className="h-12 w-12 bg-gray-50 border border-gray-100 rounded-2xl flex items-center justify-center text-gray-400 hover:text-primary transition-all">
@@ -123,7 +123,7 @@ const SellerInventory: React.FC = () => {
                     </div>
                 </div>
 
-                <button 
+                <button
                     onClick={() => openEdit()}
                     className="bg-primary text-white h-12 px-8 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center gap-2 hover:bg-red-700 transition-all shadow-xl shadow-red-500/20"
                 >
@@ -132,14 +132,12 @@ const SellerInventory: React.FC = () => {
             </div>
 
             <div className="p-8 md:p-12 pt-44 md:pt-48 max-w-7xl mx-auto space-y-10 pb-20">
-                {/* Stats Row */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                     <InventoryStat label="Total Listings" val={products.length} icon={<Package size={18}/>} color="text-primary" />
-                     <InventoryStat label="Low Stock Alert" val={products.filter(p => (p.stockQuantity || p.stock || 0) < 5).length} icon={<RefreshCcw size={18}/>} color="text-orange-500" />
-                     <InventoryStat label="Verification Pending" val={0} icon={<CheckCircle size={18}/>} color="text-green-500" />
+                    <InventoryStat label="Total Listings" val={products.length} icon={<Package size={18} />} color="text-primary" />
+                    <InventoryStat label="Low Stock Alert" val={products.filter(p => (!p.condition || p.condition === 'NEW') && (p.stockQuantity || p.stock || 0) < 5).length} icon={<RefreshCcw size={18} />} color="text-orange-500" />
+                    <InventoryStat label="Approved Listings" val={products.filter(p => !p.flagged).length} icon={<CheckCircle size={18} />} color="text-green-500" />
                 </div>
 
-                {/* Inventory Table */}
                 <div className="bg-white border border-gray-100 rounded-[2.5rem] shadow-xl shadow-black/5 overflow-hidden">
                     <table className="w-full text-left">
                         <thead className="bg-gray-50 border-b border-gray-100">
@@ -157,9 +155,9 @@ const SellerInventory: React.FC = () => {
                                         <div className="flex items-center gap-6">
                                             <div className="h-16 w-16 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-300 group-hover:text-primary transition-colors overflow-hidden">
                                                 {p.imageUrl ? (
-                                                    <img 
-                                                        src={p.imageUrl.startsWith('http') ? p.imageUrl : `http://127.0.0.1:8080${p.imageUrl}`} 
-                                                        alt={p.partName || p.name} 
+                                                    <img
+                                                        src={p.imageUrl.startsWith('http') ? p.imageUrl : `http://127.0.0.1:8080${p.imageUrl}`}
+                                                        alt={p.partName || p.name}
                                                         className="h-full w-full object-cover"
                                                         onError={(e) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?q=80&w=200&auto=format&fit=crop'; }}
                                                     />
@@ -191,14 +189,14 @@ const SellerInventory: React.FC = () => {
                                     </td>
                                     <td className="p-6">
                                         <div className="flex items-center gap-2">
-                                            <div className={`h-2 w-2 rounded-full ${(p.stockQuantity || p.stock || 0) > 10 ? 'bg-green-500' : 'bg-orange-500'}`} />
+                                            <div className={`h-2 w-2 rounded-full ${(!p.condition || p.condition === 'NEW') && (p.stockQuantity || p.stock || 0) <= 10 ? 'bg-orange-500' : 'bg-green-500'}`} />
                                             <span className="text-sm font-bold text-gray-600">{p.stockQuantity || p.stock || 0} Units</span>
                                         </div>
                                     </td>
                                     <td className="p-6">
                                         <div className="flex gap-2">
-                                            <button onClick={() => openEdit(p)} className="h-10 w-10 bg-gray-50 text-gray-400 rounded-xl flex items-center justify-center hover:bg-blue-500 hover:text-white transition-all"><Edit2 size={16}/></button>
-                                            <button onClick={() => handleDelete(p.id)} className="h-10 w-10 bg-gray-50 text-gray-400 rounded-xl flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"><Trash2 size={16}/></button>
+                                            <button onClick={() => openEdit(p)} className="h-10 w-10 bg-gray-50 text-gray-400 rounded-xl flex items-center justify-center hover:bg-blue-500 hover:text-white transition-all"><Edit2 size={16} /></button>
+                                            <button onClick={() => handleDelete(p.id)} className="h-10 w-10 bg-gray-50 text-gray-400 rounded-xl flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"><Trash2 size={16} /></button>
                                         </div>
                                     </td>
                                 </tr>
@@ -206,7 +204,8 @@ const SellerInventory: React.FC = () => {
                         </tbody>
                     </table>
                 </div>
-            </div>            {/* Modal - Quick Form */}
+            </div>
+
             {showModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowModal(false)} />
@@ -216,12 +215,11 @@ const SellerInventory: React.FC = () => {
                                 <h2 className="text-2xl font-black italic uppercase tracking-tighter text-app-bg-dark">{editingProduct.id ? 'Refine' : 'Add'} <span className="text-primary italic">Part</span></h2>
                                 <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 font-bold">Catalog Integration Layer</p>
                             </div>
-                            <button type="button" onClick={() => setShowModal(false)} className="h-10 w-10 bg-gray-50 rounded-xl flex items-center justify-center hover:text-primary transition-colors"><X size={20}/></button>
+                            <button type="button" onClick={() => setShowModal(false)} className="h-10 w-10 bg-gray-50 rounded-xl flex items-center justify-center hover:text-primary transition-colors"><X size={20} /></button>
                         </div>
-                        
-                        <div className="p-10 space-y-8">
-                             {/* Image Upload Section */}
-                             <div className="flex flex-col items-center justify-center p-8 bg-gray-50 border-2 border-dashed border-gray-200 rounded-[2.5rem] group hover:border-primary/50 transition-all cursor-pointer relative overflow-hidden">
+
+                        <div className="p-10 space-y-8 max-h-[70vh] overflow-y-auto">
+                            <div className="flex flex-col items-center justify-center p-8 bg-gray-50 border-2 border-dashed border-gray-200 rounded-[2.5rem] group hover:border-primary/50 transition-all cursor-pointer relative overflow-hidden">
                                 {imagePreview ? (
                                     <div className="relative w-full h-40">
                                         <img src={imagePreview} className="w-full h-full object-cover rounded-2xl" alt="Preview" />
@@ -237,39 +235,72 @@ const SellerInventory: React.FC = () => {
                                         <p className="text-[8px] font-black uppercase text-gray-400 tracking-widest group-hover:text-primary transition-colors">Surface Part Image (PNG/JPG)</p>
                                     </div>
                                 )}
-                                <input 
-                                    type="file" 
-                                    accept="image/*" 
-                                    onChange={handleImageChange} 
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleImageChange}
                                     className="absolute inset-0 opacity-0 cursor-pointer"
                                 />
-                             </div>
+                            </div>
 
-                             <div className="flex flex-col">
+                            <div className="flex flex-col">
                                 <label className="text-[10px] font-black uppercase text-gray-400 mb-3 ml-2">Product Name</label>
-                                <input required type="text" className="bg-gray-50 border border-gray-100 p-4 rounded-2xl text-sm font-bold outline-none focus:border-primary transition-all" value={editingProduct.partName || editingProduct.name || ''} onChange={e => setEditingProduct({...editingProduct, partName: e.target.value})} placeholder="e.g. Brembo Front Brake Pads" />
-                             </div>
+                                <input required type="text" className="bg-gray-50 border border-gray-100 p-4 rounded-2xl text-sm font-bold outline-none focus:border-primary transition-all" value={editingProduct.partName || editingProduct.name || ''} onChange={e => setEditingProduct({ ...editingProduct, partName: e.target.value })} placeholder="e.g. Brembo Front Brake Pads" />
+                            </div>
 
-                             <div className="grid grid-cols-2 gap-8">
+                            <div className="grid grid-cols-2 gap-8">
                                 <div className="flex flex-col">
                                     <label className="text-[10px] font-black uppercase text-gray-400 mb-3 ml-2">Wholesale Price (₹)</label>
-                                    <input required type="number" className="bg-gray-50 border border-gray-100 p-4 rounded-2xl text-sm font-bold outline-none focus:border-primary transition-all" value={editingProduct.price || 0} onChange={e => setEditingProduct({...editingProduct, price: Number(e.target.value)})} />
+                                    <input required type="number" className="bg-gray-50 border border-gray-100 p-4 rounded-2xl text-sm font-bold outline-none focus:border-primary transition-all" value={editingProduct.price || 0} onChange={e => setEditingProduct({ ...editingProduct, price: Number(e.target.value) })} />
                                 </div>
                                 <div className="flex flex-col">
                                     <label className="text-[10px] font-black uppercase text-gray-400 mb-3 ml-2">Current Stock</label>
-                                    <input required type="number" className="bg-gray-50 border border-gray-100 p-4 rounded-2xl text-sm font-bold outline-none focus:border-primary transition-all" value={editingProduct.stockQuantity || editingProduct.stock || 0} onChange={e => setEditingProduct({...editingProduct, stockQuantity: Number(e.target.value)})} />
+                                    <input required type="number" className="bg-gray-50 border border-gray-100 p-4 rounded-2xl text-sm font-bold outline-none focus:border-primary transition-all disabled:opacity-50" value={editingProduct.stockQuantity || editingProduct.stock || 0} onChange={e => setEditingProduct({ ...editingProduct, stockQuantity: Number(e.target.value) })} disabled={['USED', 'REFURBISHED'].includes(editingProduct.condition)} />
+                                    {['USED', 'REFURBISHED'].includes(editingProduct.condition) && <p className="text-[8px] font-black uppercase text-orange-500 mt-2 ml-2 tracking-widest leading-tight">Locked to 1 unit</p>}
                                 </div>
-                             </div>
+                            </div>
 
-                             <div className="flex flex-col">
+                            <div className="flex flex-col">
                                 <label className="text-[10px] font-black uppercase text-gray-400 mb-3 ml-2">Description</label>
-                                <textarea className="bg-gray-50 border border-gray-100 p-4 rounded-2xl text-sm font-medium outline-none focus:border-primary transition-all h-24 resize-none" value={editingProduct.description || ''} onChange={e => setEditingProduct({...editingProduct, description: e.target.value})} placeholder="Describe the performance benefits..." />
-                             </div>
+                                <textarea className="bg-gray-50 border border-gray-100 p-4 rounded-2xl text-sm font-medium outline-none focus:border-primary transition-all h-24 resize-none" value={editingProduct.description || ''} onChange={e => setEditingProduct({ ...editingProduct, description: e.target.value })} placeholder="Describe the performance benefits..." />
+                            </div>
 
-                             <div className="grid grid-cols-2 gap-8">
+                            {(editingProduct.flagged || editingProduct.sellerResponse) && (
+                                <div className="flex flex-col bg-orange-50/50 p-6 rounded-[2rem] border border-orange-100">
+                                    <label className="text-[10px] font-black uppercase text-orange-600 mb-3 ml-2 flex items-center gap-2">
+                                        <AlertTriangle size={12} /> Merchant Justification / Response
+                                    </label>
+
+                                    {editingProduct.flagReason && (
+                                        <div className="mb-4 p-4 bg-orange-50 rounded-2xl border border-orange-100">
+                                            <p className="text-[9px] font-black uppercase text-orange-400 mb-1 tracking-widest">Administrative Flag Reason:</p>
+                                            <p className="text-xs font-bold text-orange-800 italic">"{editingProduct.flagReason}"</p>
+                                        </div>
+                                    )}
+
+                                    <textarea
+                                        className="bg-white border border-orange-100 p-4 rounded-2xl text-sm font-bold text-app-bg-dark outline-none focus:border-orange-500 transition-all h-24 resize-none"
+                                        value={editingProduct.sellerResponse || ''}
+                                        onChange={e => setEditingProduct({ ...editingProduct, sellerResponse: e.target.value })}
+                                        placeholder="Provide reasoning to resolve the administrative flag..."
+                                    />
+                                    <p className="text-[8px] font-black uppercase text-orange-400 mt-3 ml-2 tracking-widest leading-relaxed">
+                                        Your response will be audited by Mad Garage administrators to verify compliance.
+                                    </p>
+                                </div>
+                            )}
+
+                            <div className="grid grid-cols-2 gap-8">
                                 <div className="flex flex-col">
                                     <label className="text-[10px] font-black uppercase text-gray-400 mb-3 ml-2">Condition</label>
-                                    <select className="bg-gray-50 border border-gray-100 p-4 rounded-2xl text-xs font-black uppercase tracking-widest text-app-bg-dark outline-none focus:border-primary appearance-none cursor-pointer" value={editingProduct.condition || 'NEW'} onChange={e => setEditingProduct({...editingProduct, condition: e.target.value})}>
+                                    <select className="bg-gray-50 border border-gray-100 p-4 rounded-2xl text-xs font-black uppercase tracking-widest text-app-bg-dark outline-none focus:border-primary appearance-none cursor-pointer" value={editingProduct.condition || 'NEW'} onChange={e => {
+                                        const isUnique = ['USED', 'REFURBISHED'].includes(e.target.value);
+                                        setEditingProduct({
+                                            ...editingProduct,
+                                            condition: e.target.value,
+                                            stockQuantity: isUnique ? 1 : editingProduct.stockQuantity
+                                        });
+                                    }}>
                                         <option value="NEW">New</option>
                                         <option value="REFURBISHED">Refurbished</option>
                                         <option value="USED">Used</option>
@@ -277,14 +308,14 @@ const SellerInventory: React.FC = () => {
                                 </div>
                                 <div className="flex flex-col">
                                     <label className="text-[10px] font-black uppercase text-gray-400 mb-3 ml-2">Category</label>
-                                    <select className="bg-gray-50 border border-gray-100 p-4 rounded-2xl text-xs font-black uppercase tracking-widest text-app-bg-dark outline-none focus:border-primary appearance-none cursor-pointer" value={editingProduct.category || 'Engine'} onChange={e => setEditingProduct({...editingProduct, category: e.target.value})}>
+                                    <select className="bg-gray-50 border border-gray-100 p-4 rounded-2xl text-xs font-black uppercase tracking-widest text-app-bg-dark outline-none focus:border-primary appearance-none cursor-pointer" value={editingProduct.category || 'Engine'} onChange={e => setEditingProduct({ ...editingProduct, category: e.target.value })}>
                                         {['Brakes', 'Engine', 'Suspension', 'Exhaust', 'Electrical', 'Exterior', 'Interior'].map(c => <option key={c} value={c}>{c}</option>)}
                                     </select>
                                 </div>
-                             </div>
+                            </div>
 
-                             {editingProduct.id && editingProduct.fitmentCategory !== 'UNIVERSAL' && (
-                                 <div className="bg-orange-50 p-6 rounded-2xl border border-orange-100">
+                            {editingProduct.id && editingProduct.fitmentCategory !== 'UNIVERSAL' && (
+                                <div className="bg-orange-50 p-6 rounded-2xl border border-orange-100">
                                     <div className="flex items-center gap-3">
                                         <div className="h-8 w-8 bg-white rounded-xl flex items-center justify-center text-orange-500 shadow-sm">
                                             <Filter size={16} />
@@ -296,22 +327,22 @@ const SellerInventory: React.FC = () => {
                                             </p>
                                         </div>
                                     </div>
-                                    <button 
+                                    <button
                                         type="button"
-                                        onClick={() => navigate('/seller/add-product', { state: { autoEdit: editingProduct }})}
+                                        onClick={() => navigate('/seller/add-product', { state: { autoEdit: editingProduct } })}
                                         className="mt-4 text-[9px] font-black uppercase text-orange-500 hover:text-orange-700 underline tracking-widest"
                                     >
                                         Manage Advanced Compatibility →
                                     </button>
-                                 </div>
-                             )}
+                                </div>
+                            )}
                         </div>
 
                         <div className="p-10 bg-gray-50 flex gap-4">
-                             <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] border border-gray-200 text-gray-400 hover:bg-white transition-all">Cancel</button>
-                             <button type="submit" disabled={isSaving} className="flex-[2] bg-primary text-white py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-3 hover:bg-red-700 transition-all shadow-xl shadow-red-500/20">
+                            <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] border border-gray-200 text-gray-400 hover:bg-white transition-all">Cancel</button>
+                            <button type="submit" disabled={isSaving} className="flex-[2] bg-primary text-white py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-3 hover:bg-red-700 transition-all shadow-xl shadow-red-500/20">
                                 {isSaving ? 'Processing...' : 'Sync to Catalog'} <Sparkles size={16} />
-                             </button>
+                            </button>
                         </div>
                     </form>
                 </div>

@@ -140,7 +140,10 @@ const SellerDashboard: React.FC = () => {
 
                 {/* Metrics Highlights */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="bg-white p-10 rounded-[2.5rem] border border-gray-100 shadow-xl shadow-black/5 flex items-center justify-between group hover:border-primary/20 transition-all overflow-hidden relative">
+                    <button 
+                        onClick={() => navigate('/seller/inventory')}
+                        className="bg-white p-10 rounded-[2.5rem] border border-gray-100 shadow-xl shadow-black/5 flex items-center justify-between group hover:border-primary/20 transition-all overflow-hidden relative text-left"
+                    >
                          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-700" />
                          <div className="relative z-10">
                             <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest mb-2">Active Inventory</p>
@@ -149,7 +152,7 @@ const SellerDashboard: React.FC = () => {
                          <div className="h-16 w-16 bg-gray-50 rounded-3xl flex items-center justify-center text-primary relative z-10">
                             <Package size={28} />
                          </div>
-                    </div>
+                    </button>
 
                     <div className="bg-white p-10 rounded-[2.5rem] border border-gray-100 shadow-xl shadow-black/5 flex items-center justify-between group hover:border-primary/20 transition-all overflow-hidden relative">
                          <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/5 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-700" />

@@ -59,7 +59,12 @@ const SellerFlaggedProducts: React.FC = () => {
     };
 
     const filteredItems = flaggedItems.filter(p => {
-        const matchesSearch = (p.partName || p.name || '').toLowerCase().includes(searchTerm.toLowerCase());
+        const fullName = (p.partName || p.name || '').toLowerCase();
+        const sku = (p.sku || p.id?.toString() || '').toLowerCase();
+        const category = (p.category || '').toLowerCase();
+        const term = searchTerm.toLowerCase();
+
+        const matchesSearch = fullName.includes(term) || sku.includes(term) || category.includes(term);
         const belongsToSeller = !p.sellerId || p.sellerId === user?.id;
         return matchesSearch && belongsToSeller;
     });

@@ -38,7 +38,7 @@ const SellerOrderManagement: React.FC = () => {
 
     const updateStatus = async (id: string, status: string) => {
         try {
-            await apiClient.put(`/orders/${id}/status`, { status });
+            await apiClient.put(`/orders/${id}/status?status=${status}`);
             fetchOrders();
         } catch (err) {
             console.error('Status update failed');
@@ -151,7 +151,7 @@ const SellerOrderManagement: React.FC = () => {
                                     <div className="flex items-center gap-4 text-right">
                                         <div className="flex-1">
                                             <p className="text-[8px] font-black uppercase text-gray-400 tracking-widest">Transaction Date</p>
-                                            <p className="text-xs font-bold text-app-bg-dark">{order.createdAt}</p>
+                                            <p className="text-xs font-bold text-app-bg-dark">{order.orderDate ? new Date(order.orderDate).toLocaleDateString() : (order.createdAt || 'N/A')}</p>
                                         </div>
                                         <div className="h-8 w-8 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400"><Calendar size={14}/></div>
                                     </div>
@@ -166,13 +166,22 @@ const SellerOrderManagement: React.FC = () => {
                                     <p className="text-2xl font-black italic tracking-tighter text-app-bg-dark">₹{(order.grandTotal || 0).toLocaleString()}</p>
                                 </div>
                                 <div className="flex gap-2 w-full">
-                                    <button 
-                                        onClick={() => updateStatus(order.id, 'SHIPPED')}
-                                        disabled={order.status !== 'PENDING'}
-                                        className="flex-1 bg-app-bg-dark text-white py-4 px-6 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-primary transition-all disabled:opacity-20"
-                                    >
-                                        Ship <Ship size={14} />
-                                    </button>
+                                    {order.status === 'SHIPPED' ? (
+                                        <button 
+                                            onClick={() => updateStatus(order.id, 'DELIVERED')}
+                                            className="flex-1 bg-green-500 text-white py-4 px-6 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-green-600 transition-all"
+                                        >
+                                            Deliver <CheckCircle size={14} />
+                                        </button>
+                                    ) : (
+                                        <button 
+                                            onClick={() => updateStatus(order.id, 'SHIPPED')}
+                                            disabled={!['PENDING', 'PAID'].includes(order.status)}
+                                            className="flex-1 bg-app-bg-dark text-white py-4 px-6 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-primary transition-all disabled:opacity-20"
+                                        >
+                                            Ship <Ship size={14} />
+                                        </button>
+                                    )}
                                     <button 
                                         onClick={() => navigate(`/order/${order.id}`)}
                                         className="h-12 w-12 bg-gray-50 text-gray-400 rounded-xl flex items-center justify-center hover:bg-app-bg-dark hover:text-white transition-all transform group-active:scale-95"

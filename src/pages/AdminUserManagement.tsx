@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { 
   Users, Search, Filter, Mail, Phone, 
   ChevronRight, ArrowLeft, Shield, MoreVertical,
-  UserCheck, UserX, Star, Trash2, RefreshCw
+  UserCheck, UserX, Star, Trash2, RefreshCw,
+  UserPlus, Archive, RotateCcw, Fingerprint, Eye, EyeOff
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../services/apiClient';
@@ -13,6 +14,19 @@ const AdminUserManagement: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [roleFilter, setRoleFilter] = useState('ALL');
+    const [activeTab, setActiveTab] = useState<'ACTIVE' | 'ARCHIVED'>('ACTIVE');
+    
+    // Edit Modal State
+    const [editingUser, setEditingUser] = useState<any | null>(null);
+    const [editForm, setEditForm] = useState({ firstName: '', lastName: '', email: '', phone: '', role: '' });
+    
+    // Provision Modal State
+    const [showProvisionModal, setShowProvisionModal] = useState(false);
+    const [provisionForm, setProvisionForm] = useState({ firstName: '', lastName: '', email: '', password: '', phone: '', role: 'ROLE_SELLER' });
+    const [showPassword, setShowPassword] = useState(false);
+    const [formError, setFormError] = useState('');
+
+    const [actionLoading, setActionLoading] = useState(false);
 
     useEffect(() => { fetchUsers(); }, []);
 
@@ -23,21 +37,90 @@ const AdminUserManagement: React.FC = () => {
             setUsers(res.data);
         } catch (err) {
             console.error('Error fetching users:', err);
-            // Fallback for demo
-            setUsers([
-                { id: 1, firstName: 'Chetan', lastName: 'Khare', email: 'admin@madgarage.com', phone: '9876543210', role: 'ROLE_ADMIN', createdAt: '2024-01-15' },
-                { id: 2, firstName: 'Brembo', lastName: 'Seller', email: 'sales@brembo.in', phone: '8888888888', role: 'ROLE_SELLER', createdAt: '2024-02-10' },
-                { id: 3, firstName: 'Speed', lastName: 'Garage', email: 'contact@speed.in', phone: '7777777777', role: 'ROLE_GARAGE', createdAt: '2024-03-01' },
-            ]);
         } finally {
             setLoading(false);
         }
     };
 
+    const handleSuspend = async (id: number) => {
+        if (!window.confirm('PERMANENTLY DELETE ACCOUNT: This will scramble core identity records and disable all platform access. Are you sure?')) return;
+        setActionLoading(true);
+        try {
+            await apiClient.delete(`/admin/users/${id}`);
+            fetchUsers();
+            alert('Account successfully purged from active network. Identity scrambled for security.');
+        } catch (err: any) {
+            alert(err.response?.data || 'Deactivation failed.');
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const handleRestore = async (id: number) => {
+        setActionLoading(true);
+        try {
+            await apiClient.post(`/admin/users/${id}/restore`);
+            fetchUsers();
+            alert('RECOVERY SUCCESSFUL: Identity records unscrambled and operator access restored.');
+        } catch (err: any) {
+            alert(err.response?.data || 'Restoration failed. Ensure email/phone is not claimed by another active user.');
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const handleProvision = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setFormError('');
+        if (!provisionForm.firstName || !provisionForm.lastName || !provisionForm.email || !provisionForm.password) {
+            setFormError('Identity fundamentals (Name/Email/Pass) are required.');
+            return;
+        }
+
+        setActionLoading(true);
+        try {
+            await apiClient.post('/admin/users', provisionForm);
+            setShowProvisionModal(false);
+            setProvisionForm({ firstName: '', lastName: '', email: '', password: '', phone: '', role: 'ROLE_SELLER' });
+            fetchUsers();
+        } catch (err: any) {
+            setFormError(err.response?.data || 'Provisioning failed.');
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const openEditModal = (user: any) => {
+        setEditingUser(user);
+        setEditForm({ 
+            firstName: user.firstName, 
+            lastName: user.lastName, 
+            email: user.email, 
+            phone: user.phone || '', 
+            role: user.role 
+        });
+    };
+
+    const handleUpdateUser = async () => {
+        if (!editingUser) return;
+        setActionLoading(true);
+        try {
+            await apiClient.put(`/admin/users/${editingUser.id}`, editForm);
+            setEditingUser(null);
+            fetchUsers();
+            alert('User identity record revised successfully.');
+        } catch (err: any) {
+            alert(err.response?.data || 'Revision failed.');
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
     const filteredUsers = users.filter(u => {
-        const matchesSearch = (u.firstName + ' ' + u.lastName + u.email + u.phone).toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSearch = ((u.firstName || '') + ' ' + (u.lastName || '') + (u.email || '') + (u.phone || '')).toLowerCase().includes(searchTerm.toLowerCase());
         const matchesRole = roleFilter === 'ALL' || u.role === roleFilter;
-        return matchesSearch && matchesRole;
+        const matchesStatus = activeTab === 'ACTIVE' ? u.active !== false : u.active === false;
+        return matchesSearch && matchesRole && matchesStatus;
     });
 
     return (
@@ -56,22 +139,43 @@ const AdminUserManagement: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-4 w-full md:w-auto">
-                        <div className="relative flex-1 md:w-80">
+                        <button 
+                            onClick={() => setShowProvisionModal(true)}
+                            className="h-12 px-6 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-2xl flex items-center gap-3 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary/20"
+                        >
+                            <UserPlus size={18} />
+                            Provision
+                        </button>
+                        <div className="h-12 bg-white/5 border border-white/10 p-1 rounded-2xl flex">
+                            <button 
+                                onClick={() => setActiveTab('ACTIVE')}
+                                className={`px-4 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${activeTab === 'ACTIVE' ? 'bg-white text-black' : 'text-gray-500 hover:text-gray-300'}`}
+                            >
+                                Active
+                            </button>
+                            <button 
+                                onClick={() => setActiveTab('ARCHIVED')}
+                                className={`px-4 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${activeTab === 'ARCHIVED' ? 'bg-primary text-white' : 'text-gray-500 hover:text-gray-300'}`}
+                            >
+                                Archived
+                            </button>
+                        </div>
+                        <div className="relative flex-1 md:w-64">
                             <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                             <input 
                                 type="text" 
-                                placeholder="Search identity records..." 
+                                placeholder="Search identity..." 
                                 className="w-full bg-white/5 border border-white/10 p-3 pl-12 rounded-2xl text-sm font-bold outline-none focus:border-primary transition-all"
                                 value={searchTerm}
                                 onChange={e => setSearchTerm(e.target.value)}
                             />
                         </div>
                         <select 
-                            className="bg-app-bg-dark border border-white/10 p-3 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white outline-none focus:border-primary transition-all appearance-none md:w-40 text-center"
+                            className="bg-app-bg-dark border border-white/10 p-3 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white outline-none focus:border-primary transition-all appearance-none md:w-32 text-center"
                             value={roleFilter}
                             onChange={e => setRoleFilter(e.target.value)}
                         >
-                            <option value="ALL">All Roles</option>
+                            <option value="ALL">Roles</option>
                             <option value="ROLE_ADMIN">Admins</option>
                             <option value="ROLE_SELLER">Sellers</option>
                             <option value="ROLE_GARAGE">Garages</option>
@@ -93,7 +197,7 @@ const AdminUserManagement: React.FC = () => {
                                     user.role === 'ROLE_SELLER' ? 'text-blue-500 border-blue-500/20 bg-blue-500/5' :
                                     'text-green-500 border-green-500/20 bg-green-500/5'
                                 }`}>
-                                    {user.role.replace('ROLE_', '')}
+                                    {user.role?.replace('ROLE_', '')}
                                 </span>
                             </div>
 
@@ -114,13 +218,37 @@ const AdminUserManagement: React.FC = () => {
                                 </div>
                                 <div className="flex items-center gap-3 text-gray-400">
                                     <Phone size={14} className="text-primary" />
-                                    <span className="text-xs font-bold">{user.phone}</span>
+                                    <span className="text-xs font-bold">{user.phone || 'NO DATA'}</span>
                                 </div>
                             </div>
 
-                            <div className="flex gap-2 pt-2">
-                                <button className="flex-1 bg-white/5 py-3 rounded-xl text-[9px] font-black uppercase text-gray-400 hover:bg-primary hover:text-white transition-all">Suspend</button>
-                                <button className="h-10 w-10 bg-white/5 rounded-xl flex items-center justify-center text-gray-400 hover:bg-white hover:text-black transition-all"><MoreVertical size={16}/></button>
+                             <div className="flex gap-2 pt-2">
+                                {activeTab === 'ACTIVE' ? (
+                                    <>
+                                        <button 
+                                            onClick={() => handleSuspend(user.id)}
+                                            disabled={actionLoading || user.role === 'ROLE_ADMIN'}
+                                            className="flex-1 bg-red-500/10 py-3 rounded-xl text-[9px] font-black uppercase text-red-500 border border-red-500/10 hover:bg-red-500 hover:text-white transition-all disabled:opacity-30"
+                                        >
+                                            Delete Account
+                                        </button>
+                                        <button 
+                                            onClick={() => openEditModal(user)}
+                                            className="h-10 w-10 bg-white/5 rounded-xl flex items-center justify-center text-gray-400 hover:bg-white hover:text-black transition-all"
+                                        >
+                                            <RefreshCw size={16}/>
+                                        </button>
+                                    </>
+                                ) : (
+                                    <button 
+                                        onClick={() => handleRestore(user.id)}
+                                        disabled={actionLoading}
+                                        className="w-full bg-primary py-3 rounded-xl text-[9px] font-black uppercase text-white hover:bg-red-700 transition-all flex items-center justify-center gap-2"
+                                    >
+                                        <RotateCcw size={14} />
+                                        Restore Account
+                                    </button>
+                                )}
                             </div>
                         </div>
                     ))}
@@ -134,6 +262,96 @@ const AdminUserManagement: React.FC = () => {
                     </div>
                 )}
             </div>
+
+            {/* Edit Modal */}
+            {/* Provision Modal */}
+            {showProvisionModal && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
+                    <form onSubmit={handleProvision} className="bg-[#121216] border border-white/10 w-full max-w-lg rounded-[2.5rem] p-10 space-y-8 shadow-2xl">
+                        <div>
+                            <h2 className="text-xl font-black italic uppercase tracking-tighter">Account <span className="text-primary">Provisioning</span></h2>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mt-2 italic">Register New Network Operator</p>
+                        </div>
+
+                        {formError && <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-500 text-[10px] font-black uppercase rounded-2xl">{formError}</div>}
+
+                        <div className="flex bg-black/40 p-1.5 rounded-2xl">
+                            {['ROLE_SELLER', 'ROLE_GARAGE', 'ROLE_ADMIN'].map(r => (
+                                <button
+                                    key={r}
+                                    type="button"
+                                    onClick={() => setProvisionForm({ ...provisionForm, role: r })}
+                                    className={`flex-1 py-3 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all ${provisionForm.role === r ? 'bg-primary shadow-lg shadow-red-500/20' : 'text-gray-500 hover:text-gray-300'}`}
+                                >
+                                    {r.replace('ROLE_', '')}
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <input 
+                                    className="bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold w-full outline-none focus:border-primary transition-all"
+                                    placeholder="First Name"
+                                    value={provisionForm.firstName}
+                                    onChange={e => setProvisionForm({...provisionForm, firstName: e.target.value})}
+                                />
+                                <input 
+                                    className="bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold w-full outline-none focus:border-primary transition-all"
+                                    placeholder="Last Name"
+                                    value={provisionForm.lastName}
+                                    onChange={e => setProvisionForm({...provisionForm, lastName: e.target.value})}
+                                />
+                            </div>
+                            <input 
+                                className="bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold w-full outline-none focus:border-primary transition-all"
+                                placeholder="Core Email Address"
+                                value={provisionForm.email}
+                                onChange={e => setProvisionForm({...provisionForm, email: e.target.value})}
+                            />
+                            <input 
+                                className="bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold w-full outline-none focus:border-primary transition-all"
+                                placeholder="Phone Terminal"
+                                value={provisionForm.phone}
+                                onChange={e => setProvisionForm({...provisionForm, phone: e.target.value})}
+                            />
+                            <div className="relative">
+                                <input 
+                                    type={showPassword ? "text" : "password"}
+                                    className="bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold w-full outline-none focus:border-primary transition-all"
+                                    placeholder="Root Password"
+                                    value={provisionForm.password}
+                                    onChange={e => setProvisionForm({...provisionForm, password: e.target.value})}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-primary"
+                                >
+                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-4">
+                            <button 
+                                type="button"
+                                onClick={() => setShowProvisionModal(false)}
+                                className="flex-1 bg-white/5 py-4 rounded-2xl text-[10px] font-black uppercase hover:bg-white/10 transition-all"
+                            >
+                                Abort
+                            </button>
+                            <button 
+                                type="submit"
+                                disabled={actionLoading}
+                                className="flex-1 bg-primary py-4 rounded-2xl text-[10px] font-black uppercase text-white hover:bg-red-700 transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-3"
+                            >
+                                {actionLoading ? 'Initializing...' : 'Provision Operator'} <Fingerprint size={16} />
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            )}
         </div>
     );
 };
