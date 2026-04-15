@@ -79,7 +79,12 @@ const AdminUserManagement: React.FC = () => {
 
         setActionLoading(true);
         try {
-            await apiClient.post('/admin/users', provisionForm);
+            // P4 DEFAULT PASSWORD LOGIC: Use password123 if left blank
+            const payload = {
+                ...provisionForm,
+                password: provisionForm.password || 'password123'
+            };
+            await apiClient.post('/admin/users', payload);
             setShowProvisionModal(false);
             setProvisionForm({ firstName: '', lastName: '', email: '', password: '', phone: '', role: 'ROLE_SELLER' });
             fetchUsers();
@@ -179,6 +184,7 @@ const AdminUserManagement: React.FC = () => {
                             <option value="ROLE_ADMIN">Admins</option>
                             <option value="ROLE_SELLER">Sellers</option>
                             <option value="ROLE_GARAGE">Garages</option>
+                            <option value="ROLE_CUSTOMER">Customers</option>
                         </select>
                     </div>
                 </div>
@@ -263,7 +269,92 @@ const AdminUserManagement: React.FC = () => {
                 )}
             </div>
 
-            {/* Edit Modal */}
+            {/* Edit Modal - Restricted to Email/Phone only */}
+            {editingUser && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
+                    <div className="bg-[#121216] border border-white/10 w-full max-w-lg rounded-[2.5rem] p-10 space-y-8 shadow-2xl">
+                        <div>
+                            <h2 className="text-xl font-black italic uppercase tracking-tighter">Identity <span className="text-primary">Revision</span></h2>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mt-2 italic">Updating Operator #{editingUser.id}</p>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4 opacity-50">
+                                <div className="space-y-2">
+                                    <label className="text-[9px] font-black uppercase text-gray-500 ml-2">First Name (Static)</label>
+                                    <input 
+                                        readOnly
+                                        className="bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold w-full outline-none cursor-not-allowed"
+                                        value={editForm.firstName}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[9px] font-black uppercase text-gray-500 ml-2">Last Name (Static)</label>
+                                    <input 
+                                        readOnly
+                                        className="bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold w-full outline-none cursor-not-allowed"
+                                        value={editForm.lastName}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[9px] font-black uppercase text-gray-500 ml-2">Contact Email</label>
+                                <input 
+                                    className="bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold w-full outline-none focus:border-primary transition-all"
+                                    placeholder="operator@madgarage.com"
+                                    value={editForm.email}
+                                    onChange={e => setEditForm({...editForm, email: e.target.value})}
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[9px] font-black uppercase text-gray-500 ml-2">Phone Terminal</label>
+                                <input 
+                                    className="bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold w-full outline-none focus:border-primary transition-all"
+                                    placeholder="+91..."
+                                    value={editForm.phone}
+                                    onChange={e => setEditForm({...editForm, phone: e.target.value})}
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[9px] font-black uppercase text-gray-500 ml-2">Assigned Role</label>
+                                <select 
+                                    className="bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold w-full outline-none focus:border-primary transition-all"
+                                    value={editForm.role}
+                                    onChange={e => setEditForm({...editForm, role: e.target.value})}
+                                >
+                                    <option value="ROLE_CUSTOMER">CUSTOMER</option>
+                                    <option value="ROLE_SELLER">SELLER</option>
+                                    <option value="ROLE_GARAGE">GARAGE</option>
+                                    <option value="ROLE_ADMIN">ADMIN</option>
+                                </select>
+                            </div>
+
+                            <div className="p-4 bg-primary/5 border border-white/5 rounded-2xl">
+                                <p className="text-[9px] font-black uppercase text-gray-500 tracking-widest text-center">Passwords cannot be modified by administrators.</p>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-4">
+                            <button 
+                                onClick={() => setEditingUser(null)}
+                                className="flex-1 bg-white/5 py-4 rounded-2xl text-[10px] font-black uppercase hover:bg-white/10 transition-all"
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                onClick={handleUpdateUser}
+                                disabled={actionLoading}
+                                className="flex-1 bg-primary py-4 rounded-2xl text-[10px] font-black uppercase text-white hover:bg-red-700 transition-all shadow-lg shadow-primary/20"
+                            >
+                                {actionLoading ? 'Updating...' : 'Save Revisions'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
             {/* Provision Modal */}
             {showProvisionModal && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
@@ -315,14 +406,14 @@ const AdminUserManagement: React.FC = () => {
                                 value={provisionForm.phone}
                                 onChange={e => setProvisionForm({...provisionForm, phone: e.target.value})}
                             />
-                            <div className="relative">
-                                <input 
-                                    type={showPassword ? "text" : "password"}
-                                    className="bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold w-full outline-none focus:border-primary transition-all"
-                                    placeholder="Root Password"
-                                    value={provisionForm.password}
-                                    onChange={e => setProvisionForm({...provisionForm, password: e.target.value})}
-                                />
+                             <div className="relative">
+                                 <input 
+                                     type={showPassword ? "text" : "password"}
+                                     className="bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold w-full outline-none focus:border-primary transition-all"
+                                     placeholder="Root Password (Optional)"
+                                     value={provisionForm.password}
+                                     onChange={e => setProvisionForm({...provisionForm, password: e.target.value})}
+                                 />
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}

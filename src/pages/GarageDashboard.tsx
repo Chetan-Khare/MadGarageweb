@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import apiClient from '../services/apiClient';
+import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
 
 const GarageDashboard: React.FC = () => {
   const { user, logout } = useAuth();
@@ -93,9 +93,13 @@ const GarageDashboard: React.FC = () => {
             </div>
             <button
               onClick={() => navigate('/profile')}
-              className="h-12 w-12 bg-app-bg-dark rounded-2xl flex items-center justify-center text-primary font-black italic shadow-lg border border-primary/20 hover:scale-105 transition-all"
+              className="h-12 w-12 bg-app-bg-dark rounded-2xl flex items-center justify-center text-primary font-black italic shadow-lg border border-primary/20 hover:scale-105 transition-all overflow-hidden"
             >
-              {user?.name?.[0] || 'G'}
+              {user?.profileImageUrl ? (
+                <img src={`${BASE_SERVER_URL}${user.profileImageUrl}`} alt="Profile" className="h-full w-full object-cover" />
+              ) : (
+                (user?.name?.[0] || 'G')
+              )}
             </button>
           </div>
         </header>

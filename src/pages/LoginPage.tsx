@@ -60,7 +60,18 @@ const LoginPage: React.FC = () => {
     setError('');
     try {
       const response = await apiClient.post('/auth/verify-otp', { phone, otp });
-      handleLoginSuccess(response.data);
+      const data = response.data;
+
+      if (data?.requiresRegistration) {
+          navigate('/complete-profile', { 
+              state: { 
+                  registrationToken: data.registrationToken,
+                  phone: phone 
+              } 
+          });
+      } else {
+          handleLoginSuccess(data);
+      }
     } catch (err: any) {
       setError(err.response?.data?.error || 'Invalid OTP. Please try again.');
     } finally {

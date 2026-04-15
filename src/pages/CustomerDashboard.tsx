@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import apiClient from '../services/apiClient';
+import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
 
 const CustomerDashboard: React.FC = () => {
     const { user, logout } = useAuth();
@@ -77,9 +77,13 @@ const CustomerDashboard: React.FC = () => {
                         </button>
                         <button 
                             onClick={() => navigate('/profile')}
-                            className="h-12 w-12 bg-app-bg-dark rounded-2xl flex items-center justify-center text-primary font-black italic shadow-lg border border-primary/20 hover:scale-105 transition-all outline-none"
+                            className="h-12 w-12 bg-app-bg-dark rounded-2xl flex items-center justify-center text-primary font-black italic shadow-lg border border-primary/20 hover:scale-105 transition-all outline-none overflow-hidden"
                         >
-                            {user?.name?.[0] || 'C'}
+                            {user?.profileImageUrl ? (
+                                <img src={`${BASE_SERVER_URL}${user.profileImageUrl}`} alt="Profile" className="h-full w-full object-cover" />
+                            ) : (
+                                (user?.name?.[0] || 'C')
+                            )}
                         </button>
                     </div>
                 </header>

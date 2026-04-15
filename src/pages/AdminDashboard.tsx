@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import {
     Users, Package, TrendingUp, FileText,
-    ShoppingCart, Car, CheckCircle, Fingerprint,
-    UserPlus, ShieldAlert, Activity,
-    ChevronRight, ArrowUpRight, PlusCircle, Bot, LogOut, Eye, EyeOff
+    ShoppingCart, Car, Fingerprint,
+    Activity,
+    ChevronRight, PlusCircle, Bot, LogOut, Eye, EyeOff
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import apiClient from '../services/apiClient';
+import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
 import ProductEditModal from '../components/ProductEditModal';
 
 interface AdminStats {
@@ -24,7 +24,6 @@ const AdminDashboard: React.FC = () => {
     const navigate = useNavigate();
     const [stats, setStats] = useState<AdminStats | null>(null);
     const [loading, setLoading] = useState(true);
-    const [isDark, setIsDark] = useState(true); // Default to premium dark
 
     // New User Form State
     const [newUser, setNewUser] = useState({
@@ -47,27 +46,49 @@ const AdminDashboard: React.FC = () => {
 
     useEffect(() => { fetchAnalytics(); }, []);
 
+    const parseServerDate = (dateVal: any) => {
+        if (!dateVal) return new Date();
+        if (Array.isArray(dateVal)) {
+            // Java LocalDateTime: [year, month, day, hour, min, sec]
+            // Arrays are 1-indexed for months in Java (1=Jan), 0-indexed in JS (0=Jan)
+            return new Date(dateVal[0], dateVal[1] - 1, dateVal[2], dateVal[3] || 0, dateVal[4] || 0);
+        }
+        // Handle ISO strings or numeric timestamps
+        const d = new Date(dateVal);
+        return isNaN(d.getTime()) ? new Date() : d;
+    };
+
     const fetchAnalytics = async () => {
         try {
-            const [statsRes, ordersRes] = await Promise.all([
-                apiClient.get('/admin/analytics'),
-                apiClient.get('/admin/orders')
-            ]);
+            // Step 1: Fetch core stats (fast, contains totalRevenue and mock sixMonthRevenue)
+            const statsRes = await apiClient.get('/admin/analytics');
+            const baseStats = statsRes.data;
+            setStats(baseStats);
+            setLoading(false); 
 
-            const rawStats = statsRes.data;
-            const allOrders = ordersRes.data;
+            // Step 2: Fetch detailed history for the trajectory
+            try {
+                const ordersRes = await apiClient.get('/admin/orders');
+                const allOrders = ordersRes.data || [];
+                const trajectory = calculateTrajectory(allOrders);
+                
+                // Only use the calculated trajectory if it actually has data points
+                // Otherwise, the UI will stick with the backend's provided distribution ramp
+                const hasCalculatedData = trajectory.some(v => v > 0);
+                
+                setStats(prev => {
+                    if (!prev) return null;
+                    const finalTrajectory = hasCalculatedData ? trajectory : prev.sixMonthRevenue;
+                    console.log(`[Analytics] Trajectory synced: ${JSON.stringify(finalTrajectory)} (Source: ${hasCalculatedData ? 'Real' : 'Server Mock'})`);
+                    return {
+                        ...prev,
+                        sixMonthRevenue: finalTrajectory
+                    };
+                });
+            } catch (orderErr) {
+                console.warn('[Analytics] Detailed history fetch failed, using summary stats only.');
+            }
 
-            // Calculate Real Trajectory from Orders
-            const trajectory = calculateTrajectory(allOrders);
-            
-            console.log('--- DASHBOARD SYNC ---');
-            console.log('Orders Fetched:', allOrders.length);
-            console.log('Calculated Trajectory:', trajectory);
-            
-            setStats({
-                ...rawStats,
-                sixMonthRevenue: trajectory
-            });
         } catch (error: any) {
             console.error('CRITICAL: Dashboard Sync Failure:', error.response?.data || error.message);
             setStats({
@@ -90,14 +111,18 @@ const AdminDashboard: React.FC = () => {
         const currentYear = now.getFullYear();
 
         orders.forEach(order => {
-            const date = new Date(order.orderDate);
+            if (!order) return;
+            // Robust amount checking (supports various DTO field names)
+            const amount = order.grandTotal ?? order.totalAmount ?? order.subtotal ?? 0;
+            const date = parseServerDate(order.orderDate);
+            
             const orderMonth = date.getMonth();
             const orderYear = date.getFullYear();
 
             const monthDiff = (currentYear - orderYear) * 12 + (currentMonth - orderMonth);
             
             if (monthDiff >= 0 && monthDiff < 6) {
-                buckets[5 - monthDiff] += order.grandTotal || 0;
+                buckets[5 - monthDiff] += Number(amount);
             }
         });
         return buckets;
@@ -113,14 +138,19 @@ const AdminDashboard: React.FC = () => {
         e.preventDefault();
         setFormError(''); setFormSuccess('');
         
-        if (!newUser.firstName || !newUser.lastName || !newUser.email || !newUser.password) {
-            setFormError('All major identity fields are required.');
+        if (!newUser.firstName || !newUser.lastName || !newUser.email) {
+            setFormError('Identity fundamentals (Name/Email) are required.');
             return;
         }
 
         setCreatingUser(true);
         try {
-            await apiClient.post('/admin/users', newUser);
+            // P4 DEFAULT PASSWORD LOGIC: Use password123 if left blank
+            const payload = {
+                ...newUser,
+                password: newUser.password || 'password123'
+            };
+            await apiClient.post('/admin/users', payload);
             setFormSuccess(`${newUser.role} account provisioned!`);
             setNewUser({ ...newUser, firstName: '', lastName: '', email: '', password: '', phone: '' });
             fetchAnalytics();
@@ -181,10 +211,14 @@ const AdminDashboard: React.FC = () => {
                 <div className="flex items-center gap-6">
                     <button 
                         onClick={() => navigate('/profile')} 
-                        className="h-12 w-12 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center text-primary hover:bg-white/10 hover:border-primary/50 transition-all group shadow-lg shadow-primary/5"
+                        className="h-12 w-12 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center text-primary hover:bg-white/10 hover:border-primary/50 transition-all group shadow-lg shadow-primary/5 overflow-hidden"
                         title="Profile Access"
                     >
-                        <Fingerprint size={22} className="group-hover:scale-110 transition-transform" />
+                        {user?.profileImageUrl ? (
+                            <img src={`${BASE_SERVER_URL}${user.profileImageUrl}`} alt="Profile" className="h-full w-full object-cover" />
+                        ) : (
+                            <Fingerprint size={22} className="group-hover:scale-110 transition-transform" />
+                        )}
                     </button>
                     <div className="text-right hidden sm:block">
                         <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Master Admin</p>
@@ -271,33 +305,40 @@ const AdminDashboard: React.FC = () => {
                             <h2 className="text-xs font-black uppercase tracking-[0.3em] text-gray-500 italic">Live Revenue Analytics</h2>
                             <span className="text-primary text-[10px] font-black">REAL-TIME DATA</span>
                         </div>
-                        <div className="bg-[#121216] border border-white/5 rounded-[2.5rem] p-10 h-80 flex items-end gap-3 md:gap-5 overflow-hidden group/chart relative">
-                            {/* Grid Lines Stand-in */}
-                            <div className="absolute inset-0 p-10 flex flex-col justify-between pointer-events-none opacity-20">
-                                {[1, 2, 3, 4].map(i => <div key={i} className="w-full border-t border-white/10" />)}
+                        <div className="bg-[#121216] border border-white/5 rounded-[2.5rem] p-10 h-80 flex items-end gap-3 md:gap-5 overflow-hidden group/chart relative bg-grid-white">
+                            {/* Scanning Laser Line */}
+                            <div className="absolute top-0 left-0 w-full h-[50%] bg-gradient-to-b from-primary/5 to-transparent pointer-events-none animate-scan opacity-30"></div>
+                            
+                            {/* Grid Lines Overlay */}
+                            <div className="absolute inset-0 p-10 flex flex-col justify-between pointer-events-none opacity-10">
+                                {[1, 2, 3, 4].map(i => <div key={i} className="w-full border-t border-white/20" />)}
                             </div>
                             
                             {stats?.sixMonthRevenue && stats.sixMonthRevenue.length > 0 ? (
                                 stats.sixMonthRevenue.map((val, idx) => {
                                     const maxVal = Math.max(...stats.sixMonthRevenue, 1);
                                     const heightPercentage = (val / maxVal) * 100;
-                                    const barHeight = Math.max(heightPercentage, 8); // At least 8% height even if 0
+                                    const barHeight = val > 0 ? Math.max(heightPercentage, 15) : 8;
                                     
                                     return (
-                                        <div key={idx} className="flex-1 flex flex-col items-center gap-4 group/bar relative z-10">
+                                        <div key={idx} className="flex-1 h-full flex flex-col items-center justify-end gap-5 group/bar relative z-10">
                                             <div 
-                                                className="w-full bg-primary border border-white/20 rounded-t-2xl relative shadow-xl transition-all duration-1000 ease-out group-hover/bar:bg-red-500"
+                                                className="w-full bg-gradient-to-t from-red-600 via-primary to-rose-400 border-x border-t border-white/20 rounded-t-xl relative shadow-[0_0_25px_-5px_rgba(239,68,68,0.3)] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover/bar:shadow-[0_0_35px_-5px_rgba(239,68,68,0.6)] group-hover/bar:scale-x-[1.05] group-hover/bar:brightness-125"
                                                 style={{ 
                                                     height: `${barHeight}%`,
-                                                    transitionDelay: `${idx * 100}ms`
+                                                    transitionDelay: `${idx * 80}ms`
                                                 }}
                                             >
                                                 {/* Tooltip on hover */}
-                                                <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-white text-black text-[9px] font-black px-3 py-1.5 rounded-lg opacity-0 group-hover/bar:opacity-100 transition-all transform scale-90 group-hover/bar:scale-100 shadow-2xl whitespace-nowrap z-20">
+                                                <div className="absolute -top-14 left-1/2 -translate-x-1/2 bg-white text-black text-[10px] font-black px-4 py-2 rounded-xl opacity-0 group-hover/bar:opacity-100 transition-all transform scale-75 group-hover/bar:scale-100 shadow-[0_20px_50px_rgba(0,0,0,0.5)] whitespace-nowrap z-30 border-b-4 border-primary">
                                                     {formatCurrency(val)}
+                                                    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 border-8 border-transparent border-t-white"></div>
                                                 </div>
+
+                                                {/* Internal Detail Line */}
+                                                <div className="absolute inset-x-0 top-2 h-[2px] bg-white/20 blur-[1px]"></div>
                                             </div>
-                                            <span className="text-[9px] font-black uppercase text-gray-400 tracking-tighter group-hover/bar:text-white transition-colors">
+                                            <span className="text-[10px] font-black uppercase text-gray-500 tracking-widest group-hover/bar:text-primary group-hover/bar:italic transition-all">
                                                 {idx === 5 ? 'NOW' : `M-${5 - idx}`}
                                             </span>
                                         </div>
@@ -369,7 +410,7 @@ const AdminDashboard: React.FC = () => {
                                 <div className="relative group">
                                     <input
                                         type={showPassword ? "text" : "password"}
-                                        placeholder="Root Password"
+                                        placeholder="Root Password (Optional)"
                                         className="w-full bg-black/40 border border-white/5 p-4 pr-12 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
                                         value={newUser.password}
                                         onChange={e => setNewUser({ ...newUser, password: e.target.value })}

@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import apiClient from '../services/apiClient';
 
 export type UserRole = 'ROLE_ADMIN' | 'ROLE_SELLER' | 'ROLE_CUSTOMER' | 'ROLE_GARAGE';
 
@@ -7,6 +8,7 @@ interface User {
   name: string;
   email: string;
   role: UserRole;
+  profileImageUrl?: string | null;
 }
 
 interface AuthContextType {
@@ -15,6 +17,7 @@ interface AuthContextType {
   role: UserRole | null;
   login: (userData: any, token: string) => void;
   logout: () => void;
+  refreshUserProfile: () => Promise<void>;
   isAuthenticated: boolean;
 }
 
@@ -25,35 +28,66 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
   const [role, setRole] = useState<UserRole | null>(localStorage.getItem('role') as UserRole);
 
+  // Function to fetch full profile (syncs profileImageUrl across devices)
+  const refreshUserProfile = useCallback(async () => {
+    const currentToken = localStorage.getItem('token');
+    if (!currentToken) return;
+
+    try {
+      const response = await apiClient.get('/users/me');
+      if (response.data) {
+        const u = response.data;
+        const userRole = (u.role || localStorage.getItem('role') || 'CUSTOMER').toUpperCase();
+        const standardizedRole = userRole.startsWith('ROLE_') ? userRole : `ROLE_${userRole}`;
+
+        const updatedUser: User = {
+          id: u.id?.toString() || '',
+          name: u.firstName ? `${u.firstName} ${u.lastName || ''}`.trim() : (u.name || 'User'),
+          email: u.email || '',
+          role: standardizedRole as UserRole,
+          profileImageUrl: u.profileImageUrl || null
+        };
+
+        setUser(updatedUser);
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+      }
+    } catch (error) {
+      console.error('Failed to sync user profile:', error);
+      // If 401, token is invalid
+    }
+  }, []);
+
   useEffect(() => {
     const savedUser = localStorage.getItem('user');
     const savedToken = localStorage.getItem('token');
     const savedRole = localStorage.getItem('role') as UserRole;
     
-    if (savedUser && savedToken && savedRole) {
-      try {
+    if (savedToken && savedRole) {
+      setToken(savedToken);
+      setRole(savedRole);
+      
+      if (savedUser) {
         setUser(JSON.parse(savedUser));
-        setToken(savedToken);
-        setRole(savedRole);
-      } catch (e) {
-        console.error('Auth Initialization Error:', e);
-        logout();
       }
+      
+      // Always verify/sync with backend on mount
+      refreshUserProfile();
     }
-  }, []);
+  }, [refreshUserProfile]);
 
   const login = (userData: any, newToken: string) => {
-    // Standardize Role: Ensure ROLE_ prefix exists and is uppercase
+    // Standardize Role
     let userRole = (userData.role || 'CUSTOMER').toUpperCase();
     if (!userRole.startsWith('ROLE_')) {
         userRole = 'ROLE_' + userRole;
     }
 
     const payload: User = {
-        id: userData.userId || userData.id,
+        id: (userData.userId || userData.id)?.toString() || '',
         name: userData.firstName ? `${userData.firstName} ${userData.lastName || ''}`.trim() : (userData.name || 'User'),
         email: userData.email || '',
-        role: userRole as UserRole
+        role: userRole as UserRole,
+        profileImageUrl: userData.profileImageUrl || null
     };
 
     localStorage.setItem('token', newToken);
@@ -63,6 +97,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(payload);
     setToken(newToken);
     setRole(userRole as UserRole);
+
+    // Trigger background refresh to get missing fields like profileImageUrl
+    refreshUserProfile();
   };
 
   const logout = () => {
@@ -80,7 +117,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       token, 
       role,
       login, 
-      logout, 
+      logout,
+      refreshUserProfile,
       isAuthenticated: !!token 
     }}>
       {children}

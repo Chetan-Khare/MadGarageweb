@@ -40,4 +40,5 @@ apiClient.interceptors.response.use(
 );
 
 export default apiClient;
-export const BASE_URL = import.meta.env.VITE_API_URL || '';
+export const BASE_SERVER_URL = import.meta.env.VITE_API_SERVER_URL || '';
+export const BASE_URL = import.meta.env.VITE_API_URL || '/api';

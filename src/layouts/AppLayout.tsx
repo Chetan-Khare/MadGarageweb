@@ -4,9 +4,10 @@ import { ShoppingCart, Search, Menu, Phone, Download, Instagram, Facebook, Twitt
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
+import { BASE_SERVER_URL } from '../services/apiClient';
 
 const AppLayout: React.FC = () => {
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, logout, user } = useAuth();
   const { totalItems: cartCount } = useCart();
   const { totalItems: wishlistCount } = useWishlist();
   const navigate = useNavigate();
@@ -69,10 +70,23 @@ const AppLayout: React.FC = () => {
               <div className="flex items-center gap-3">
                 <Link 
                   to="/profile" 
-                  className="h-10 w-10 flex items-center justify-center bg-white/5 border border-white/10 rounded-full text-gray-400 hover:text-primary transition-all shadow-lg"
+                  className="h-10 w-10 flex items-center justify-center bg-white/5 border border-white/10 rounded-full text-gray-400 hover:text-primary transition-all shadow-lg overflow-hidden"
                   title="My Profile"
                 >
-                  <User size={18} />
+                  {user?.profileImageUrl ? (
+                    <img 
+                      src={`${BASE_SERVER_URL}${user.profileImageUrl}`} 
+                      alt="Profile" 
+                      className="h-full w-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).onerror = null;
+                        (e.target as HTMLImageElement).src = ''; 
+                        (e.target as HTMLImageElement).parentElement?.classList.add('flex-col');
+                      }}
+                    />
+                  ) : (
+                    <User size={18} />
+                  )}
                 </Link>
                 <Link to="/user-dashboard" className="flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full border border-primary/20 hover:bg-primary hover:text-white transition-all group">
                   <LayoutDashboard size={14} />

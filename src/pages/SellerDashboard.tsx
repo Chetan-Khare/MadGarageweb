@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import apiClient from '../services/apiClient';
+import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
 
 interface SellerStats {
     activeListings: number;
@@ -95,9 +95,13 @@ const SellerDashboard: React.FC = () => {
                     </div>
                     <button 
                         onClick={() => navigate('/profile')}
-                        className="h-12 w-12 bg-app-bg-dark text-primary rounded-2xl flex items-center justify-center font-black italic shadow-lg shadow-black/10 border border-primary/20 hover:scale-110 transition-all"
+                        className="h-12 w-12 bg-app-bg-dark text-primary rounded-2xl flex items-center justify-center font-black italic shadow-lg shadow-black/10 border border-primary/20 hover:scale-110 transition-all overflow-hidden"
                     >
-                        {user?.name?.[0] || 'S'}
+                        {user?.profileImageUrl ? (
+                            <img src={`${BASE_SERVER_URL}${user.profileImageUrl}`} alt="Profile" className="h-full w-full object-cover" />
+                        ) : (
+                            (user?.name?.[0] || 'S')
+                        )}
                     </button>
                     <button onClick={() => { logout(); navigate('/'); }} className="flex items-center gap-3 bg-red-50 text-primary px-6 py-3 rounded-2xl border border-primary/10 hover:bg-primary hover:text-white transition-all group">
                         <LogOut size={18} />

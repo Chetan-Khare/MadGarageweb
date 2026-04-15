@@ -3,6 +3,7 @@ import AppLayout from './layouts/AppLayout';
 import HomePage from './pages/HomePage';
 import PartRequestPage from './pages/PartRequestPage';
 import LoginPage from './pages/LoginPage';
+import CompleteProfilePage from './pages/CompleteProfilePage';
 import GarageDashboard from './pages/GarageDashboard';
 import CustomerDashboard from './pages/CustomerDashboard';
 import AdminDashboard from './pages/AdminDashboard';
@@ -50,6 +51,7 @@ function App() {
 
       {/* Auth Routes - No Main Layout */}
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/complete-profile" element={<CompleteProfilePage />} />
 
       {/* Admin Specific Routes */}
       <Route element={<ProtectedRoute allowedRoles={['ROLE_ADMIN']} />}>

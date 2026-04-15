@@ -2,20 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { 
   User, Mail, Phone, Lock, 
   ShieldCheck, ChevronLeft, Save, 
-  Eye, EyeOff, AlertCircle, CheckCircle2
+  Eye, EyeOff, AlertCircle, CheckCircle2,
+  Camera, Loader2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import apiClient from '../services/apiClient';
+import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
 import { useAuth } from '../context/AuthContext';
 
 const ProfilePage: React.FC = () => {
     const navigate = useNavigate();
-    const { user: authUser } = useAuth();
+    const { user: authUser, login } = useAuth();
     
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [uploading, setUploading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
     
     // Form State
     const [formData, setFormData] = useState({
@@ -45,12 +48,64 @@ const ProfilePage: React.FC = () => {
                     email: response.data.email || '',
                     phone: response.data.phone || ''
                 }));
+                setProfileImageUrl(response.data.profileImageUrl || null);
+                
+                // SYNC WITH AUTH CONTEXT for headers
+                if (authUser && response.data.profileImageUrl) {
+                    login({ ...authUser, profileImageUrl: response.data.profileImageUrl }, localStorage.getItem('token') || '');
+                }
             }
         } catch (err) {
             console.error('Failed to fetch profile:', err);
             setError('Could not establish secure link to profile data.');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Basic validation
+        if (!file.type.startsWith('image/')) {
+            setError('System Error: File type must be an image.');
+            return;
+        }
+
+        setUploading(true);
+        setError('');
+
+        try {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = async () => {
+                const base64Content = (reader.result as string).split(',')[1];
+                const extension = file.name.split('.').pop() || 'jpg';
+
+                const response = await apiClient.post('/users/profile-image/base64', {
+                    base64Image: base64Content,
+                    extension: extension
+                });
+
+                if (response.data) {
+                    const newImageUrl = response.data;
+                    setProfileImageUrl(newImageUrl);
+                    
+                    // Update AuthContext to sync header immediately
+                    if (authUser) {
+                        login({ ...authUser, profileImageUrl: newImageUrl }, localStorage.getItem('token') || '');
+                    }
+                    
+                    setSuccess('Profile image updated successfully.');
+                    setTimeout(() => setSuccess(''), 3000);
+                }
+            };
+        } catch (err: any) {
+            console.error('Image upload failed:', err);
+            setError('Transmission error: Could not upload profile image.');
+        } finally {
+            setUploading(false);
         }
     };
 
@@ -67,13 +122,18 @@ const ProfilePage: React.FC = () => {
 
         setSaving(true);
         try {
-            await apiClient.put('/users/profile', {
+            const response = await apiClient.put('/users/profile', {
                 firstName: formData.firstName,
                 lastName: formData.lastName,
                 email: formData.email,
                 phone: formData.phone,
                 password: formData.password.trim() || null
             });
+
+            if (response.data?.token) {
+                login(response.data, response.data.token);
+            }
+
             setSuccess('Profile re-calibrated successfully!');
             setTimeout(() => setSuccess(''), 3000);
         } catch (err: any) {
@@ -107,9 +167,33 @@ const ProfilePage: React.FC = () => {
                              <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-[60px] -mr-16 -mt-16" />
                              
                              <div className="relative z-10 space-y-6">
-                                <div className="h-24 w-24 bg-white/5 border-2 border-primary/30 rounded-[2rem] flex items-center justify-center mx-auto text-3xl font-black text-primary italic shadow-lg">
-                                    {formData.firstName?.[0]}{formData.lastName?.[0] || 'G'}
+                                <div className="relative group mx-auto w-32 h-32">
+                                    <div className="absolute inset-0 bg-primary/20 rounded-[2.5rem] blur-xl group-hover:bg-primary/40 transition-all duration-500" />
+                                    <div className="relative h-32 w-32 bg-white/5 border-2 border-primary/30 rounded-[2.5rem] flex items-center justify-center overflow-hidden shadow-2xl group-hover:border-primary/60 transition-all duration-300">
+                                        {uploading ? (
+                                            <Loader2 size={32} className="text-primary animate-spin" />
+                                        ) : profileImageUrl ? (
+                                            <img src={`${BASE_SERVER_URL}${profileImageUrl}`} alt="Profile" className="h-full w-full object-cover" />
+                                        ) : (
+                                            <span className="text-4xl font-black text-primary italic">
+                                                {formData.firstName?.[0]}{formData.lastName?.[0] || 'G'}
+                                            </span>
+                                        )}
+                                        
+                                        {/* Camera Overlay */}
+                                        <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+                                            <Camera size={24} className="text-white" />
+                                            <input 
+                                                type="file" 
+                                                className="hidden" 
+                                                accept="image/*"
+                                                onChange={handleImageUpload}
+                                                disabled={uploading}
+                                            />
+                                        </label>
+                                    </div>
                                 </div>
+                                
                                 <div>
                                     <h2 className="text-xl font-black italic text-white uppercase tracking-tight">{formData.firstName} {formData.lastName}</h2>
                                     <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mt-1 italic">{authUser?.role?.split('_')[1] || 'MEMBER'}</p>
@@ -158,7 +242,7 @@ const ProfilePage: React.FC = () => {
                                     <InputField 
                                         label="Email Address" 
                                         value={formData.email} 
-                                        readOnly 
+                                        onChange={(v) => setFormData({...formData, email: v})}
                                         icon={<Mail size={16} />}
                                     />
 
