@@ -60,37 +60,34 @@ const AdminDashboard: React.FC = () => {
 
     const fetchAnalytics = async () => {
         try {
-            // Step 1: Fetch core stats (fast, contains totalRevenue and mock sixMonthRevenue)
+            setFormError('');
             const statsRes = await apiClient.get('/admin/analytics');
             const baseStats = statsRes.data;
             setStats(baseStats);
             setLoading(false); 
 
-            // Step 2: Fetch detailed history for the trajectory
             try {
                 const ordersRes = await apiClient.get('/admin/orders');
                 const allOrders = ordersRes.data || [];
                 const trajectory = calculateTrajectory(allOrders);
-                
-                // Only use the calculated trajectory if it actually has data points
-                // Otherwise, the UI will stick with the backend's provided distribution ramp
                 const hasCalculatedData = trajectory.some(v => v > 0);
                 
                 setStats(prev => {
                     if (!prev) return null;
                     const finalTrajectory = hasCalculatedData ? trajectory : prev.sixMonthRevenue;
-                    // Log removed for privacy
-                    return {
-                        ...prev,
-                        sixMonthRevenue: finalTrajectory
-                    };
+                    return { ...prev, sixMonthRevenue: finalTrajectory };
                 });
             } catch (orderErr) {
-                console.warn('[Analytics] Detailed history fetch failed, using summary stats only.');
+                // Secondary analytics fetch failed, dashboard still usable with summary data
             }
 
         } catch (error: any) {
-            console.error('CRITICAL: Dashboard Sync Failure:', error.response?.data || error.message);
+            let errorMsg = error.response?.data || error.message || 'Unknown synchronisation failure';
+            if (typeof errorMsg === 'object') {
+                errorMsg = errorMsg.message || JSON.stringify(errorMsg);
+            }
+            console.error('CRITICAL: Dashboard Sync Failure:', errorMsg);
+            setFormError(`Sync Error: ${errorMsg}`);
             setStats({
                 totalUsers: 0,
                 totalSellers: 0,
@@ -234,6 +231,21 @@ const AdminDashboard: React.FC = () => {
             </div>
 
             <div className="p-8 md:px-12 pb-20 space-y-12 max-w-7xl mx-auto">
+                {formError && (
+                    <div className="bg-red-500/10 border border-red-500/20 p-6 rounded-[2rem] flex items-center justify-between group">
+                        <div className="flex items-center gap-4">
+                            <div className="h-10 w-10 bg-red-500/20 rounded-xl flex items-center justify-center text-red-500">
+                                <Activity size={20} className="animate-pulse" />
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-red-500/60">System Synchronisation Failure</p>
+                                <p className="text-sm font-black italic text-red-500">{formError}</p>
+                            </div>
+                        </div>
+                        <button onClick={() => fetchAnalytics()} className="px-6 py-2 bg-red-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:scale-105 active:scale-95 transition-all">Retry Link</button>
+                    </div>
+                )}
+
                 {/* Metrics Grid */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                     <StatCard onClick={() => navigate('/admin/users')} icon={<Users />} value={stats?.totalUsers || 0} label="Total Users" />
