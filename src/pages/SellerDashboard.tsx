@@ -277,11 +277,4 @@ const ActionButton: React.FC<{ icon: React.ReactNode, label: string, color: stri
     );
 };
 
-const TrendRow: React.FC<{ label: string, trend: string, color: string }> = ({ label, trend, color }) => (
-    <div className="flex items-center justify-between border-b border-gray-50 pb-3 last:border-0 last:pb-0">
-        <span className="text-xs font-bold text-app-bg-dark">{label}</span>
-        <span className={`text-[10px] font-black ${color}`}>{trend} <ArrowUpRight size={10} className="inline ml-1" /></span>
-    </div>
-);
-
 export default SellerDashboard;

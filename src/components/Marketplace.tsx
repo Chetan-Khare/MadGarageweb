@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
-  Search, ChevronRight, Zap, ChevronDown, ChevronUp, ShoppingBag,
-  Plus, Heart, X, Target, ShieldCheck
+  ChevronRight, Zap, ChevronDown, ChevronUp, ShoppingBag,
+  Plus, Heart, X
 } from 'lucide-react';
 import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
 import { useCart } from '../context/CartContext';

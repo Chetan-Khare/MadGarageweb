@@ -1,13 +1,15 @@
-import React from 'react';
-import { ShoppingBag, Heart, Trash2, ShoppingCart, ArrowLeft, ChevronRight, Zap } from 'lucide-react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Heart, Trash2, ShoppingCart, ArrowLeft, ChevronRight, Zap } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useWishlist } from '../context/WishlistContext';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 
 const WishlistPage: React.FC = () => {
     const { wishlist, removeFromWishlist } = useWishlist();
     const { addToCart } = useCart();
+    const { isAuthenticated } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
 
     const handleMoveToCart = (item: any) => {
         addToCart(item);
@@ -20,7 +22,7 @@ const WishlistPage: React.FC = () => {
                 {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
                     <div className="flex items-center gap-4">
-                        <button 
+                        <button
                             onClick={() => navigate('/user-dashboard')}
                             className="h-10 w-10 bg-white rounded-xl flex items-center justify-center text-gray-400 hover:text-primary transition-all shadow-sm border border-gray-100"
                         >
@@ -33,9 +35,9 @@ const WishlistPage: React.FC = () => {
                             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-2">{wishlist.length} Items Saved for Assembly</p>
                         </div>
                     </div>
-                    
+
                     {wishlist.length > 0 && (
-                        <button 
+                        <button
                             onClick={() => navigate('/')}
                             className="bg-app-bg-dark text-white px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary transition-all shadow-lg flex items-center gap-2"
                         >
@@ -50,12 +52,12 @@ const WishlistPage: React.FC = () => {
                         {wishlist.map((item) => (
                             <div key={item.id} className="bg-white rounded-[2.5rem] border border-gray-100 shadow-xl shadow-black/5 overflow-hidden group hover:border-primary/20 transition-all flex flex-col">
                                 <div className="aspect-[4/3] relative overflow-hidden bg-gray-50">
-                                    <img 
-                                        src={item.imageUrl || 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&q=80'} 
-                                        alt={item.name} 
+                                    <img
+                                        src={item.imageUrl || 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&q=80'}
+                                        alt={item.name}
                                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                                     />
-                                    <button 
+                                    <button
                                         onClick={() => removeFromWishlist(item.id)}
                                         className="absolute top-4 right-4 h-10 w-10 bg-white/90 backdrop-blur-md text-red-500 rounded-full flex items-center justify-center shadow-lg hover:bg-red-500 hover:text-white transition-all transform translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100"
                                     >
@@ -85,17 +87,25 @@ const WishlistPage: React.FC = () => {
                                         </div>
 
                                         <div className="grid grid-cols-5 gap-3">
-                                            <button 
+                                            <button
                                                 onClick={() => handleMoveToCart(item)}
                                                 className="col-span-4 bg-app-bg-dark text-white py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-3 hover:bg-primary transition-all shadow-lg active:scale-95"
                                             >
                                                 Move to Cart <ShoppingCart size={14} />
                                             </button>
-                                            <button 
-                                                onClick={() => navigate(`/product/${item.id}`)}
-                                                className="col-span-1 bg-gray-50 text-app-bg-dark rounded-2xl flex items-center justify-center hover:bg-gray-100 transition-all border border-gray-100"
+                                            <button
+                                                onClick={() => {
+                                                    if (!isAuthenticated) {
+                                                        navigate('/login', { state: { from: location } });
+                                                        return;
+                                                    }
+                                                    addToCart(item);
+                                                    navigate('/checkout');
+                                                }}
+                                                title="Buy Now"
+                                                className="col-span-1 bg-gray-50 text-primary rounded-2xl flex items-center justify-center hover:bg-primary hover:text-white transition-all border border-gray-100 shadow-sm"
                                             >
-                                                <Zap size={18} />
+                                                <Zap size={18} fill="currentColor" />
                                             </button>
                                         </div>
                                     </div>
@@ -110,7 +120,7 @@ const WishlistPage: React.FC = () => {
                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-4 max-w-xs mx-auto leading-relaxed">
                             No parts saved yet. Explore the marketplace and build your dream machine.
                         </p>
-                        <button 
+                        <button
                             onClick={() => navigate('/catalog')}
                             className="mt-10 bg-primary text-white px-12 py-5 rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-red-500/20 hover:bg-red-700 transition-all active:scale-95"
                         >
@@ -130,7 +140,7 @@ const WishlistPage: React.FC = () => {
                                 </h1>
                                 <p className="text-gray-400 font-medium max-w-md">Our Garage AI can analyze your wishlist items and verify compatibility with your registered vehicles.</p>
                             </div>
-                            <button 
+                            <button
                                 onClick={() => navigate('/chat')}
                                 className="bg-primary text-white px-10 py-5 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center gap-3 hover:bg-white hover:text-app-bg-dark transition-all transform"
                             >

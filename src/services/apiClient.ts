@@ -31,13 +31,16 @@ apiClient.interceptors.response.use(
   (error) => {
     // Handle 401 Unauthorized (token expired)
     if (error.response?.status === 401) {
-        console.warn('API returned 401 Unauthorized. Session expired or account revoked.');
+        if (import.meta.env.DEV) console.warn('API returned 401 Unauthorized. Session expired or account revoked.');
         localStorage.removeItem('token');
         if (window.location.pathname !== '/login') {
             window.location.href = '/login?expired=true';
         }
     }
-    console.error('API Error:', error.response?.data?.message || error.response?.data || error.message);
+    
+    if (import.meta.env.DEV) {
+        console.error('API Error:', error.response?.data?.message || error.response?.data || error.message);
+    }
     return Promise.reject(error);
   }
 );

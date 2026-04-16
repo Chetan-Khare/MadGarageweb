@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  ArrowLeft, AlertTriangle, Edit2, Package, 
-  ExternalLink, Search, RefreshCcw, ShieldAlert,
+  ArrowLeft, Package, 
+  Search, RefreshCcw, ShieldAlert,
   Info, CheckCircle
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
@@ -10,7 +10,6 @@ import { useAuth } from '../context/AuthContext';
 
 const SellerFlaggedProducts: React.FC = () => {
     const { user } = useAuth();
-    const navigate = useNavigate();
     const [flaggedItems, setFlaggedItems] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');

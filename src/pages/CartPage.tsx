@@ -1,19 +1,15 @@
 import React from 'react';
 import { useCart } from '../context/CartContext';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { 
   Trash2, Plus, Minus, ArrowLeft, ShoppingBag, 
-  ShieldCheck, Truck, Zap, ShoppingCart 
+  ShieldCheck, Truck, Zap 
 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
+import { BASE_SERVER_URL } from '../services/apiClient';
 
 const CartPage: React.FC = () => {
-    const { cart, updateQuantity, removeFromCart, subtotal, savings, totalItems } = useCart();
-    const { user, role } = useAuth();
+    const { cart, updateQuantity, removeFromCart, subtotal, totalItems } = useCart();
     const navigate = useNavigate();
-
-    const isMechanic = role === 'ROLE_GARAGE';
 
     if (cart.length === 0) {
         return (

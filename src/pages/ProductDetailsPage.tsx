@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { 
   ChevronLeft, ShoppingBag, Star, ShieldCheck, 
-  Zap, ArrowRight, Minus, Plus, Info, Heart
+  Zap, Minus, Plus, Info, Heart
 } from 'lucide-react';
-import apiClient, { BASE_URL, BASE_SERVER_URL } from '../services/apiClient';
+import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  ArrowLeft, Search, Filter, MessageSquare, 
-  Clock, CheckCircle, RefreshCw, Phone, Mail, 
-  User, Car, ChevronRight, CheckCircle2, AlertCircle
+import {
+    ArrowLeft, Search,
+    Clock, CheckCircle, RefreshCw, Phone, Mail,
+    Car, CheckCircle2, AlertCircle
 } from 'lucide-react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import apiClient from '../services/apiClient';
 
 const AdminPartRequestReview: React.FC = () => {
@@ -14,21 +14,25 @@ const AdminPartRequestReview: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('ALL');
     const [updatingId, setUpdatingId] = useState<number | null>(null);
+    const [syncError, setSyncError] = useState('');
 
     useEffect(() => { fetchRequests(); }, []);
 
     const fetchRequests = async () => {
         setLoading(true);
+        setSyncError('');
         try {
             const res = await apiClient.get('/admin/requests');
             setRequests(res.data);
-        } catch (err) {
-            console.error('Error fetching requests:', err);
-            // Fallback for demo
-            setRequests([
-                { id: 1, make: 'Tata', model: 'Nexon', year: '2024', partName: 'Front Brake Pads', status: 'PENDING', customerName: 'Chetan Khare', customerPhone: '9876543210' },
-                { id: 2, make: 'Mahindra', model: 'Thar', year: '2023', partName: 'Air Filter', status: 'IN_PROGRESS', customerName: 'Garage One', customerPhone: '8888888888' },
-            ]);
+        } catch (err: any) {
+            let errorMsg = err.response?.data || err.message || 'Unknown Sourcing Pipeline Sync Failure';
+            if (typeof errorMsg === 'object') {
+                errorMsg = errorMsg.message || JSON.stringify(errorMsg);
+            }
+            setSyncError(errorMsg);
+            console.error('Sourcing Sync Failure:', errorMsg);
+            // Non-destructive fallback for graceful UI degradation
+            setRequests([]);
         } finally {
             setLoading(false);
         }
@@ -48,8 +52,8 @@ const AdminPartRequestReview: React.FC = () => {
     };
 
     const filteredRequests = requests.filter(r => {
-        const matchesSearch = r.partName?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                             r.customerName?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSearch = r.partName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            r.customerName?.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesStatus = statusFilter === 'ALL' || r.status === statusFilter;
         return matchesSearch && matchesStatus;
     });
@@ -78,15 +82,15 @@ const AdminPartRequestReview: React.FC = () => {
                     <div className="flex items-center gap-4 w-full md:w-auto">
                         <div className="relative flex-1 md:w-80">
                             <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                            <input 
-                                type="text" 
-                                placeholder="Search parts or clients..." 
+                            <input
+                                type="text"
+                                placeholder="Search parts or clients..."
                                 className="w-full bg-white/5 border border-white/10 p-3 pl-12 rounded-2xl text-sm font-bold outline-none focus:border-primary transition-all"
                                 value={searchTerm}
                                 onChange={e => setSearchTerm(e.target.value)}
                             />
                         </div>
-                        <select 
+                        <select
                             className="bg-app-bg-dark border border-white/10 p-3 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white outline-none focus:border-primary transition-all appearance-none md:w-40 text-center"
                             value={statusFilter}
                             onChange={e => setStatusFilter(e.target.value)}
@@ -101,11 +105,32 @@ const AdminPartRequestReview: React.FC = () => {
             </div>
 
             <div className="p-8 md:p-12 pt-48 md:pt-56 max-w-7xl mx-auto space-y-10 pb-20">
+                {/* Error Banner */}
+                {syncError && (
+                    <div className="bg-primary/10 border-2 border-primary/20 p-8 rounded-[2.5rem] flex flex-col md:flex-row items-center justify-between gap-8 animate-pulse shadow-2xl shadow-primary/5">
+                        <div className="flex items-center gap-6">
+                            <div className="h-16 w-16 bg-primary text-white rounded-3xl flex items-center justify-center shadow-lg shadow-primary/20">
+                                <AlertCircle size={32} />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-black italic text-white uppercase tracking-tighter">System <span className="text-primary italic">Synchronisation Failure</span></h3>
+                                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary/60 mt-1">{syncError}</p>
+                            </div>
+                        </div>
+                        <button
+                            onClick={fetchRequests}
+                            className="w-full md:w-auto bg-white/5 hover:bg-white/10 text-white px-10 py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] border border-white/10 transition-all"
+                        >
+                            Retry Sync
+                        </button>
+                    </div>
+                )}
+
                 {/* Micro Stats */}
                 <div className="grid grid-cols-3 gap-6">
-                    <MiniStat label="Awaiting Review" val={stats.pending} color="text-orange-500" icon={<Clock size={14}/>} />
-                    <MiniStat label="In Sourcing" val={stats.inProgress} color="text-blue-500" icon={<RefreshCw size={14}/>} />
-                    <MiniStat label="Fulfilled" val={stats.completed} color="text-green-500" icon={<CheckCircle size={14}/>} />
+                    <MiniStat label="Awaiting Review" val={stats.pending} color="text-orange-500" icon={<Clock size={14} />} />
+                    <MiniStat label="In Sourcing" val={stats.inProgress} color="text-blue-500" icon={<RefreshCw size={14} />} />
+                    <MiniStat label="Fulfilled" val={stats.completed} color="text-green-500" icon={<CheckCircle size={14} />} />
                 </div>
 
                 {/* Table Layout */}
@@ -134,17 +159,17 @@ const AdminPartRequestReview: React.FC = () => {
                                             <div className="flex flex-col gap-1">
                                                 <p className="font-black text-white italic uppercase">{req.customerName}</p>
                                                 <div className="flex items-center gap-2 text-gray-500 text-[9px] font-bold uppercase tracking-widest">
-                                                    <Phone size={10} className="text-primary"/> {req.customerPhone}
+                                                    <Phone size={10} className="text-primary" /> {req.customerPhone}
                                                 </div>
                                                 {req.customerEmail && <div className="flex items-center gap-2 text-gray-500 text-[9px] font-bold uppercase tracking-widest lowercase italic">
-                                                    <Mail size={10} className="text-blue-500"/> {req.customerEmail}
+                                                    <Mail size={10} className="text-blue-500" /> {req.customerEmail}
                                                 </div>}
                                             </div>
                                         </td>
                                         <td className="p-6">
                                             <div className="space-y-1">
                                                 <p className="text-primary font-black uppercase italic tracking-tighter leading-none">{req.partName}</p>
-                                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1"><Car size={10}/> {req.year} {req.make} {req.model}</p>
+                                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1"><Car size={10} /> {req.year} {req.make} {req.model}</p>
                                             </div>
                                         </td>
                                         <td className="p-6">
@@ -152,22 +177,21 @@ const AdminPartRequestReview: React.FC = () => {
                                         </td>
                                         <td className="p-6">
                                             <div className="flex items-center justify-between gap-4">
-                                                <span className={`text-[8px] font-black uppercase px-3 py-1 rounded-full border ${
-                                                    req.status === 'PENDING' ? 'text-orange-500 border-orange-500/20 bg-orange-500/5' :
-                                                    req.status === 'COMPLETED' ? 'text-green-500 border-green-500/20 bg-green-500/5' :
-                                                    'text-blue-500 border-blue-500/20 bg-blue-500/5'
-                                                }`}>
+                                                <span className={`text-[8px] font-black uppercase px-3 py-1 rounded-full border ${req.status === 'PENDING' ? 'text-orange-500 border-orange-500/20 bg-orange-500/5' :
+                                                        req.status === 'COMPLETED' ? 'text-green-500 border-green-500/20 bg-green-500/5' :
+                                                            'text-blue-500 border-blue-500/20 bg-blue-500/5'
+                                                    }`}>
                                                     {req.status}
                                                 </span>
-                                                
+
                                                 <div className="flex gap-2">
-                                                    <button 
+                                                    <button
                                                         disabled={updatingId === req.id}
                                                         onClick={() => handleStatusUpdate(req.id, 'IN_PROGRESS')}
                                                         className="h-8 w-8 bg-white/5 border border-white/5 rounded-lg flex items-center justify-center text-blue-400 hover:bg-blue-500 hover:text-white transition-all"
                                                         title="Sourcing"
                                                     ><RefreshCw size={14} className={updatingId === req.id ? 'animate-spin' : ''} /></button>
-                                                    <button 
+                                                    <button
                                                         disabled={updatingId === req.id}
                                                         onClick={() => handleStatusUpdate(req.id, 'COMPLETED')}
                                                         className="h-8 w-8 bg-white/5 border border-white/5 rounded-lg flex items-center justify-center text-green-500 hover:bg-green-500 hover:text-white transition-all"

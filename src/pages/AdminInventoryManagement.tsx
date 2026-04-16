@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import {
     Plus, Edit2, Trash2, Search, ArrowLeft,
-    Package, ShoppingBag, CheckCircle, RefreshCw,
-    X, Image as ImageIcon, Sparkles, Filter,
-    ShieldCheck, AlertTriangle, Eye
+    Package, CheckCircle, RefreshCw,
+    Image as ImageIcon, Sparkles,
+    ShieldCheck, AlertTriangle, Eye, AlertCircle
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
@@ -20,17 +20,24 @@ const AdminInventoryManagement: React.FC = () => {
     const [showModal, setShowModal] = useState(false);
     const [editingProduct, setEditingProduct] = useState<any | null>(null);
     const [isSaving, setIsSaving] = useState(false);
+    const [syncError, setSyncError] = useState('');
 
     useEffect(() => { fetchGlobalInventory(); }, []);
 
     const fetchGlobalInventory = async () => {
         setLoading(true);
+        setSyncError('');
         try {
             const res = await apiClient.get('/admin/inventory');
             setProducts(res.data);
-        } catch (err) {
-            console.error(err);
-            setProducts([]); // Removed fake fallback data
+        } catch (err: any) {
+            let errorMsg = err.response?.data || err.message || 'Unknown Inventory Sync Failure';
+            if (typeof errorMsg === 'object') {
+                errorMsg = errorMsg.message || JSON.stringify(errorMsg);
+            }
+            setSyncError(errorMsg);
+            console.error('Inventory Sync Failure:', errorMsg);
+            setProducts([]); 
         } finally {
             setLoading(false);
         }
@@ -147,6 +154,27 @@ const AdminInventoryManagement: React.FC = () => {
             </div>
 
             <div className="p-8 md:p-12 pt-48 md:pt-56 max-w-7xl mx-auto space-y-10 pb-20">
+                {/* Error Banner */}
+                {syncError && (
+                    <div className="bg-primary/10 border-2 border-primary/20 p-8 rounded-[2.5rem] flex flex-col md:flex-row items-center justify-between gap-8 animate-pulse shadow-2xl shadow-primary/5">
+                        <div className="flex items-center gap-6">
+                            <div className="h-16 w-16 bg-primary text-white rounded-3xl flex items-center justify-center shadow-lg shadow-primary/20">
+                                <AlertCircle size={32} />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-black italic text-white uppercase tracking-tighter">System <span className="text-primary italic">Synchronisation Failure</span></h3>
+                                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary/60 mt-1">{syncError}</p>
+                            </div>
+                        </div>
+                        <button 
+                            onClick={fetchGlobalInventory}
+                            className="w-full md:w-auto bg-white/5 hover:bg-white/10 text-white px-10 py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] border border-white/10 transition-all"
+                        >
+                            Retry Sync
+                        </button>
+                    </div>
+                )}
+
                 {/* Global Stats */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                     <InvStat
