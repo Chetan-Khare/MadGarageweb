@@ -8,8 +8,11 @@ const OrderLookupPage: React.FC = () => {
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
-        if (orderId.trim()) {
-            navigate(`/order/${orderId.trim()}`);
+        const cleanId = orderId.trim();
+        if (cleanId && /^\d+$/.test(cleanId)) {
+            navigate(`/order/${cleanId}`);
+        } else if (cleanId) {
+            alert("Reference ID must be a numeric value.");
         }
     };
 

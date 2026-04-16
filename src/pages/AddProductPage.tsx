@@ -5,7 +5,7 @@ import {
   Info, ShieldCheck, ArrowUpRight
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import apiClient from '../services/apiClient';
+import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
 
 const PART_CATEGORIES = ['Engine', 'Brakes', 'Suspension', 'Exhaust', 'Electrical', 'Exterior', 'Interior', 'others'];
 
@@ -70,7 +70,7 @@ const AddProductPage: React.FC = () => {
             });
 
             if (editProduct.imageUrl) {
-                const fullUrl = editProduct.imageUrl.startsWith('http') ? editProduct.imageUrl : `http://127.0.0.1:8080${editProduct.imageUrl}`;
+                const fullUrl = editProduct.imageUrl.startsWith('http') ? editProduct.imageUrl : `${BASE_SERVER_URL}${editProduct.imageUrl}`;
                 setImagePreviews([fullUrl]);
             }
 

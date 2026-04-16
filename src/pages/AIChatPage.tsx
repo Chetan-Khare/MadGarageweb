@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  Send, Image as ImageIcon, Camera, User, 
+  Send, Camera, User, 
   Bot, Trash2, ShoppingCart, Loader2,
-  ChevronLeft, ArrowUpRight
+  ChevronLeft
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import apiClient, { BASE_URL } from '../services/apiClient';
-import { useAuth } from '../context/AuthContext';
+import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
+
+import { useCart } from '../context/CartContext';
 
 interface ChatMessage {
   id: string;
@@ -17,7 +18,8 @@ interface ChatMessage {
 }
 
 const AIChatPage: React.FC = () => {
-  const { user } = useAuth();
+
+  const { addToCart } = useCart();
   const navigate = useNavigate();
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -165,10 +167,14 @@ const AIChatPage: React.FC = () => {
                 {msg.products && msg.products.length > 0 && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
                     {msg.products.map((p, idx) => (
-                      <div key={idx} className="bg-[#1a1a20] border border-white/5 rounded-3xl overflow-hidden group hover:border-primary/40 transition-all duration-500 shadow-2xl">
+                      <div 
+                        key={idx} 
+                        onClick={() => navigate(`/product/${p.id}`, { state: { product: p } })}
+                        className="bg-[#1a1a20] border border-white/5 rounded-3xl overflow-hidden group hover:border-primary/40 transition-all duration-500 shadow-2xl cursor-pointer"
+                      >
                         <div className="relative h-40">
                           <img 
-                            src={p.imageUrl?.startsWith('/') ? `${BASE_URL.replace('/api','')}${p.imageUrl}` : (p.imageUrl || 'https://via.placeholder.com/150')} 
+                            src={p.imageUrl?.startsWith('/') ? `${BASE_SERVER_URL}${p.imageUrl}` : (p.imageUrl || 'https://via.placeholder.com/150')} 
                             alt={p.partName} 
                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                           />
@@ -183,7 +189,10 @@ const AIChatPage: React.FC = () => {
                             {p.originalPrice && <p className="text-gray-400 text-[10px] line-through font-bold">₹{(p.originalPrice || 0).toLocaleString()}</p>}
                             <p className="text-lg font-black text-white italic tracking-tighter">₹{(p.garagePrice || p.price || 0).toLocaleString()}</p>
                           </div>
-                          <button className="h-10 w-10 bg-primary rounded-xl flex items-center justify-center text-white hover:scale-110 transition-all shadow-lg shadow-red-600/20">
+                           <button 
+                             onClick={(e) => { e.stopPropagation(); addToCart(p); }}
+                             className="h-10 w-10 bg-primary rounded-xl flex items-center justify-center text-white hover:scale-110 transition-all shadow-lg shadow-red-600/20"
+                           >
                             <ShoppingCart size={18} />
                           </button>
                         </div>

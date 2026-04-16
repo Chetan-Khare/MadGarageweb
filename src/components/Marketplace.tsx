@@ -4,7 +4,7 @@ import {
   Search, ChevronRight, Zap, ChevronDown, ChevronUp, ShoppingBag,
   Plus, Heart, X, Target, ShieldCheck
 } from 'lucide-react';
-import apiClient from '../services/apiClient';
+import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useAuth } from '../context/AuthContext';
@@ -128,12 +128,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({ isGarage = false }) => {
       setProducts(response.data);
     } catch (error) {
       console.error('Failed to fetch products:', error);
-      // Demo fallback
-      setProducts([
-        { id: 1, name: 'Brembo Racing Pads', price: 12500, garagePrice: 10500, category: 'Brakes', brand: 'Brembo', condition: 'NEW' },
-        { id: 2, name: 'Garrett G-Series Turbo', price: 145000, garagePrice: 132000, category: 'Engine', brand: 'Garrett', condition: 'NEW' },
-        { id: 3, name: 'HKS Hi-Power Exhaust', price: 65000, garagePrice: 58000, category: 'Exhaust', brand: 'HKS', condition: 'NEW' }
-      ]);
+      setProducts([]); // Removed demo products fallback
     } finally {
       setLoading(false);
     }
@@ -213,7 +208,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({ isGarage = false }) => {
                 </div>
                 <div className="mt-10 flex flex-col md:flex-row items-center justify-between gap-6 pt-10 border-t border-gray-50">
                   <button
-                    onClick={() => { setSelectedMake(''); setSelectedModel(''); setSelectedYear(''); setSelectedFuel(''); setSelectedTrim(''); setSelectedEngine(''); }}
+                    onClick={() => { setSelectedMake(''); setSelectedModel(''); setSelectedYear(''); setSelectedFuel(''); setSelectedTrim(''); setSelectedEngine(''); setSearchTerm(''); }}
                     className="text-[10px] font-black uppercase text-primary tracking-widest flex items-center gap-2 hover:underline"
                   >
                     <X size={14} /> Clear Vehicle Profile
@@ -289,7 +284,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({ isGarage = false }) => {
                 >
                   <div className="aspect-square bg-gray-50 flex items-center justify-center p-8 relative overflow-hidden">
                     <img
-                      src={product.imageUrl ? (product.imageUrl.startsWith('http') ? product.imageUrl : `http://127.0.0.1:8080${product.imageUrl}`) : 'https://via.placeholder.com/300'}
+                      src={product.imageUrl ? (product.imageUrl.startsWith('http') ? product.imageUrl : `${BASE_SERVER_URL}${product.imageUrl}`) : 'https://via.placeholder.com/300'}
                       alt={product.partName || product.name}
                       className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-700"
                       onError={(e: React.SyntheticEvent<HTMLImageElement>) => {

@@ -6,7 +6,7 @@ import {
     ShieldCheck, AlertTriangle, Eye
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import apiClient from '../services/apiClient';
+import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
 import ProductEditModal from '../components/ProductEditModal';
 
 const AdminInventoryManagement: React.FC = () => {
@@ -30,12 +30,7 @@ const AdminInventoryManagement: React.FC = () => {
             setProducts(res.data);
         } catch (err) {
             console.error(err);
-            // Fallback
-            setProducts([
-                { id: 101, partName: 'Brembo Ceramic Pads', price: 4500, category: 'Brakes', condition: 'NEW', stockQuantity: 12, sellerName: 'Brembo India' },
-                { id: 102, partName: 'Air Filter K&N', price: 2800, category: 'Engine', condition: 'REFURBISHED', stockQuantity: 5, sellerName: 'Speed Parts' },
-                { id: 103, partName: 'Turbocharger GT30', price: 65000, category: 'Engine', condition: 'NEW', stockQuantity: 2, sellerName: 'Mad Garage Original' },
-            ]);
+            setProducts([]); // Removed fake fallback data
         } finally {
             setLoading(false);
         }
@@ -193,7 +188,7 @@ const AdminInventoryManagement: React.FC = () => {
                             >
                                 {p.imageUrl ? (
                                     <img
-                                        src={p.imageUrl.startsWith('http') ? p.imageUrl : `http://127.0.0.1:8080${p.imageUrl}`}
+                                        src={p.imageUrl.startsWith('http') ? p.imageUrl : `${BASE_SERVER_URL}${p.imageUrl}`}
                                         alt={p.partName}
                                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                                         onError={(e) => {

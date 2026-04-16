@@ -39,7 +39,7 @@ const GarageDashboard: React.FC = () => {
   // Derived Stats Logic
   const activeBuildsCount = orders.filter(o => o.status !== 'DELIVERED').length;
   const savingsAmount = Math.round(totalSpend * 0.05); // 5% Garage Discount
-  const fleetCount = orders.length > 0 ? Array.from(new Set(orders.map(o => o.vehicleId))).length || 2 : 0;
+  const fleetCount = orders.length > 0 ? Array.from(new Set(orders.map(o => o.vehicleId))).length : 0;
 
   return (
     <div className="min-h-screen bg-app-bg-light flex font-inter">
@@ -95,7 +95,7 @@ const GarageDashboard: React.FC = () => {
               onClick={() => navigate('/profile')}
               className="h-12 w-12 bg-app-bg-dark rounded-2xl flex items-center justify-center text-primary font-black italic shadow-lg border border-primary/20 hover:scale-105 transition-all overflow-hidden"
             >
-              {user?.profileImageUrl ? (
+              {(user?.profileImageUrl && user.profileImageUrl.startsWith('/uploads/')) ? (
                 <img src={`${BASE_SERVER_URL}${user.profileImageUrl}`} alt="Profile" className="h-full w-full object-cover" />
               ) : (
                 (user?.name?.[0] || 'G')

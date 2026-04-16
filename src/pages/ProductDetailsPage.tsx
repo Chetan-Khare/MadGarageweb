@@ -4,7 +4,7 @@ import {
   ChevronLeft, ShoppingBag, Star, ShieldCheck, 
   Zap, ArrowRight, Minus, Plus, Info, Heart
 } from 'lucide-react';
-import apiClient, { BASE_URL } from '../services/apiClient';
+import apiClient, { BASE_URL, BASE_SERVER_URL } from '../services/apiClient';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
@@ -65,7 +65,7 @@ const ProductDetailsPage: React.FC = () => {
                     <div className="space-y-6">
                         <div className="aspect-square bg-gray-50 rounded-[3rem] overflow-hidden border border-gray-100 flex items-center justify-center p-12 group relative">
                             <img 
-                                src={product.imageUrl ? (product.imageUrl.startsWith('http') ? product.imageUrl : `http://127.0.0.1:8080${product.imageUrl}`) : 'https://via.placeholder.com/600'} 
+                                src={product.imageUrl ? (product.imageUrl.startsWith('http') ? product.imageUrl : `${BASE_SERVER_URL}${product.imageUrl}`) : 'https://via.placeholder.com/600'} 
                                 alt={product.partName || product.name}
                                 className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-700" 
                                 onError={(e) => {

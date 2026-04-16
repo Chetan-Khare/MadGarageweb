@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { 
   Package, TrendingUp, ShoppingCart, Plus, 
   ChevronRight, ArrowUpRight,
-  Clock, Ship, LogOut, MoreVertical,
+  Clock, Ship, LogOut, List,
   AlertTriangle
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -34,8 +34,7 @@ const SellerDashboard: React.FC = () => {
             setStats(response.data);
         } catch (error) {
             console.error('Failed to fetch seller stats:', error);
-            // Fallback for demo
-            setStats({ activeListings: 12, monthRevenue: 48500 });
+            setStats(null); // Remove fake fallback
         } finally {
             setLoading(false);
         }
@@ -47,11 +46,7 @@ const SellerDashboard: React.FC = () => {
             setOrders(response.data);
         } catch (error) {
             console.error('Failed to fetch seller orders:', error);
-            // Fallback for demo
-            setOrders([
-                { id: '1001', status: 'PENDING', items: [{ productName: 'Ceramic Brake Pads', quantity: 2 }], grandTotal: 4500, createdAt: '2024-04-03' },
-                { id: '1002', status: 'SHIPPED', items: [{ productName: 'Air Filter K&N', quantity: 1 }], grandTotal: 2800, createdAt: '2024-04-02' }
-            ]);
+            setOrders([]); // Remove fake fallback
         }
     };
 
@@ -59,7 +54,8 @@ const SellerDashboard: React.FC = () => {
         try {
             const response = await apiClient.get('/seller/inventory');
             // Truthy check handles boolean, number (1), or string "true" from different backend versions
-            const flagged = response.data.filter((p: any) => p.flagged && (!p.sellerId || p.sellerId === user?.id));
+            // Fix H-7: Coerce ID to string for reliable comparison
+            const flagged = response.data.filter((p: any) => p.flagged && (!p.sellerId || p.sellerId.toString() === user?.id));
             setFlaggedProducts(flagged);
         } catch (error) {
             console.error('Failed to fetch flagged items:', error);
@@ -97,7 +93,7 @@ const SellerDashboard: React.FC = () => {
                         onClick={() => navigate('/profile')}
                         className="h-12 w-12 bg-app-bg-dark text-primary rounded-2xl flex items-center justify-center font-black italic shadow-lg shadow-black/10 border border-primary/20 hover:scale-110 transition-all overflow-hidden"
                     >
-                        {user?.profileImageUrl ? (
+                        {(user?.profileImageUrl && user.profileImageUrl.startsWith('/uploads/')) ? (
                             <img src={`${BASE_SERVER_URL}${user.profileImageUrl}`} alt="Profile" className="h-full w-full object-cover" />
                         ) : (
                             (user?.name?.[0] || 'S')
@@ -238,16 +234,14 @@ const SellerDashboard: React.FC = () => {
 
                             <div className="relative z-10 grid grid-cols-2 gap-4">
                                 <ActionButton to="/seller/inventory" icon={<Package size={16}/>} label="Inventory" color="text-blue-400" />
-                                <ActionButton to="/seller/orders" icon={<MoreVertical size={16}/>} label="History" color="text-purple-400" />
+                                <ActionButton to="/seller/orders" icon={<List size={16}/>} label="History" color="text-purple-400" />
                             </div>
                         </div>
 
                         <div className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-lg">
                             <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-6">Marketplace Trends</h4>
-                            <div className="space-y-4">
-                                <TrendRow label="Brembo Pads" trend="+24%" color="text-green-500" />
-                                <TrendRow label="Alloy Wheels" trend="+12%" color="text-green-500" />
-                                <TrendRow label="Air Filters" trend="-3%" color="text-red-500" />
+                            <div className="p-8 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                                <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest italic">Live Analytics Hub Syncing...</p>
                             </div>
                         </div>
                     </div>

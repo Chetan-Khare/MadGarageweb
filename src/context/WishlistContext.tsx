@@ -78,7 +78,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setWishlist([]);
       }
     }
-  }, []);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     reloadWishlist();
@@ -89,7 +89,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (!isAuthenticated) {
       localStorage.setItem(GUEST_KEY, JSON.stringify(wishlist));
     }
-  }, [wishlist]);
+  }, [wishlist, isAuthenticated]);
 
   // ── Toggle ───────────────────────────────────────────────────────────────
   const toggleWishlist = async (product: any) => {

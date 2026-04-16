@@ -11,8 +11,7 @@ const WishlistPage: React.FC = () => {
 
     const handleMoveToCart = (item: any) => {
         addToCart(item);
-        // Optionally remove from wishlist
-        // removeFromWishlist(item.id);
+        removeFromWishlist(item.id);
     };
 
     return (
@@ -37,7 +36,7 @@ const WishlistPage: React.FC = () => {
                     
                     {wishlist.length > 0 && (
                         <button 
-                            onClick={() => navigate('/catalog')}
+                            onClick={() => navigate('/')}
                             className="bg-app-bg-dark text-white px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary transition-all shadow-lg flex items-center gap-2"
                         >
                             Continue Sourcing <ChevronRight size={14} />

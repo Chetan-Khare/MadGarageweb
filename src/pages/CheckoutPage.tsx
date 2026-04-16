@@ -5,7 +5,7 @@ import {
     ShieldCheck, Package, ShoppingBag,
     CheckCircle, AlertCircle
 } from 'lucide-react';
-import apiClient from '../services/apiClient';
+import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
 import { useCart } from '../context/CartContext';
 
 const CheckoutPage: React.FC = () => {
@@ -217,7 +217,7 @@ const CheckoutPage: React.FC = () => {
                                         <div key={item.id} className="flex items-center gap-6">
                                             <div className="h-20 w-20 bg-black rounded-2xl overflow-hidden border border-white/10 p-3 shrink-0">
                                                 <img 
-                                                    src={item.imageUrl ? (item.imageUrl.startsWith('http') ? item.imageUrl : `http://127.0.0.1:8080${item.imageUrl}`) : 'https://via.placeholder.com/100'} 
+                                                    src={item.imageUrl ? (item.imageUrl.startsWith('http') ? item.imageUrl : `${BASE_SERVER_URL}${item.imageUrl}`) : 'https://via.placeholder.com/100'} 
                                                     alt={item.name}
                                                     className="w-full h-full object-contain"
                                                 />

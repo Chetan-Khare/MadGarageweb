@@ -6,6 +6,7 @@ import {
   ShieldCheck, Truck, Zap, ShoppingCart 
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
 
 const CartPage: React.FC = () => {
     const { cart, updateQuantity, removeFromCart, subtotal, savings, totalItems } = useCart();
@@ -65,7 +66,7 @@ const CartPage: React.FC = () => {
                                         <div className="h-40 w-40 bg-gray-50 rounded-2xl flex items-center justify-center p-4 relative overflow-hidden shrink-0 group-hover:bg-primary/5 transition-all">
                                             {item.imageUrl ? (
                                                 <img 
-                                                    src={item.imageUrl.startsWith('http') ? item.imageUrl : `http://127.0.0.1:8080${item.imageUrl}`} 
+                                                    src={item.imageUrl.startsWith('http') ? item.imageUrl : `${BASE_SERVER_URL}${item.imageUrl}`} 
                                                     alt={item.name} 
                                                     className="w-full h-full object-contain"
                                                 />
@@ -177,7 +178,7 @@ const CartPage: React.FC = () => {
                             </div>
 
                             <button 
-                                onClick={() => navigate('/checkout')}
+                                onClick={() => navigate('/checkout', { state: { from: '/checkout' } })}
                                 className="w-full bg-primary text-white py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-sm flex items-center justify-center gap-3 hover:bg-white hover:text-app-bg-dark transition-all shadow-xl shadow-red-500/20 active:scale-95"
                             >
                                 Proceed to Checkout <Zap size={18} />

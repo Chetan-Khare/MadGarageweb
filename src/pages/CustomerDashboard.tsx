@@ -79,7 +79,7 @@ const CustomerDashboard: React.FC = () => {
                             onClick={() => navigate('/profile')}
                             className="h-12 w-12 bg-app-bg-dark rounded-2xl flex items-center justify-center text-primary font-black italic shadow-lg border border-primary/20 hover:scale-105 transition-all outline-none overflow-hidden"
                         >
-                            {user?.profileImageUrl ? (
+                            {(user?.profileImageUrl && user.profileImageUrl.startsWith('/uploads/')) ? (
                                 <img src={`${BASE_SERVER_URL}${user.profileImageUrl}`} alt="Profile" className="h-full w-full object-cover" />
                             ) : (
                                 (user?.name?.[0] || 'C')
@@ -93,7 +93,12 @@ const CustomerDashboard: React.FC = () => {
                     <section className="space-y-6">
                         <div className="flex items-center justify-between px-2">
                             <h2 className="text-xs font-black uppercase tracking-[0.3em] text-gray-500">Recent Activity</h2>
-                            <button className="text-[10px] font-black uppercase text-primary hover:underline">View All Orders</button>
+                            <button 
+                                onClick={() => navigate('/orders')}
+                                className="text-[10px] font-black uppercase text-primary hover:underline"
+                            >
+                                View All Orders
+                            </button>
                         </div>
 
                         <div className="space-y-4">

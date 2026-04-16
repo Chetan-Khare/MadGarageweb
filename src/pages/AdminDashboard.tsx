@@ -79,7 +79,7 @@ const AdminDashboard: React.FC = () => {
                 setStats(prev => {
                     if (!prev) return null;
                     const finalTrajectory = hasCalculatedData ? trajectory : prev.sixMonthRevenue;
-                    console.log(`[Analytics] Trajectory synced: ${JSON.stringify(finalTrajectory)} (Source: ${hasCalculatedData ? 'Real' : 'Server Mock'})`);
+                    // Log removed for privacy
                     return {
                         ...prev,
                         sixMonthRevenue: finalTrajectory
@@ -148,7 +148,7 @@ const AdminDashboard: React.FC = () => {
             // P4 DEFAULT PASSWORD LOGIC: Use password123 if left blank
             const payload = {
                 ...newUser,
-                password: newUser.password || 'password123'
+                password: newUser.password
             };
             await apiClient.post('/admin/users', payload);
             setFormSuccess(`${newUser.role} account provisioned!`);
@@ -214,7 +214,7 @@ const AdminDashboard: React.FC = () => {
                         className="h-12 w-12 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center text-primary hover:bg-white/10 hover:border-primary/50 transition-all group shadow-lg shadow-primary/5 overflow-hidden"
                         title="Profile Access"
                     >
-                        {user?.profileImageUrl ? (
+                        {(user?.profileImageUrl && user.profileImageUrl.startsWith('/uploads/')) ? (
                             <img src={`${BASE_SERVER_URL}${user.profileImageUrl}`} alt="Profile" className="h-full w-full object-cover" />
                         ) : (
                             <Fingerprint size={22} className="group-hover:scale-110 transition-transform" />

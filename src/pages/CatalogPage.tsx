@@ -5,8 +5,7 @@ import {
   Cpu, Activity, Database, Boxes,
   ShieldCheck
 } from 'lucide-react';
-import apiClient from '../services/apiClient';
-import { useWishlist } from '../context/WishlistContext';
+import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
 import ProductEditModal from '../components/ProductEditModal';
 
 const CatalogPage: React.FC = () => {
@@ -14,7 +13,6 @@ const CatalogPage: React.FC = () => {
     const engineId = searchParams.get('engineId');
     const categoryQuery = searchParams.get('category');
     const q = searchParams.get('q');
-    useWishlist();
     
     const [products, setProducts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -46,13 +44,7 @@ const CatalogPage: React.FC = () => {
             setProducts(response.data);
         } catch (error) {
             console.error('Failed to fetch products:', error);
-            // Fallback mock data with technical metadata
-            setProducts([
-                { id: 1, name: 'Brembo Racing Pads', price: 12500, originalPrice: 14000, category: 'Brakes', brand: 'Brembo', sku: 'BR-992-X', stock: 12, fitmentScore: 98 },
-                { id: 2, name: 'Garrett G-Series Turbo', price: 145000, originalPrice: 158000, category: 'Engine', brand: 'Garrett', sku: 'GT-G30-770', stock: 3, fitmentScore: 100 },
-                { id: 3, name: 'HKS Hi-Power Exhaust', price: 65000, originalPrice: 72000, category: 'Exhaust', brand: 'HKS', sku: 'HKS-HI-P', stock: 5, fitmentScore: 94 },
-                { id: 4, name: 'Ohlins Road & Track', price: 210000, originalPrice: 235000, category: 'Suspension', brand: 'Ohlins', sku: 'OH-RT-X7', stock: 2, fitmentScore: 99 }
-            ]);
+            setProducts([]); // Removed fake fallback data
         } finally {
             setLoading(false);
         }
@@ -182,7 +174,7 @@ const CatalogPage: React.FC = () => {
                                 {/* Visual Container */}
                                 <div className={`${viewMode === 'grid' ? 'h-56' : 'h-32 w-32'} bg-[#111] flex items-center justify-center p-8 relative group-hover:bg-primary/[0.03] transition-all`}>
                                      <img 
-                                        src={product.imageUrl ? (product.imageUrl.startsWith('http') ? product.imageUrl : `http://127.0.0.1:8080${product.imageUrl}`) : 'https://via.placeholder.com/300'} 
+                                        src={product.imageUrl ? (product.imageUrl.startsWith('http') ? product.imageUrl : `${BASE_SERVER_URL}${product.imageUrl}`) : 'https://via.placeholder.com/300'} 
                                         alt={product.name}
                                         className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500 drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]" 
                                         onError={(e) => {

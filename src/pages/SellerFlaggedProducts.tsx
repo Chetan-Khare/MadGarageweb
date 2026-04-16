@@ -5,7 +5,7 @@ import {
   Info, CheckCircle
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
-import apiClient from '../services/apiClient';
+import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
 import { useAuth } from '../context/AuthContext';
 
 const SellerFlaggedProducts: React.FC = () => {
@@ -128,7 +128,7 @@ const SellerFlaggedProducts: React.FC = () => {
                                 
                                 <div className="h-32 w-32 bg-black/40 rounded-[2rem] flex items-center justify-center shrink-0 border border-white/5 overflow-hidden relative">
                                     {p.imageUrl ? (
-                                        <img src={p.imageUrl.startsWith('http') ? p.imageUrl : `http://127.0.0.1:8080${p.imageUrl}`} className="h-full w-full object-cover" alt={p.partName} />
+                                        <img src={p.imageUrl.startsWith('http') ? p.imageUrl : `${BASE_SERVER_URL}${p.imageUrl}`} className="h-full w-full object-cover" alt={p.partName} />
                                     ) : (
                                         <Package size={40} className="text-gray-800" />
                                     )}

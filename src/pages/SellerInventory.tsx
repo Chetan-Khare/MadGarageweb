@@ -5,7 +5,7 @@ import {
     X, Image as ImageIcon, Sparkles, Filter, AlertTriangle
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import apiClient from '../services/apiClient';
+import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
 import { useAuth } from '../context/AuthContext';
 
 const SellerInventory: React.FC = () => {
@@ -156,7 +156,7 @@ const SellerInventory: React.FC = () => {
                                             <div className="h-16 w-16 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-300 group-hover:text-primary transition-colors overflow-hidden">
                                                 {p.imageUrl ? (
                                                     <img
-                                                        src={p.imageUrl.startsWith('http') ? p.imageUrl : `http://127.0.0.1:8080${p.imageUrl}`}
+                                                        src={p.imageUrl.startsWith('http') ? p.imageUrl : `${BASE_SERVER_URL}${p.imageUrl}`}
                                                         alt={p.partName || p.name}
                                                         className="h-full w-full object-cover"
                                                         onError={(e) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?q=80&w=200&auto=format&fit=crop'; }}

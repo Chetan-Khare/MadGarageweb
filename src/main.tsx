@@ -5,7 +5,7 @@ import './index.css'
 import { BrowserRouter } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 
-console.log('Mad Garage: Initializing React Mount...');
+
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -20,5 +20,5 @@ if (!rootElement) {
       </AuthProvider>
     </React.StrictMode>
   );
-  console.log('Mad Garage: Mount triggered.');
+
 }

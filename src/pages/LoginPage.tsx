@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, ShieldAlert, Phone, Hash, ChevronLeft, ShieldCheck, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import apiClient from '../services/apiClient';
@@ -17,6 +17,7 @@ const LoginPage: React.FC = () => {
   const [error, setError] = useState('');
   
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
 
   useEffect(() => {
@@ -110,6 +111,13 @@ const LoginPage: React.FC = () => {
     if (data?.token) {
         login(data, data.token);
         
+        // Handle post-login redirection
+        const from = (location.state as any)?.from?.pathname || (location.state as any)?.from || null;
+        if (from) {
+            navigate(from, { replace: true });
+            return;
+        }
+
         // Dynamic Role-Based Redirection (Standardized)
         const rawRole = (data.role || 'CUSTOMER').toUpperCase();
         const role = rawRole.startsWith('ROLE_') ? rawRole : `ROLE_${rawRole}`;
