@@ -1,13 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { 
-  Search, Filter, ChevronRight, Zap, 
-  ShoppingBag, SlidersHorizontal, Plus, Heart,
-  Cpu, Activity, Database, Boxes, ShieldAlert,
+  Search, SlidersHorizontal,
+  Cpu, Activity, Database, Boxes,
   ShieldCheck
 } from 'lucide-react';
 import apiClient from '../services/apiClient';
-import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import ProductEditModal from '../components/ProductEditModal';
 
@@ -16,9 +14,7 @@ const CatalogPage: React.FC = () => {
     const engineId = searchParams.get('engineId');
     const categoryQuery = searchParams.get('category');
     const q = searchParams.get('q');
-    const navigate = useNavigate();
-    const { addToCart } = useCart();
-    const { toggleWishlist, isInWishlist } = useWishlist();
+    useWishlist();
     
     const [products, setProducts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);

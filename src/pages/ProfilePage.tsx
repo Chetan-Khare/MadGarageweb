@@ -90,6 +90,13 @@ const ProfilePage: React.FC = () => {
 
                 if (response.data) {
                     const newImageUrl = response.data;
+                    
+                    // SECURITY GUARD: Ensure image URL is within local uploads path
+                    if (typeof newImageUrl !== 'string' || !newImageUrl.startsWith('/uploads/')) {
+                         setError('Security System: Unauthorized image path detected.');
+                         return;
+                    }
+
                     setProfileImageUrl(newImageUrl);
                     
                     // Update AuthContext to sync header immediately
@@ -138,7 +145,15 @@ const ProfilePage: React.FC = () => {
             setTimeout(() => setSuccess(''), 3000);
         } catch (err: any) {
             console.error('Update failed:', err);
-            setError(err.response?.data?.message || 'Transmission error. Please check your connection.');
+            // Sanitize backend errors: map technical validation messages to generic ones
+            const msg = err.response?.data?.message || '';
+            if (msg.includes('Password') || msg.includes('characters')) {
+                setError('Security Error: Password must be 6-100 characters.');
+            } else if (msg.includes('Email') || msg.includes('format')) {
+                setError('Invalid Input: Email format is incorrectly formatted.');
+            } else {
+                setError('Transmission error. Deployment of profile updates failed.');
+            }
         } finally {
             setSaving(false);
         }
@@ -172,7 +187,7 @@ const ProfilePage: React.FC = () => {
                                     <div className="relative h-32 w-32 bg-white/5 border-2 border-primary/30 rounded-[2.5rem] flex items-center justify-center overflow-hidden shadow-2xl group-hover:border-primary/60 transition-all duration-300">
                                         {uploading ? (
                                             <Loader2 size={32} className="text-primary animate-spin" />
-                                        ) : profileImageUrl ? (
+                                        ) : (profileImageUrl && profileImageUrl.startsWith('/uploads/')) ? (
                                             <img src={`${BASE_SERVER_URL}${profileImageUrl}`} alt="Profile" className="h-full w-full object-cover" />
                                         ) : (
                                             <span className="text-4xl font-black text-primary italic">

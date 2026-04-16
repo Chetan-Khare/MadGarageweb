@@ -27,10 +27,22 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user } = useAuth();
   const [cart, setCart] = useState<CartItem[]>(() => {
     const saved = localStorage.getItem('madgarage_cart');
-    return saved ? JSON.parse(saved) : [];
+    if (!saved) return [];
+    try {
+        const parsed = JSON.parse(saved);
+        if (!Array.isArray(parsed)) return [];
+        // Security validation for persisted cart data
+        return parsed.filter(item => 
+            typeof item.id === 'number' && item.id > 0 &&
+            typeof item.quantity === 'number' && item.quantity >= 1 &&
+            typeof item.price === 'number' && item.price >= 0
+        );
+    } catch (e) {
+        console.error('Failed to load cart from storage:', e);
+        return [];
+    }
   });
 
   useEffect(() => {

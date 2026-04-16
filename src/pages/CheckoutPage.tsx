@@ -43,8 +43,9 @@ const CheckoutPage: React.FC = () => {
 
     const handlePlaceOrder = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!address || !city || !state || !pincode) {
-            setError('Please complete all shipping details.');
+        const pincodeRegex = /^[1-9][0-9]{5}$/;
+        if (!pincodeRegex.test(pincode)) {
+            setError('Please enter a valid 6-digit pincode.');
             return;
         }
 
@@ -167,11 +168,13 @@ const CheckoutPage: React.FC = () => {
                                     <label className="text-[10px] font-black uppercase text-gray-500 mb-3 ml-2">Pincode</label>
                                     <input 
                                         required 
-                                        type="text" 
+                                        type="tel" 
+                                        pattern="[0-9]{6}"
+                                        maxLength={6}
                                         placeholder="400001"
                                         className="bg-white/5 border border-white/10 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all w-full md:w-1/2" 
                                         value={pincode}
-                                        onChange={e => setPincode(e.target.value)}
+                                        onChange={e => setPincode(e.target.value.replace(/\D/g, ''))}
                                     />
                                 </div>
                             </form>

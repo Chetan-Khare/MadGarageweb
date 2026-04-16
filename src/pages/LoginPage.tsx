@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, ArrowRight, UserPlus, ShieldAlert, Phone, Hash, ChevronLeft, ShieldCheck, Eye, EyeOff } from 'lucide-react';
-import { useAuth, UserRole } from '../context/AuthContext';
+import { Mail, Lock, ArrowRight, ShieldAlert, Phone, Hash, ChevronLeft, ShieldCheck, Eye, EyeOff } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import apiClient from '../services/apiClient';
 
 const LoginPage: React.FC = () => {
@@ -20,6 +20,13 @@ const LoginPage: React.FC = () => {
   const { login } = useAuth();
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('expired')) {
+        setError('Your session has expired. Please sign in again for security.');
+    }
+  }, []);
+
+  useEffect(() => {
     let interval: any;
     if (resendTimer > 0) {
       interval = setInterval(() => {
@@ -31,16 +38,15 @@ const LoginPage: React.FC = () => {
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!phone || phone.length < 10) {
-      setError('Please enter a valid 10-digit phone number.');
+    const phoneRegex = /^[6-9]\d{9}$/;
+    if (!phoneRegex.test(phone)) {
+      setError('Please enter a valid 10-digit Indian mobile number.');
       return;
     }
     setLoading(true);
     setError('');
     try {
-      const res = await apiClient.post('/auth/send-otp', { phone });
-      // In development, the OTP is returned in the response for convenience
-      console.log('OTP Sent:', res.data);
+      await apiClient.post('/auth/send-otp', { phone });
       setShowOtpInput(true);
       setResendTimer(30);
     } catch (err: any) {
@@ -102,7 +108,6 @@ const LoginPage: React.FC = () => {
 
   const handleLoginSuccess = (data: any) => {
     if (data?.token) {
-        console.log('[Auth] Handshake Success:', { id: data.userId || data.id, role: data.role });
         login(data, data.token);
         
         // Dynamic Role-Based Redirection (Standardized)

@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Users, Search, Filter, Mail, Phone, 
-  ChevronRight, ArrowLeft, Shield, MoreVertical,
-  UserCheck, UserX, Star, Trash2, RefreshCw,
-  UserPlus, Archive, RotateCcw, Fingerprint, Eye, EyeOff
+  Users, Search, Mail, Phone, 
+  ArrowLeft, Shield, RefreshCw,
+  UserPlus, RotateCcw, Fingerprint, Eye, EyeOff
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../services/apiClient';
@@ -79,17 +78,18 @@ const AdminUserManagement: React.FC = () => {
 
         setActionLoading(true);
         try {
-            // P4 DEFAULT PASSWORD LOGIC: Use password123 if left blank
+            // Remove insecure fallback password123. Use empty string or fail.
+            // Backend now has @NotBlank validation.
             const payload = {
                 ...provisionForm,
-                password: provisionForm.password || 'password123'
+                password: provisionForm.password
             };
             await apiClient.post('/admin/users', payload);
             setShowProvisionModal(false);
             setProvisionForm({ firstName: '', lastName: '', email: '', password: '', phone: '', role: 'ROLE_SELLER' });
             fetchUsers();
         } catch (err: any) {
-            setFormError(err.response?.data || 'Provisioning failed.');
+            setFormError(err.response?.data?.message || err.response?.data || 'Provisioning failed.');
         } finally {
             setActionLoading(false);
         }
@@ -108,6 +108,14 @@ const AdminUserManagement: React.FC = () => {
 
     const handleUpdateUser = async () => {
         if (!editingUser) return;
+
+        // Security Guard: Role escalation confirmation
+        if (editForm.role === 'ROLE_ADMIN' && editingUser.role !== 'ROLE_ADMIN') {
+            if (!window.confirm('SECURITY WARNING: You are elevating this user to ADMINISTRATOR status. This provides unrestricted access to the entire platform. Proceed?')) {
+                return;
+            }
+        }
+
         setActionLoading(true);
         try {
             await apiClient.put(`/admin/users/${editingUser.id}`, editForm);
@@ -115,7 +123,7 @@ const AdminUserManagement: React.FC = () => {
             fetchUsers();
             alert('User identity record revised successfully.');
         } catch (err: any) {
-            alert(err.response?.data || 'Revision failed.');
+            alert(err.response?.data?.message || err.response?.data || 'Revision failed.');
         } finally {
             setActionLoading(false);
         }
@@ -410,7 +418,7 @@ const AdminUserManagement: React.FC = () => {
                                  <input 
                                      type={showPassword ? "text" : "password"}
                                      className="bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold w-full outline-none focus:border-primary transition-all"
-                                     placeholder="Root Password (Optional)"
+                                     placeholder="Root Password (Required)"
                                      value={provisionForm.password}
                                      onChange={e => setProvisionForm({...provisionForm, password: e.target.value})}
                                  />

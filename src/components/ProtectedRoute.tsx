@@ -7,10 +7,17 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) => {
-  const { isAuthenticated, role, token } = useAuth();
-  const savedToken = localStorage.getItem('token');
+  const { isAuthenticated, role, isInitializing } = useAuth();
 
-  if (!isAuthenticated && !savedToken) {
+  if (isInitializing) {
+     return (
+       <div className="min-h-screen bg-app-bg-dark flex items-center justify-center">
+         <div className="h-10 w-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+       </div>
+     );
+  }
+
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 

@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { 
-  ShoppingBag, Clock, Heart, Settings, 
-  LogOut, Search, ChevronRight, Zap, 
-  ShieldCheck, Package, MapPin, User, ShoppingCart
+  ShoppingBag, Heart,
+  LogOut, ChevronRight, Zap, 
+  Package, User, ShoppingCart
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
@@ -165,16 +165,6 @@ const SidebarLink: React.FC<{ icon: React.ReactNode, label: string, active?: boo
     </button>
 );
 
-const StatusCard: React.FC<{ icon: React.ReactNode, label: string, value: string | number }> = ({ icon, label, value }) => (
-    <div className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-xl shadow-black/5 flex items-center gap-6 group hover:border-primary/20 transition-all">
-        <div className="h-14 w-14 bg-gray-50 rounded-2xl flex items-center justify-center transition-all group-hover:scale-110">
-            {icon}
-        </div>
-        <div>
-            <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest mb-1">{label}</p>
-            <h3 className="text-2xl font-black italic text-app-bg-dark uppercase tracking-tighter">{value}</h3>
-        </div>
-    </div>
-);
+
 
 export default CustomerDashboard;

@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { 
   PlusCircle, Camera, CheckCircle, ChevronLeft, 
-  Trash2, Package, Truck, Activity,
-  Info, ShieldCheck, ChevronRight, ArrowUpRight
+  Trash2, Truck, Activity,
+  Info, ShieldCheck, ArrowUpRight
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import apiClient from '../services/apiClient';
 
 const PART_CATEGORIES = ['Engine', 'Brakes', 'Suspension', 'Exhaust', 'Electrical', 'Exterior', 'Interior', 'others'];
-const COLORS = ['Black', 'Silver', 'White', 'Red', 'Blue', 'Unpainted/Raw', 'Other'];
 
 const AddProductPage: React.FC = () => {
     const navigate = useNavigate();

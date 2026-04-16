@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { 
   Package, TrendingUp, ShoppingCart, Plus, 
-  Search, Filter, ChevronRight, ArrowUpRight,
-  Clock, CheckCircle, Ship, LogOut, MoreVertical,
+  ChevronRight, ArrowUpRight,
+  Clock, Ship, LogOut, MoreVertical,
   AlertTriangle
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';

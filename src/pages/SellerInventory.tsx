@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
-    Plus, Edit2, Trash2, Search, ArrowLeft,
-    Package, ShoppingBag, CheckCircle, RefreshCcw,
+    Plus, Edit2, Trash2, ArrowLeft,
+    Package, CheckCircle, RefreshCcw,
     X, Image as ImageIcon, Sparkles, Filter, AlertTriangle
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -13,7 +13,7 @@ const SellerInventory: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [products, setProducts] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [_loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [editingProduct, setEditingProduct] = useState<any | null>(null);
     const [isSaving, setIsSaving] = useState(false);

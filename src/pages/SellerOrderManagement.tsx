@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  ArrowLeft, Search, Filter, ShoppingCart, 
+  ArrowLeft, Search,
   Clock, Ship, CheckCircle, ChevronRight, 
-  MapPin, Phone, User, Package, Calendar,
+  User, Package, Calendar,
   TrendingUp, AlertCircle
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';

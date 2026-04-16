@@ -19,6 +19,7 @@ interface AuthContextType {
   logout: () => void;
   refreshUserProfile: () => Promise<void>;
   isAuthenticated: boolean;
+  isInitializing: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,53 +27,48 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
-  const [role, setRole] = useState<UserRole | null>(localStorage.getItem('role') as UserRole);
+  const [role, setRole] = useState<UserRole | null>(null);
+  const [isInitializing, setIsInitializing] = useState(true);
 
   // Function to fetch full profile (syncs profileImageUrl across devices)
   const refreshUserProfile = useCallback(async () => {
     const currentToken = localStorage.getItem('token');
-    if (!currentToken) return;
+    if (!currentToken) {
+        setIsInitializing(false);
+        return;
+    }
 
     try {
       const response = await apiClient.get('/users/me');
       if (response.data) {
         const u = response.data;
-        const userRole = (u.role || localStorage.getItem('role') || 'CUSTOMER').toUpperCase();
-        const standardizedRole = userRole.startsWith('ROLE_') ? userRole : `ROLE_${userRole}`;
+        const userRole = (u.role || 'CUSTOMER').toUpperCase();
+        const standardizedRole = (userRole.startsWith('ROLE_') ? userRole : `ROLE_${userRole}`) as UserRole;
 
         const updatedUser: User = {
           id: u.id?.toString() || '',
           name: u.firstName ? `${u.firstName} ${u.lastName || ''}`.trim() : (u.name || 'User'),
           email: u.email || '',
-          role: standardizedRole as UserRole,
+          role: standardizedRole,
           profileImageUrl: u.profileImageUrl || null
         };
 
         setUser(updatedUser);
-        localStorage.setItem('user', JSON.stringify(updatedUser));
+        setRole(standardizedRole);
+        setToken(currentToken);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to sync user profile:', error);
-      // If 401, token is invalid
+      if (error.response?.status === 401) {
+          logout();
+      }
+    } finally {
+        setIsInitializing(false);
     }
   }, []);
 
   useEffect(() => {
-    const savedUser = localStorage.getItem('user');
-    const savedToken = localStorage.getItem('token');
-    const savedRole = localStorage.getItem('role') as UserRole;
-    
-    if (savedToken && savedRole) {
-      setToken(savedToken);
-      setRole(savedRole);
-      
-      if (savedUser) {
-        setUser(JSON.parse(savedUser));
-      }
-      
-      // Always verify/sync with backend on mount
-      refreshUserProfile();
-    }
+    refreshUserProfile();
   }, [refreshUserProfile]);
 
   const login = (userData: any, newToken: string) => {
@@ -82,30 +78,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         userRole = 'ROLE_' + userRole;
     }
 
-    const payload: User = {
+    localStorage.setItem('token', newToken);
+    
+    setToken(newToken);
+    setRole(userRole as UserRole);
+
+    // Initial state from login response (will be perfected by refreshUserProfile immediately)
+    setUser({
         id: (userData.userId || userData.id)?.toString() || '',
         name: userData.firstName ? `${userData.firstName} ${userData.lastName || ''}`.trim() : (userData.name || 'User'),
         email: userData.email || '',
         role: userRole as UserRole,
         profileImageUrl: userData.profileImageUrl || null
-    };
+    });
 
-    localStorage.setItem('token', newToken);
-    localStorage.setItem('user', JSON.stringify(payload));
-    localStorage.setItem('role', userRole);
-    
-    setUser(payload);
-    setToken(newToken);
-    setRole(userRole as UserRole);
-
-    // Trigger background refresh to get missing fields like profileImageUrl
+    // Sync full profile
     refreshUserProfile();
   };
 
   const logout = () => {
     localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('role');
     setUser(null);
     setToken(null);
     setRole(null);
@@ -119,7 +111,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       login, 
       logout,
       refreshUserProfile,
-      isAuthenticated: !!token 
+      isAuthenticated: !!token && !!user,
+      isInitializing
     }}>
       {children}
     </AuthContext.Provider>

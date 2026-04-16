@@ -73,7 +73,7 @@ const AppLayout: React.FC = () => {
                   className="h-10 w-10 flex items-center justify-center bg-white/5 border border-white/10 rounded-full text-gray-400 hover:text-primary transition-all shadow-lg overflow-hidden"
                   title="My Profile"
                 >
-                  {user?.profileImageUrl ? (
+                  {(user?.profileImageUrl && user.profileImageUrl.startsWith('/uploads/')) ? (
                     <img 
                       src={`${BASE_SERVER_URL}${user.profileImageUrl}`} 
                       alt="Profile" 
