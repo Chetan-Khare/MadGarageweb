@@ -4,6 +4,4 @@ build
 .git
 .github
 .env
-Dockerfile
-nginx.conf
 npm-debug.log
