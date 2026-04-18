@@ -29,6 +29,7 @@ import ScrollToTop from './components/ScrollToTop';
 import { useAuth } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
+import { LocationProvider } from './context/LocationContext';
 import CartPage from './pages/CartPage';
 import OrdersPage from './pages/OrdersPage';
 import WishlistPage from './pages/WishlistPage';
@@ -37,79 +38,81 @@ function App() {
   const { role } = useAuth();
 
   return (
-    <CartProvider>
-      <WishlistProvider>
-        <ScrollToTop />
-        <Routes>
-      {/* Public Routes with Layout */}
-      <Route path="/" element={<AppLayout />}>
-        <Route index element={<HomePage />} />
-        <Route path="request-part" element={<PartRequestPage />} />
-        <Route path="product/:id" element={<ProductDetailsPage />} />
-        <Route path="cart" element={<CartPage />} />
-      </Route>
+    <LocationProvider>
+      <CartProvider>
+        <WishlistProvider>
+          <ScrollToTop />
+          <Routes>
+            {/* Public Routes with Layout */}
+            <Route path="/" element={<AppLayout />}>
+              <Route index element={<HomePage />} />
+              <Route path="request-part" element={<PartRequestPage />} />
+              <Route path="product/:id" element={<ProductDetailsPage />} />
+              <Route path="cart" element={<CartPage />} />
+            </Route>
 
-      {/* Auth Routes - No Main Layout */}
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/complete-profile" element={<CompleteProfilePage />} />
+            {/* Auth Routes - No Main Layout */}
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/complete-profile" element={<CompleteProfilePage />} />
 
-      {/* Admin Specific Routes */}
-      <Route element={<ProtectedRoute allowedRoles={['ROLE_ADMIN']} />}>
-        <Route path="/admin/add-product" element={<AddProductPage />} />
-        <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/admin/vehicles" element={<AdminVehicleManagement />} />
-        <Route path="/admin/requests" element={<AdminPartRequestReview />} />
-        <Route path="/admin/users" element={<AdminUserManagement />} />
-        <Route path="/admin/inventory" element={<AdminInventoryManagement />} />
-        <Route path="/admin/orders" element={<AdminOrderManagement />} />
-        <Route path="/admin/parts-db" element={<CatalogPage />} />
-      </Route>
+            {/* Admin Specific Routes */}
+            <Route element={<ProtectedRoute allowedRoles={['ROLE_ADMIN']} />}>
+              <Route path="/admin/add-product" element={<AddProductPage />} />
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/vehicles" element={<AdminVehicleManagement />} />
+              <Route path="/admin/requests" element={<AdminPartRequestReview />} />
+              <Route path="/admin/users" element={<AdminUserManagement />} />
+              <Route path="/admin/inventory" element={<AdminInventoryManagement />} />
+              <Route path="/admin/orders" element={<AdminOrderManagement />} />
+              <Route path="/admin/parts-db" element={<CatalogPage />} />
+            </Route>
 
-      {/* Redirects */}
-      <Route path="/catalog" element={<Navigate to="/" replace />} />
-      
-      {/* Seller Specific Routes */}
-      <Route element={<ProtectedRoute allowedRoles={['ROLE_SELLER']} />}>
-        <Route path="/seller" element={<SellerDashboard />} />
-        <Route path="/seller/inventory" element={<SellerInventory />} />
-        <Route path="/seller/orders" element={<SellerOrderManagement />} />
-        <Route path="/seller/flagged-items" element={<SellerFlaggedProducts />} />
-        <Route path="/seller/add-product" element={<AddProductPage />} />
-      </Route>
+            {/* Redirects */}
+            <Route path="/catalog" element={<Navigate to="/" replace />} />
+            
+            {/* Seller Specific Routes */}
+            <Route element={<ProtectedRoute allowedRoles={['ROLE_SELLER']} />}>
+              <Route path="/seller" element={<SellerDashboard />} />
+              <Route path="/seller/inventory" element={<SellerInventory />} />
+              <Route path="/seller/orders" element={<SellerOrderManagement />} />
+              <Route path="/seller/flagged-items" element={<SellerFlaggedProducts />} />
+              <Route path="/seller/add-product" element={<AddProductPage />} />
+            </Route>
 
-      {/* Global AI Chat & Global Order Details (Requires Auth) */}
-      <Route element={<ProtectedRoute />}>
-        <Route path="/chat" element={<AIChatPage />} />
-        <Route path="/order" element={<OrderLookupPage />} />
-        <Route path="/order/:id" element={<OrderDetailsPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/checkout" element={<CheckoutPage />} />
-        <Route path="/orders" element={<OrdersPage />} />
-        <Route path="/wishlist" element={<WishlistPage />} />
-      </Route>
+            {/* Global AI Chat & Global Order Details (Requires Auth) */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/chat" element={<AIChatPage />} />
+              <Route path="/order" element={<OrderLookupPage />} />
+              <Route path="/order/:id" element={<OrderDetailsPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/checkout" element={<CheckoutPage />} />
+              <Route path="/orders" element={<OrdersPage />} />
+              <Route path="/wishlist" element={<WishlistPage />} />
+            </Route>
 
-      {/* Garage Protected Routes */}
-      <Route element={<ProtectedRoute allowedRoles={['ROLE_GARAGE']} />}>
-        <Route path="/dashboard" element={<GarageDashboard />} />
-      </Route>
+            {/* Garage Protected Routes */}
+            <Route element={<ProtectedRoute allowedRoles={['ROLE_GARAGE']} />}>
+              <Route path="/dashboard" element={<GarageDashboard />} />
+            </Route>
 
-      {/* Customer Protected Routes */}
-      <Route element={<ProtectedRoute allowedRoles={['ROLE_CUSTOMER']} />}>
-        <Route path="/customer-dashboard" element={<CustomerDashboard />} />
-      </Route>
+            {/* Customer Protected Routes */}
+            <Route element={<ProtectedRoute allowedRoles={['ROLE_CUSTOMER']} />}>
+              <Route path="/customer-dashboard" element={<CustomerDashboard />} />
+            </Route>
 
-      {/* Default Dashboard Redirect based on Role */}
-      <Route element={<ProtectedRoute />}>
-         <Route path="/user-dashboard" element={
-             role === 'ROLE_ADMIN' ? <Navigate to="/admin" replace /> :
-             role === 'ROLE_SELLER' ? <Navigate to="/seller" replace /> :
-             role === 'ROLE_CUSTOMER' ? <Navigate to="/customer-dashboard" replace /> :
-             <Navigate to="/dashboard" replace />
-         } />
-      </Route>
+            {/* Default Dashboard Redirect based on Role */}
+            <Route element={<ProtectedRoute />}>
+               <Route path="/user-dashboard" element={
+                   role === 'ROLE_ADMIN' ? <Navigate to="/admin" replace /> :
+                   role === 'ROLE_SELLER' ? <Navigate to="/seller" replace /> :
+                   role === 'ROLE_CUSTOMER' ? <Navigate to="/customer-dashboard" replace /> :
+                   <Navigate to="/dashboard" replace />
+               } />
+            </Route>
           </Routes>
         </WishlistProvider>
       </CartProvider>
+    </LocationProvider>
   );
 }
 

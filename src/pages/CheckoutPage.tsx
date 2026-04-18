@@ -1,20 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation as useDomLocation, useNavigate } from 'react-router-dom';
 import { 
     ChevronLeft, CreditCard, MapPin, 
     ShieldCheck, Package, ShoppingBag,
-    CheckCircle, AlertCircle
+    CheckCircle, AlertCircle, Store, Truck, Navigation
 } from 'lucide-react';
 import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
 import { useCart } from '../context/CartContext';
+import { useLocation } from '../context/LocationContext';
 
 const CheckoutPage: React.FC = () => {
-    const location = useLocation();
+    const domLocation = useDomLocation();
     const navigate = useNavigate();
     const { cart, subtotal: cartSubtotal, clearCart } = useCart();
+    const { city: detectedCity, address: detectedAddress, nearbyGarages, fetchGarages } = useLocation();
     
     // Support both single product "Buy Now" and "Cart Checkout"
-    const { product: buyNowProduct, quantity: buyNowQuantity } = location.state || {};
+    const { product: buyNowProduct, quantity: buyNowQuantity } = domLocation.state || {};
     
     // Final product list for checkout
     const checkoutItems = buyNowProduct ? [{ ...buyNowProduct, quantity: buyNowQuantity }] : cart;
@@ -28,6 +30,21 @@ const CheckoutPage: React.FC = () => {
     const [city, setCity] = useState('');
     const [state, setState] = useState('');
     const [pincode, setPincode] = useState('');
+    
+    // Fitting State
+    const [deliveryType, setDeliveryType] = useState<'HOME_DELIVERY' | 'GARAGE_FITTING'>('HOME_DELIVERY');
+    const [selectedGarageId, setSelectedGarageId] = useState<number | null>(null);
+
+    useEffect(() => {
+        if (detectedCity && !city) setCity(detectedCity);
+        if (detectedAddress && !address) setAddress(detectedAddress);
+    }, [detectedCity, detectedAddress]);
+
+    useEffect(() => {
+        if (city && city.length > 2) {
+            fetchGarages(city);
+        }
+    }, [city, fetchGarages]);
 
     useEffect(() => {
         if (checkoutItems.length === 0) {
@@ -61,7 +78,9 @@ const CheckoutPage: React.FC = () => {
                 shippingAddress: address,
                 city,
                 state,
-                pincode
+                pincode,
+                deliveryType,
+                fittingGarageId: deliveryType === 'GARAGE_FITTING' ? selectedGarageId : null
             });
 
             if (!buyNowProduct) clearCart(); // Clear cart only if this was a cart checkout
@@ -119,6 +138,84 @@ const CheckoutPage: React.FC = () => {
                     {/* Left: Form */}
                     <div className="lg:col-span-7 space-y-12">
                         <div className="space-y-8">
+                             <div className="flex items-center gap-4">
+                                <div className="h-8 w-8 bg-primary/10 text-primary rounded-xl flex items-center justify-center">
+                                    <Package size={16} />
+                                </div>
+                                <h3 className="text-xs font-black uppercase tracking-[0.3em] text-white">Fulfillment Mode</h3>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <button 
+                                    type="button"
+                                    onClick={() => setDeliveryType('HOME_DELIVERY')}
+                                    className={`p-8 rounded-[2.5rem] border transition-all text-left flex flex-col gap-4 ${deliveryType === 'HOME_DELIVERY' ? 'bg-primary/5 border-primary/20 shadow-xl' : 'bg-[#121216] border-white/5 hover:border-white/10'}`}
+                                >
+                                    <div className={`h-12 w-12 rounded-2xl flex items-center justify-center ${deliveryType === 'HOME_DELIVERY' ? 'bg-primary text-white' : 'bg-white/5 text-gray-500'}`}>
+                                        <Truck size={24} />
+                                    </div>
+                                    <div>
+                                        <h4 className={`text-sm font-black uppercase italic tracking-tighter ${deliveryType === 'HOME_DELIVERY' ? 'text-primary' : 'text-white'}`}>Home Delivery</h4>
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-1">Direct to your doorstep</p>
+                                    </div>
+                                </button>
+
+                                <button 
+                                    type="button"
+                                    onClick={() => setDeliveryType('GARAGE_FITTING')}
+                                    className={`p-8 rounded-[2.5rem] border transition-all text-left flex flex-col gap-4 ${deliveryType === 'GARAGE_FITTING' ? 'bg-primary/5 border-primary/20 shadow-xl' : 'bg-[#121216] border-white/5 hover:border-white/10'}`}
+                                >
+                                    <div className={`h-12 w-12 rounded-2xl flex items-center justify-center ${deliveryType === 'GARAGE_FITTING' ? 'bg-primary text-white' : 'bg-white/5 text-gray-500'}`}>
+                                        <Store size={24} />
+                                    </div>
+                                    <div>
+                                        <h4 className={`text-sm font-black uppercase italic tracking-tighter ${deliveryType === 'GARAGE_FITTING' ? 'text-primary' : 'text-white'}`}>Garage Fitting</h4>
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-1">Visit a partner workshop</p>
+                                    </div>
+                                </button>
+                            </div>
+
+                            {deliveryType === 'GARAGE_FITTING' && (
+                                <div className="space-y-6">
+                                    <div className="flex items-center justify-between">
+                                        <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-2">Select Your Partner Garage</h4>
+                                        <div className="flex items-center gap-2 text-[8px] font-bold text-primary uppercase animate-pulse">
+                                            <Navigation size={10} /> Local Matching Active
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+                                        {nearbyGarages.length > 0 ? (
+                                            nearbyGarages.map(garage => (
+                                                <div 
+                                                    key={garage.id}
+                                                    onClick={() => setSelectedGarageId(garage.id)}
+                                                    className={`min-w-[280px] p-6 rounded-[2rem] border cursor-pointer transition-all ${selectedGarageId === garage.id ? 'bg-primary text-white border-primary shadow-2xl' : 'bg-[#121216] border-white/5 hover:border-white/10'}`}
+                                                >
+                                                    <div className="flex items-center gap-4 mb-4">
+                                                        <div className={`h-12 w-12 rounded-xl flex items-center justify-center font-black ${selectedGarageId === garage.id ? 'bg-white text-primary' : 'bg-white/5 text-primary'}`}>
+                                                            {garage.firstName[0]}
+                                                        </div>
+                                                        <div>
+                                                            <h5 className="text-xs font-black italic uppercase tracking-tighter leading-tight">{garage.firstName} {garage.lastName}</h5>
+                                                            <p className={`text-[8px] font-black uppercase tracking-widest mt-1 opacity-60`}>{garage.distance?.toFixed(1)} km • {garage.city}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="h-1 w-full bg-black/10 rounded-full overflow-hidden">
+                                                        <div className={`h-full bg-current opacity-30`} style={{ width: '100%' }} />
+                                                    </div>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="w-full bg-primary/5 border border-dashed border-primary/20 p-8 rounded-[2rem] text-center">
+                                                <p className="text-[9px] font-black uppercase text-primary tracking-widest">No verified garages in {city || 'your area'}</p>
+                                                <p className="text-[8px] text-gray-500 mt-2 font-bold uppercase tracking-widest whitespace-nowrap">Service arriving soon. Please select Home Delivery.</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="flex items-center gap-4">
                                 <div className="h-8 w-8 bg-primary/10 text-primary rounded-xl flex items-center justify-center">
                                     <MapPin size={16} />
@@ -242,6 +339,18 @@ const CheckoutPage: React.FC = () => {
                                         <span>Logistics & Handling</span>
                                         <span className="text-white">₹{shippingFee.toLocaleString()}</span>
                                     </div>
+                                    {deliveryType === 'GARAGE_FITTING' && (
+                                        <div className="p-6 bg-primary/5 rounded-2xl border border-primary/20 space-y-3">
+                                            <div className="flex items-center gap-3">
+                                                <Store size={14} className="text-primary" />
+                                                <span className="text-[9px] font-black uppercase tracking-widest text-primary italic">Precision Fitting Service</span>
+                                            </div>
+                                            <p className="text-[10px] font-medium text-gray-400 leading-relaxed">
+                                                Labor settlement based on garage inspection. <span className="text-white">Pay part price only online.</span>
+                                            </p>
+                                        </div>
+                                    )}
+
                                     <div className="pt-6 mt-6 border-t border-white/10 flex justify-between items-center">
                                         <span className="text-xs font-black uppercase tracking-[0.2em] text-white italic">Total Amount</span>
                                         <span className="text-3xl font-black italic text-primary tracking-tighter uppercase leading-none">₹{total.toLocaleString()}</span>
@@ -251,10 +360,10 @@ const CheckoutPage: React.FC = () => {
                                 <button 
                                     form="checkout-form"
                                     type="submit"
-                                    disabled={loading}
+                                    disabled={loading || (deliveryType === 'GARAGE_FITTING' && !selectedGarageId)}
                                     className="w-full bg-primary text-white py-6 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 hover:bg-red-700 transition-all shadow-2xl shadow-red-500/20 active:scale-95 disabled:opacity-50"
                                 >
-                                    {loading ? 'Processing Transaction...' : 'Place Order'} <ShoppingBag size={18} />
+                                    {(deliveryType === 'GARAGE_FITTING' && !selectedGarageId) ? 'Select a Garage Partner' : loading ? 'Processing Transaction...' : 'Place Order'} <ShoppingBag size={18} />
                                 </button>
                             </div>
                         </div>

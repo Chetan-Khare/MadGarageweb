@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Car, ShoppingBag, MessageCircle, LogOut, LayoutDashboard, Zap, User,
-  ChevronRight, Package, Clock
+  ChevronRight, Package, Clock, RefreshCw, Eye
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
@@ -14,12 +14,15 @@ const GarageDashboard: React.FC = () => {
   // Dashboard Logic State
   const [activeTab, setActiveTab] = useState('garage');
   const [orders, setOrders] = useState<any[]>([]);
+  const [fittingOrders, setFittingOrders] = useState<any[]>([]);
   const [totalSpend, setTotalSpend] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [fittingLoading, setFittingLoading] = useState(false);
 
   // Initial Data Fetch
   useEffect(() => {
     fetchOrders();
+    fetchFittingOrders();
   }, []);
 
   const fetchOrders = async () => {
@@ -33,6 +36,27 @@ const GarageDashboard: React.FC = () => {
       console.error('Error fetching orders'); 
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchFittingOrders = async () => {
+    setFittingLoading(true);
+    try {
+      const res = await apiClient.get('/orders/garage-fittings');
+      setFittingOrders(res.data);
+    } catch (err) {
+      console.error('Error fetching fitting orders');
+    } finally {
+      setFittingLoading(false);
+    }
+  };
+
+  const updateFittingStatus = async (orderId: number, status: string) => {
+    try {
+      await apiClient.patch(`/orders/${orderId}/fitting-status?status=${status}`);
+      fetchFittingOrders();
+    } catch (err) {
+      alert('Failed to update fitting status');
     }
   };
 
@@ -106,11 +130,91 @@ const GarageDashboard: React.FC = () => {
 
         <div className="p-6 md:p-12 space-y-12 max-w-7xl mx-auto w-full">
            {/* Workshop Quick Stats */}
-           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
              <StatusCard icon={<ShoppingBag className="text-blue-500" />} label="Active Builds" value={`${activeBuildsCount} Orders`} />
+             <StatusCard icon={<Car className="text-primary" />} label="Fitting Requests" value={`${fittingOrders.length} Expected`} />
              <StatusCard icon={<Zap className="text-green-500" />} label="Total Savings" value={`₹${savingsAmount.toLocaleString()}`} />
-             <StatusCard icon={<Car className="text-primary" />} label="Fleet Log" value={`${fleetCount} Vehicles`} />
+             <StatusCard icon={<Package className="text-orange-500" />} label="Fleet Log" value={`${fleetCount} Vehicles`} />
            </div>
+
+           {/* Incoming Installation Network */}
+           <section className="space-y-8">
+             <div className="flex items-center justify-between px-2">
+               <div className="flex items-center gap-4">
+                 <div className="h-10 w-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary shadow-lg shadow-red-500/10">
+                   <Car size={20} />
+                 </div>
+                 <div>
+                   <h2 className="text-xs font-black uppercase tracking-[0.3em] text-app-bg-dark">FITTING NETWORK TERMINAL</h2>
+                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Incoming installations from local marketplace</p>
+                 </div>
+               </div>
+               <button 
+                 onClick={fetchFittingOrders}
+                 className="h-10 w-10 bg-white border border-gray-100 rounded-xl flex items-center justify-center text-gray-400 hover:text-primary transition-all shadow-sm"
+               >
+                 <RefreshCw className={fittingLoading ? 'animate-spin' : ''} size={16} />
+               </button>
+             </div>
+
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+               {fittingLoading ? (
+                 Array(3).fill(0).map((_, i) => <div key={i} className="h-64 bg-white rounded-[2.5rem] animate-pulse border border-gray-100" />)
+               ) : fittingOrders.length > 0 ? (
+                 fittingOrders.map((order) => (
+                   <div key={order.id} className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-xl shadow-black/5 space-y-6 group hover:border-primary/20 transition-all relative overflow-hidden">
+                     <div className="flex items-center justify-between">
+                       <span className="text-[10px] font-black uppercase tracking-widest text-primary italic">Reference #{order.id}</span>
+                       <span className={`text-[8px] font-black uppercase px-3 py-1 rounded-full ${order.fittingStatus === 'COMPLETED' ? 'bg-green-100 text-green-600' : 'bg-orange-100 text-orange-600'}`}>
+                         {order.fittingStatus?.replace('_', ' ')}
+                       </span>
+                     </div>
+                     
+                     <div>
+                       <h4 className="text-xl font-black italic uppercase text-app-bg-dark tracking-tighter">{order.customerName}</h4>
+                       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1 truncate">{order.shippingAddress}</p>
+                     </div>
+
+                     <div className="p-4 bg-gray-50 rounded-2xl space-y-2">
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Part Allocated</p>
+                        <p className="text-xs font-black text-app-bg-dark italic uppercase">{order.items?.[0]?.productName || 'Custom Fabrication'}</p>
+                     </div>
+
+                     <div className="flex gap-3">
+                       {order.fittingStatus === 'PENDING' && (
+                         <button 
+                            onClick={() => updateFittingStatus(order.id, 'INSPECTED')}
+                            className="flex-1 bg-orange-500 text-white py-4 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-orange-600 transition-all"
+                         >
+                           Mark Inspected
+                         </button>
+                       )}
+                       {order.fittingStatus === 'INSPECTED' && (
+                         <button 
+                            onClick={() => updateFittingStatus(order.id, 'COMPLETED')}
+                            className="flex-1 bg-green-500 text-white py-4 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-green-600 transition-all"
+                         >
+                           Complete Fitting
+                         </button>
+                       )}
+                       <button 
+                          onClick={() => navigate(`/order/${order.id}`)}
+                          className="w-14 bg-gray-50 text-gray-400 rounded-xl flex items-center justify-center hover:bg-app-bg-dark hover:text-white transition-all shadow-sm"
+                       >
+                         <Eye size={20} />
+                       </button>
+                     </div>
+                   </div>
+                 ))
+               ) : (
+                 <div className="col-span-full py-20 text-center bg-gray-50 rounded-[3rem] border border-dashed border-gray-200">
+                    <Car size={48} className="mx-auto text-gray-200 mb-6" />
+                    <h3 className="text-lg font-black italic text-gray-500 uppercase tracking-tight">No Fitting Records</h3>
+                    <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest mt-2">External fitting installation requests will manifest here.</p>
+                 </div>
+               )}
+             </div>
+           </section>
 
            {/* Recent Activity */}
            <section className="space-y-6">

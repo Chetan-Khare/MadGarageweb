@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Plus, Edit2, Trash2, Search, ChevronRight, 
-  ArrowLeft, Car, Save, X, Activity, 
+  Plus, Edit2, Trash2, Search, 
+  ArrowLeft, Car, Save, X, 
   CheckCircle2, AlertCircle, RefreshCcw
 } from 'lucide-react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import apiClient from '../services/apiClient';
 
 const AdminVehicleManagement: React.FC = () => {

@@ -4,7 +4,7 @@ import {
   Search, RefreshCcw, ShieldAlert,
   Info, CheckCircle
 } from 'lucide-react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
 import { useAuth } from '../context/AuthContext';
 

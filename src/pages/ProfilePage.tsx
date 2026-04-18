@@ -3,7 +3,7 @@ import {
   User, Mail, Phone, Lock, 
   ShieldCheck, ChevronLeft, Save, 
   Eye, EyeOff, AlertCircle, CheckCircle2,
-  Camera, Loader2
+  Camera, Loader2, MapPin
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
@@ -24,10 +24,14 @@ const ProfilePage: React.FC = () => {
     const [formData, setFormData] = useState({
         firstName: '',
         lastName: '',
-        email: '',
-        phone: '',
-        password: '',
-        confirmPassword: ''
+        email: '', 
+        phone: '', 
+        password: '', 
+        confirmPassword: '',
+        address: '',
+        city: '',
+        latitude: '',
+        longitude: ''
     });
     
     const [showPassword, setShowPassword] = useState(false);
@@ -46,7 +50,11 @@ const ProfilePage: React.FC = () => {
                     firstName: response.data.firstName || fName || '',
                     lastName: response.data.lastName || lNameParts.join(' ') || '',
                     email: response.data.email || '',
-                    phone: response.data.phone || ''
+                    phone: response.data.phone || '',
+                    address: response.data.address || '',
+                    city: response.data.city || '',
+                    latitude: response.data.latitude || '',
+                    longitude: response.data.longitude || ''
                 }));
                 setProfileImageUrl(response.data.profileImageUrl || null);
                 
@@ -134,7 +142,11 @@ const ProfilePage: React.FC = () => {
                 lastName: formData.lastName,
                 email: formData.email,
                 phone: formData.phone,
-                password: formData.password.trim() || null
+                password: formData.password.trim() || null,
+                address: formData.address,
+                city: formData.city,
+                latitude: formData.latitude,
+                longitude: formData.longitude
             });
 
             if (response.data?.token) {
@@ -321,6 +333,50 @@ const ProfilePage: React.FC = () => {
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Location Logistics Section (Sellers & Garages Only) */}
+                            {(authUser?.role === 'ROLE_SELLER' || authUser?.role === 'ROLE_GARAGE') && (
+                                <div className="bg-white rounded-[3rem] p-10 md:p-14 border border-gray-100 shadow-2xl space-y-12">
+                                    <div className="space-y-2">
+                                        <h2 className="text-2xl font-black italic text-app-bg-dark uppercase tracking-tighter flex items-center gap-3">
+                                            <MapPin size={24} className="text-primary" /> Location Logistics
+                                        </h2>
+                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-9">Synchronize your physical workspace with the delivery network</p>
+                                    </div>
+
+                                    <div className="space-y-10">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                            <InputField 
+                                                label="Service City" 
+                                                value={formData.city} 
+                                                onChange={(v) => setFormData({...formData, city: v})} 
+                                                placeholder="Mumbai"
+                                            />
+                                            <InputField 
+                                                label="Street Address" 
+                                                value={formData.address} 
+                                                onChange={(v) => setFormData({...formData, address: v})} 
+                                                placeholder="123 Racing Avenue, Sector 4"
+                                            />
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                            <InputField 
+                                                label="Latitude" 
+                                                value={formData.latitude?.toString() || ''} 
+                                                onChange={(v) => setFormData({...formData, latitude: v})} 
+                                                placeholder="19.0760"
+                                            />
+                                            <InputField 
+                                                label="Longitude" 
+                                                value={formData.longitude?.toString() || ''} 
+                                                onChange={(v) => setFormData({...formData, longitude: v})} 
+                                                placeholder="72.8777"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Notifications */}
                             {error && (

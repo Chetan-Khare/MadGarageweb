@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   ChevronRight, Zap, ChevronDown, ChevronUp, ShoppingBag,
-  Plus, Heart, X
+  Plus, Heart, X, Navigation, MapPin, ShieldCheck
 } from 'lucide-react';
 import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useAuth } from '../context/AuthContext';
+import { useLocation } from '../context/LocationContext';
 
 interface MarketplaceProps {
   isGarage?: boolean;
@@ -20,6 +21,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({ isGarage = false }) => {
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
   const { user, role } = useAuth();
+  const { city, detectLocation, nearbyGarages, isLoading: locationLoading } = useLocation();
 
   const effectiveIsGarage = isGarage || role === 'ROLE_GARAGE';
 
@@ -41,6 +43,8 @@ const Marketplace: React.FC<MarketplaceProps> = ({ isGarage = false }) => {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedCondition, setSelectedCondition] = useState('ALL');
   const [showVehicleFilters, setShowVehicleFilters] = useState(false);
+  const [isEditingCity, setIsEditingCity] = useState(false);
+  const [manualCity, setManualCityInput] = useState('');
 
   const categories = ['All', 'Engine', 'Brakes', 'Suspension', 'Exhaust', 'Electrical', 'Exterior'];
 
@@ -221,6 +225,122 @@ const Marketplace: React.FC<MarketplaceProps> = ({ isGarage = false }) => {
                     Sync Fitment <ChevronRight size={20} />
                   </button>
                 </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* Nearby Garages Section (Blinkit Style) */}
+      <section className="bg-white py-10 border-b border-gray-100">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-4">
+              <div className="h-10 w-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary shadow-lg shadow-red-500/10">
+                <Navigation size={20} />
+              </div>
+              <div>
+                <h3 className="text-xl font-black italic uppercase tracking-tighter text-app-bg-dark flex items-center gap-3">
+                  Verified Fitting Garages {city && <span className="text-primary italic">in {city}</span>}
+                </h3>
+                {!city && <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest mt-1">Detect location to see partners within 10km</p>}
+              </div>
+            </div>
+            <div className="flex flex-col md:flex-row items-center gap-4">
+              {city && (
+                <button 
+                  onClick={() => setIsEditingCity(!isEditingCity)}
+                  className="text-[10px] font-black uppercase text-primary tracking-widest hover:underline flex items-center gap-2"
+                >
+                  <Navigation size={12} /> {isEditingCity ? 'Cancel' : 'Change City'}
+                </button>
+              )}
+              {city && user && (
+                <button 
+                  onClick={() => useLocation().saveLocationToProfile()}
+                  className="text-[10px] font-black uppercase text-green-500 tracking-widest hover:underline flex items-center gap-2"
+                >
+                  <MapPin size={12} /> Save to Profile
+                </button>
+              )}
+              <button 
+                onClick={detectLocation}
+                className="text-[10px] font-black uppercase text-primary tracking-widest hover:underline flex items-center gap-2"
+              >
+                <MapPin size={12} /> Refresh Location
+              </button>
+            </div>
+          </div>
+
+          {isEditingCity && (
+            <div className="mb-8 p-6 bg-gray-50 rounded-2xl flex items-center gap-4 animate-in slide-in-from-top-2">
+              <input 
+                type="text" 
+                placeholder="Enter City Name (e.g. Jhansi)"
+                className="flex-1 bg-white border border-gray-200 p-4 rounded-xl text-xs font-bold outline-none focus:border-primary"
+                value={manualCity}
+                onChange={e => setManualCityInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && manualCity && (useLocation().setManualCity(manualCity), setIsEditingCity(false))}
+              />
+              <button 
+                onClick={() => manualCity && (useLocation().setManualCity(manualCity), setIsEditingCity(false))}
+                className="bg-app-bg-dark text-white px-6 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest"
+              >
+                Sync Area
+              </button>
+            </div>
+          )}
+
+          <div className="flex gap-6 overflow-x-auto pb-6 scrollbar-hide snap-x">
+            {locationLoading ? (
+              Array(3).fill(0).map((_, i) => (
+                <div key={i} className="min-w-[320px] h-44 bg-gray-50 animate-pulse rounded-[2rem] border border-gray-100" />
+              ))
+            ) : nearbyGarages.length > 0 ? (
+              nearbyGarages.map((garage) => (
+                <div key={garage.id} className="min-w-[320px] bg-white border border-gray-100 p-6 rounded-[2rem] shadow-xl hover:border-primary/20 transition-all snap-start flex flex-col group">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="h-14 w-14 bg-gray-50 rounded-2xl flex items-center justify-center text-primary group-hover:scale-110 transition-transform overflow-hidden font-black">
+                      {garage.profileImageUrl ? (
+                        <img src={`${BASE_SERVER_URL}${garage.profileImageUrl}`} alt={garage.firstName} className="w-full h-full object-cover" />
+                      ) : (
+                        garage.firstName?.[0]
+                      )}
+                    </div>
+                    <div>
+                      <h4 className="font-black italic uppercase tracking-tighter text-app-bg-dark">{garage.firstName} {garage.lastName}</h4>
+                      <div className="flex items-center gap-2 text-[10px] font-black uppercase text-gray-400 mt-1">
+                        <MapPin size={10} className="text-primary" />
+                        {garage.distance?.toFixed(1)} km away • {garage.city}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-auto flex items-center justify-between">
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map(s => <ShieldCheck key={s} size={10} className="text-primary" />)}
+                    </div>
+                    <span className="text-[10px] font-black uppercase text-primary bg-primary/5 px-3 py-1.5 rounded-full">Certified Partner</span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              // Coming Soon Card
+              <div className="w-full max-w-2xl bg-app-bg-dark rounded-[2.5rem] p-10 flex flex-col md:flex-row items-center gap-10 border border-primary/20 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 opacity-10 p-4">
+                   <Zap size={120} className="text-primary group-hover:scale-110 transition-transform duration-1000" />
+                </div>
+                <div className="h-20 w-20 bg-primary/10 rounded-3xl flex items-center justify-center text-primary shrink-0 animate-pulse">
+                  <Zap size={36} fill="currentColor" />
+                </div>
+                <div>
+                  <h4 className="text-2xl font-black italic text-white uppercase tracking-tighter leading-tight">
+                    MAD GARAGE LIVE <span className="text-primary">COMING SOON</span> TO YOUR AREA
+                  </h4>
+                  <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mt-3 leading-relaxed">
+                    We're expanding our verified garage network 24/7. Hold tight, precision tuning is arriving for <span className="text-white italic">{city || 'your city'}</span>.
+                  </p>
+                </div>
+                <ChevronRight size={32} className="text-primary ml-auto hidden md:block group-hover:translate-x-2 transition-transform" />
               </div>
             )}
           </div>

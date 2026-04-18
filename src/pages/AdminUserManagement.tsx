@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Users, Search, Mail, Phone, 
   ArrowLeft, Shield, RefreshCw,
-  UserPlus, RotateCcw, Fingerprint, Eye, EyeOff
+  UserPlus, RotateCcw, Fingerprint, Eye, EyeOff, X
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../services/apiClient';
@@ -17,11 +17,34 @@ const AdminUserManagement: React.FC = () => {
     
     // Edit Modal State
     const [editingUser, setEditingUser] = useState<any | null>(null);
-    const [editForm, setEditForm] = useState({ firstName: '', lastName: '', email: '', phone: '', role: '' });
+    const [editForm, setEditForm] = useState({ 
+        firstName: '', 
+        lastName: '', 
+        email: '', 
+        phone: '', 
+        role: '',
+        isTieUp: false,
+        city: '',
+        address: '',
+        latitude: '',
+        longitude: ''
+    });
     
     // Provision Modal State
     const [showProvisionModal, setShowProvisionModal] = useState(false);
-    const [provisionForm, setProvisionForm] = useState({ firstName: '', lastName: '', email: '', password: '', phone: '', role: 'ROLE_SELLER' });
+    const [provisionForm, setProvisionForm] = useState({ 
+        firstName: '', 
+        lastName: '', 
+        email: '', 
+        password: '', 
+        phone: '', 
+        role: 'ROLE_SELLER',
+        isTieUp: false,
+        city: '',
+        address: '',
+        latitude: '',
+        longitude: ''
+    });
     const [showPassword, setShowPassword] = useState(false);
     const [formError, setFormError] = useState('');
 
@@ -86,7 +109,10 @@ const AdminUserManagement: React.FC = () => {
             };
             await apiClient.post('/admin/users', payload);
             setShowProvisionModal(false);
-            setProvisionForm({ firstName: '', lastName: '', email: '', password: '', phone: '', role: 'ROLE_SELLER' });
+            setProvisionForm({ 
+                firstName: '', lastName: '', email: '', password: '', phone: '', role: 'ROLE_SELLER',
+                isTieUp: false, city: '', address: '', latitude: '', longitude: ''
+            });
             fetchUsers();
         } catch (err: any) {
             setFormError(err.response?.data?.message || err.response?.data || 'Provisioning failed.');
@@ -102,7 +128,12 @@ const AdminUserManagement: React.FC = () => {
             lastName: user.lastName, 
             email: user.email, 
             phone: user.phone || '', 
-            role: user.role 
+            role: user.role,
+            isTieUp: user.tieUp || false,
+            city: user.city || '',
+            address: user.address || '',
+            latitude: user.latitude || '',
+            longitude: user.longitude || ''
         });
     };
 
@@ -279,9 +310,17 @@ const AdminUserManagement: React.FC = () => {
 
             {/* Edit Modal - Restricted to Email/Phone only */}
             {editingUser && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
-                    <div className="bg-[#121216] border border-white/10 w-full max-w-lg rounded-[2.5rem] p-10 space-y-8 shadow-2xl">
-                        <div>
+                <div className="fixed inset-0 z-[60] overflow-y-auto bg-black/80 backdrop-blur-md py-12">
+                    <div className="flex min-h-full items-center justify-center p-6">
+                        <div className="bg-[#121216] border border-white/10 w-full max-w-lg rounded-[2.5rem] p-8 md:p-10 space-y-8 shadow-2xl relative">
+                <button 
+                    onClick={() => setEditingUser(null)}
+                    className="absolute top-10 right-10 text-gray-500 hover:text-primary transition-all p-2 rounded-xl bg-white/5"
+                    title="Close Terminal"
+                >
+                    <X size={16} />
+                </button>
+                <div>
                             <h2 className="text-xl font-black italic uppercase tracking-tighter">Identity <span className="text-primary">Revision</span></h2>
                             <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mt-2 italic">Updating Operator #{editingUser.id}</p>
                         </div>
@@ -340,6 +379,64 @@ const AdminUserManagement: React.FC = () => {
                                 </select>
                             </div>
 
+                            {(editForm.role === 'ROLE_GARAGE' || editForm.role === 'ROLE_SELLER') && (
+                                <div className="p-6 bg-primary/5 border border-white/5 rounded-2xl space-y-6">
+                                    {editForm.role === 'ROLE_GARAGE' && (
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <p className="text-[10px] font-black uppercase text-white">Verified Fitting Partner</p>
+                                                <p className="text-[8px] font-bold text-gray-500 uppercase mt-1">Include in local delivery network</p>
+                                            </div>
+                                            <button 
+                                                type="button"
+                                                onClick={() => setEditForm({...editForm, isTieUp: !editForm.isTieUp})}
+                                                className={`h-8 w-14 rounded-full p-1 transition-all ${editForm.isTieUp ? 'bg-primary' : 'bg-white/10'}`}
+                                            >
+                                                <div className={`h-6 w-6 rounded-full bg-white transition-all ${editForm.isTieUp ? 'translate-x-6' : 'translate-x-0'}`} />
+                                            </button>
+                                        </div>
+                                    )}
+                                    <div className="space-y-2">
+                                        <label className="text-[9px] font-black uppercase text-gray-500 ml-2">Operating City / Area</label>
+                                        <input 
+                                            className="bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold w-full outline-none focus:border-primary transition-all"
+                                            placeholder="Mumbai"
+                                            value={editForm.city}
+                                            onChange={e => setEditForm({...editForm, city: e.target.value})}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[9px] font-black uppercase text-gray-500 ml-2">Street Address</label>
+                                        <input 
+                                            className="bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold w-full outline-none focus:border-primary transition-all"
+                                            placeholder="123 Racing St, Worli"
+                                            value={editForm.address}
+                                            onChange={e => setEditForm({...editForm, address: e.target.value})}
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <label className="text-[9px] font-black uppercase text-gray-500 ml-2">Latitude</label>
+                                            <input 
+                                                className="bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold w-full outline-none focus:border-primary transition-all"
+                                                placeholder="19.0760"
+                                                value={editForm.latitude}
+                                                onChange={e => setEditForm({...editForm, latitude: e.target.value})}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[9px] font-black uppercase text-gray-500 ml-2">Longitude</label>
+                                            <input 
+                                                className="bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold w-full outline-none focus:border-primary transition-all"
+                                                placeholder="72.8777"
+                                                value={editForm.longitude}
+                                                onChange={e => setEditForm({...editForm, longitude: e.target.value})}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="p-4 bg-primary/5 border border-white/5 rounded-2xl">
                                 <p className="text-[9px] font-black uppercase text-gray-500 tracking-widest text-center">Passwords cannot be modified by administrators.</p>
                             </div>
@@ -362,11 +459,21 @@ const AdminUserManagement: React.FC = () => {
                         </div>
                     </div>
                 </div>
+            </div>
             )}
             {/* Provision Modal */}
             {showProvisionModal && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
-                    <form onSubmit={handleProvision} className="bg-[#121216] border border-white/10 w-full max-w-lg rounded-[2.5rem] p-10 space-y-8 shadow-2xl">
+                <div className="fixed inset-0 z-[60] overflow-y-auto bg-black/80 backdrop-blur-md py-12">
+                    <div className="flex min-h-full items-center justify-center p-6">
+                        <form onSubmit={handleProvision} className="bg-[#121216] border border-white/10 w-full max-w-lg rounded-[2.5rem] p-8 md:p-10 space-y-8 shadow-2xl relative">
+                        <button 
+                            type="button"
+                            onClick={() => setShowProvisionModal(false)}
+                            className="absolute top-10 right-10 text-gray-500 hover:text-primary transition-all p-2 rounded-xl bg-white/5"
+                            title="Abort Provisioning"
+                        >
+                            <X size={16} />
+                        </button>
                         <div>
                             <h2 className="text-xl font-black italic uppercase tracking-tighter">Account <span className="text-primary">Provisioning</span></h2>
                             <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mt-2 italic">Register New Network Operator</p>
@@ -430,6 +537,49 @@ const AdminUserManagement: React.FC = () => {
                                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                 </button>
                             </div>
+
+                            {provisionForm.role === 'ROLE_GARAGE' && (
+                                <div className="p-6 bg-primary/5 border border-white/5 rounded-2xl space-y-4">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-[9px] font-black uppercase text-primary italic">Garage Network Provisioning</span>
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input 
+                                                type="checkbox" 
+                                                checked={provisionForm.isTieUp} 
+                                                onChange={e => setProvisionForm({...provisionForm, isTieUp: e.target.checked})}
+                                                className="accent-primary"
+                                            />
+                                            <span className="text-[9px] font-black uppercase text-gray-500">Auto-Verify Tie-up</span>
+                                        </label>
+                                    </div>
+                                    <input 
+                                        className="bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold w-full outline-none focus:border-primary transition-all"
+                                        placeholder="Operating City"
+                                        value={provisionForm.city}
+                                        onChange={e => setProvisionForm({...provisionForm, city: e.target.value})}
+                                    />
+                                    <input 
+                                        className="bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold w-full outline-none focus:border-primary transition-all"
+                                        placeholder="Street Address"
+                                        value={provisionForm.address}
+                                        onChange={e => setProvisionForm({...provisionForm, address: e.target.value})}
+                                    />
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <input 
+                                            className="bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold w-full outline-none focus:border-primary transition-all"
+                                            placeholder="Latitude"
+                                            value={provisionForm.latitude}
+                                            onChange={e => setProvisionForm({...provisionForm, latitude: e.target.value})}
+                                        />
+                                        <input 
+                                            className="bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold w-full outline-none focus:border-primary transition-all"
+                                            placeholder="Longitude"
+                                            value={provisionForm.longitude}
+                                            onChange={e => setProvisionForm({...provisionForm, longitude: e.target.value})}
+                                        />
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <div className="flex gap-4">
@@ -450,6 +600,7 @@ const AdminUserManagement: React.FC = () => {
                         </div>
                     </form>
                 </div>
+            </div>
             )}
         </div>
     );

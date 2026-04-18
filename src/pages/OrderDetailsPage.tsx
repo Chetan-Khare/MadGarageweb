@@ -4,7 +4,8 @@ import {
   ChevronLeft, Package, MapPin, 
   Truck, CheckCircle, Clock, 
   Printer, Share2, HelpCircle,
-  Star, MessageSquare, Send
+  Star, MessageSquare, Send,
+  ShieldCheck
 } from 'lucide-react';
 import apiClient from '../services/apiClient';
 
@@ -97,10 +98,51 @@ const OrderDetailsPage: React.FC = () => {
                             <div className="hidden md:block h-px flex-1 bg-gray-100" />
                             <TrackItem icon={<Clock size={20}/>} label="Processing" sub="Allocated" active={order.status !== 'PENDING'} />
                             <div className="hidden md:block h-px flex-1 bg-gray-100" />
-                            <TrackItem icon={<Truck size={20}/>} label="Shipped" sub="In Transit" active={order.status === 'SHIPPED' || order.status === 'DELIVERED'} />
+                            <TrackItem icon={<Truck size={20}/>} label={order.fittingGarageId ? "At Garage" : "Shipped"} sub={order.fittingGarageId ? "Terminal" : "In Transit"} active={order.status === 'SHIPPED' || order.status === 'DELIVERED'} />
                             <div className="hidden md:block h-px flex-1 bg-gray-100" />
-                            <TrackItem icon={<CheckCircle size={20}/>} label="Delivered" sub="Completion" active={order.status === 'DELIVERED'} />
+                            <TrackItem icon={<CheckCircle size={20}/>} label={order.fittingGarageId ? "Fitted" : "Delivered"} sub="Completion" active={order.status === 'DELIVERED'} />
                         </div>
+
+                        {/* Fitting Coordination Terminal */}
+                        {order.fittingGarageId && (
+                            <div className="bg-primary/5 rounded-[2.5rem] border border-primary/10 overflow-hidden">
+                                <div className="bg-primary p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+                                    <div className="flex items-center gap-4">
+                                        <div className="h-10 w-10 bg-white text-primary rounded-xl flex items-center justify-center">
+                                            <ShieldCheck size={24} />
+                                        </div>
+                                        <h3 className="text-sm font-black italic uppercase tracking-tighter text-white">Fitting Coordination Terminal</h3>
+                                    </div>
+                                    <div className="bg-white/20 backdrop-blur-md px-6 py-2 rounded-full border border-white/20">
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-white">Status: {order.fittingStatus?.replace('_', ' ')}</span>
+                                    </div>
+                                </div>
+                                <div className="p-10 grid grid-cols-1 md:grid-cols-2 gap-10">
+                                    <div className="space-y-4">
+                                        <p className="text-[10px] font-black uppercase text-primary tracking-widest">Selected Partner Garage</p>
+                                        <div className="bg-white p-6 rounded-2xl border border-gray-100 flex items-center gap-4 shadow-sm">
+                                            <div className="h-14 w-14 bg-gray-50 rounded-xl flex items-center justify-center font-black text-primary text-xl">
+                                                {order.fittingGarageName?.[0]}
+                                            </div>
+                                            <div>
+                                                <h4 className="font-black italic uppercase tracking-tighter text-app-bg-dark">{order.fittingGarageName}</h4>
+                                                <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase mt-1">
+                                                    <MapPin size={10} className="text-primary" /> {order.fittingGarageAddress}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-8 border-l border-gray-100 pl-10">
+                                        <div className="bg-white/50 p-6 rounded-2xl border border-gray-50 flex-1">
+                                            <h5 className="text-[9px] font-black uppercase text-gray-500 tracking-widest mb-2">Technician Protocol</h5>
+                                            <p className="text-[10px] font-bold text-app-bg-dark leading-relaxed">
+                                                Labor settlement strictly post-inspection. Provide order ID <span className="text-primary">#{order.id}</span> at the terminal.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Order Items */}
                         <div className="space-y-8">

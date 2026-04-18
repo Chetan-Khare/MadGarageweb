@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useNavigate } from 'react-router-dom';
-import { ShoppingCart, Search, Menu, Phone, Download, Instagram, Facebook, Twitter, LayoutDashboard, User, ShieldCheck, Zap, Heart, LogOut, X } from 'lucide-react';
+import { ShoppingCart, Search, Menu, Phone, Download, Instagram, Facebook, Twitter, LayoutDashboard, User, ShieldCheck, Zap, Heart, LogOut, X, MapPin, Navigation } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { BASE_SERVER_URL } from '../services/apiClient';
+import { useLocation } from '../context/LocationContext';
 
 const AppLayout: React.FC = () => {
-  const { isAuthenticated, logout, user } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
   const { totalItems: cartCount } = useCart();
   const { totalItems: wishlistCount } = useWishlist();
+  const { city, detectLocation, isLoading: locationLoading } = useLocation();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -23,12 +25,35 @@ const AppLayout: React.FC = () => {
     <div className="min-h-screen flex flex-col font-inter bg-app-bg-light">
       {/* Header / Navbar */}
       <header className="sticky top-0 z-50 bg-app-bg-dark text-white border-b border-primary/20 backdrop-blur-md bg-opacity-95">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-3 shrink-0">
-            <img src="/logo.png" alt="MAD GARAGE" className="h-10 aspect-square object-contain rounded-full overflow-hidden" />
-            <span className="text-2xl font-black italic tracking-tighter text-primary hidden sm:block">MAD GARAGE</span>
-          </Link>
+        <div className="container mx-auto px-4 h-20 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-8">
+            {/* Logo */}
+            <Link to="/" className="flex items-center gap-3 shrink-0">
+              <img src="/logo.png" alt="MAD GARAGE" className="h-10 aspect-square object-contain rounded-full overflow-hidden" />
+              <span className="text-2xl font-black italic tracking-tighter text-primary hidden lg:block">MAD GARAGE</span>
+            </Link>
+
+            {/* Location Selector (Blinkit Style) */}
+            <div 
+              onClick={detectLocation}
+              className="flex items-center gap-3 cursor-pointer group hover:bg-white/5 p-2 rounded-xl transition-all border border-transparent hover:border-white/10"
+            >
+              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                <MapPin size={20} />
+              </div>
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-primary italic">Delivering to</span>
+                  <Navigation size={10} className={`${locationLoading ? 'animate-spin' : ''} text-primary`} />
+                </div>
+                <div className="flex items-center gap-1 max-w-[150px]">
+                  <span className="text-sm font-black italic uppercase tracking-tighter truncate">
+                    {city || 'Select Location'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
 
           {/* Search Bar - Desktop-friendly */}
           <form 

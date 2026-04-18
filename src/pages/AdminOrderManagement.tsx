@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  ArrowLeft, Search, Filter, ShoppingBag, 
-  CheckCircle, Clock, Truck, XCircle, 
-  ChevronRight, ArrowUpRight, Eye, FileText
+  ArrowLeft, Search, ShoppingBag, 
+  Clock, Eye
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../services/apiClient';

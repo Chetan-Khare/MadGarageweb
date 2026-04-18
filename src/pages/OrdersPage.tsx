@@ -1,11 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { ShoppingBag, ChevronRight, Package, Clock, ShieldCheck, ArrowLeft } from 'lucide-react';
+import { ShoppingBag, ChevronRight, Package, Clock, ArrowLeft } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import apiClient from '../services/apiClient';
-import { useAuth } from '../context/AuthContext';
 
 const OrdersPage: React.FC = () => {
-    const { user } = useAuth();
     const navigate = useNavigate();
     const [orders, setOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
