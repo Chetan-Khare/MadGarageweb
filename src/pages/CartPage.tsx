@@ -10,7 +10,7 @@ import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
 const CartPage: React.FC = () => {
     const { cart, updateQuantity, removeFromCart, subtotal, totalItems } = useCart();
     const navigate = useNavigate();
-    const [config, setConfig] = React.useState({ shippingFee: 250, freeThreshold: 400 });
+    const [config, setConfig] = React.useState({ shippingFee: 250, freeThreshold: 400, platformFee: 7 });
 
     React.useEffect(() => {
         const fetchConfig = async () => {
@@ -18,7 +18,8 @@ const CartPage: React.FC = () => {
                 const response = await apiClient.get('/config/public');
                 setConfig({
                     shippingFee: parseInt(response.data.SHIPPING_FEE || '250', 10),
-                    freeThreshold: parseInt(response.data.FREE_SHIPPING_THRESHOLD || '400', 10)
+                    freeThreshold: parseInt(response.data.FREE_SHIPPING_THRESHOLD || '400', 10),
+                    platformFee: parseInt(response.data.PLATFORM_FEE || '7', 10)
                 });
             } catch (error) {
                 console.error('Failed to fetch public config:', error);
@@ -176,6 +177,10 @@ const CartPage: React.FC = () => {
                                     <span className="text-sm font-bold text-gray-400 uppercase tracking-widest">Subtotal</span>
                                     <span className="text-lg font-black italic">₹{subtotal.toLocaleString()}</span>
                                 </div>
+                                <div className="flex justify-between items-center text-gray-400">
+                                    <span className="text-sm font-bold uppercase tracking-widest">Platform Fee</span>
+                                    <span className="text-sm font-black italic">₹{config.platformFee.toLocaleString()}</span>
+                                </div>
                                 <div className="flex justify-between items-center">
                                     <span className="text-sm font-bold text-gray-400 uppercase tracking-widest">Shipping</span>
                                     <span className={`text-xs font-black uppercase italic tracking-[0.1em] ${subtotal >= config.freeThreshold ? 'text-green-500' : 'text-primary'}`}>
@@ -187,7 +192,7 @@ const CartPage: React.FC = () => {
                                     <div>
                                         <p className="text-[10px] font-black uppercase text-gray-500 tracking-widest leading-none">Grand Total</p>
                                         <span className="text-4xl md:text-5xl font-black italic tracking-tighter leading-none mt-2 block">
-                                            ₹{Math.round(subtotal + (subtotal >= config.freeThreshold ? 0 : config.shippingFee)).toLocaleString()}
+                                            ₹{Math.round(subtotal + (subtotal >= config.freeThreshold ? 0 : config.shippingFee) + config.platformFee).toLocaleString()}
                                         </span>
                                     </div>
                                 </div>

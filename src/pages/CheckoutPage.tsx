@@ -40,7 +40,7 @@ const CheckoutPage: React.FC = () => {
     const [deliveryType, setDeliveryType] = useState<'HOME_DELIVERY' | 'GARAGE_FITTING'>('HOME_DELIVERY');
     const [selectedGarageId, setSelectedGarageId] = useState<number | null>(null);
     const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
-    const [config, setConfig] = useState({ shippingFee: 250, freeThreshold: 400 });
+    const [config, setConfig] = useState({ shippingFee: 250, freeThreshold: 400, platformFee: 7 });
 
     useEffect(() => {
         const fetchConfig = async () => {
@@ -48,7 +48,8 @@ const CheckoutPage: React.FC = () => {
                 const response = await apiClient.get('/config/public');
                 setConfig({
                     shippingFee: parseInt(response.data.SHIPPING_FEE || '250', 10),
-                    freeThreshold: parseInt(response.data.FREE_SHIPPING_THRESHOLD || '400', 10)
+                    freeThreshold: parseInt(response.data.FREE_SHIPPING_THRESHOLD || '400', 10),
+                    platformFee: parseInt(response.data.PLATFORM_FEE || '7', 10)
                 });
             } catch (error) {
                 console.error('Failed to fetch public config:', error);
@@ -124,7 +125,8 @@ const CheckoutPage: React.FC = () => {
 
     const subtotal = buyNowProduct ? (buyNowProduct.garagePrice || buyNowProduct.price || 0) * buyNowQuantity : cartSubtotal;
     const shippingFee = (checkoutItems.length > 0 && subtotal < config.freeThreshold) ? config.shippingFee : 0;
-    const total = subtotal + shippingFee;
+    const platformFee = subtotal > 0 ? config.platformFee : 0;
+    const total = subtotal + shippingFee + platformFee;
 
     const handlePlaceOrder = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -495,8 +497,14 @@ const CheckoutPage: React.FC = () => {
                                         <span className="text-white">₹{subtotal.toLocaleString()}</span>
                                     </div>
                                     <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-gray-500">
+                                        <span>Secure Infrastructure Fee</span>
+                                        <span className="text-white">₹{platformFee.toLocaleString()}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-gray-500">
                                         <span>Logistics & Handling</span>
-                                        <span className="text-white">₹{shippingFee.toLocaleString()}</span>
+                                        <span className="text-white">
+                                            {shippingFee === 0 ? 'FREE' : `₹${shippingFee.toLocaleString()}`}
+                                        </span>
                                     </div>
                                     {deliveryType === 'GARAGE_FITTING' && (
                                         <div className="p-6 bg-primary/5 rounded-2xl border border-primary/20 space-y-3">

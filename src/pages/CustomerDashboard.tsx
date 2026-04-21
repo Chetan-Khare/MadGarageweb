@@ -151,7 +151,7 @@ const CustomerDashboard: React.FC = () => {
                                 <h2 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-none mb-4">
                                     Tuned by <span className="text-primary italic">AI.</span>
                                 </h2>
-                                <p className="text-gray-400 font-medium max-w-md">Our neural engine has identified 4 performance upgrades for your Toyota Camry. Ready to take it to the next level?</p>
+                                <p className="text-gray-400 font-medium max-w-md">Elevate your build with our precision AI optimization engine. Get tailored performance insights for your specific machine.</p>
                             </div>
                             <button onClick={() => navigate('/chat')} className="bg-primary text-white px-10 py-5 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center gap-3 hover:bg-white hover:text-app-bg-dark transition-all">
                                 Consult AI Builder <ChevronRight size={18} />

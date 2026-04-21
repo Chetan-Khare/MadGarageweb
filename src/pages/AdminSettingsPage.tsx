@@ -55,6 +55,7 @@ const AdminSettingsPage: React.FC = () => {
     const getIcon = (key: string) => {
         if (key.includes('SHIPPING')) return <Truck size={20} />;
         if (key.includes('THRESHOLD')) return <Package size={20} />;
+        if (key.includes('PLATFORM')) return <ShieldCheck size={20} />;
         return <Settings size={20} />;
     };
 

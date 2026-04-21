@@ -186,9 +186,13 @@ const OrderDetailsPage: React.FC = () => {
                                         <span>Subtotal</span>
                                         <span>₹{order.subtotal?.toLocaleString()}</span>
                                     </div>
-                                    <div className="flex justify-between text-xs font-bold text-gray-500 uppercase tracking-widest">
-                                        <span>Tax & Logistic</span>
-                                        <span>₹{(order.taxAmount + order.shippingFee).toLocaleString()}</span>
+                                    <div className="flex justify-between text-xs font-bold text-gray-400 uppercase tracking-widest">
+                                        <span>Logistic & Shipping</span>
+                                        <span>₹{order.shippingFee?.toLocaleString()}</span>
+                                    </div>
+                                    <div className="flex justify-between text-xs font-bold text-gray-400 uppercase tracking-widest">
+                                        <span>Platform Fee</span>
+                                        <span>₹{order.platformFee?.toLocaleString()}</span>
                                     </div>
                                     <div className="pt-4 border-t border-white/5 flex justify-between items-end">
                                         <span className="text-[10px] font-black uppercase tracking-widest text-primary">Grand Total</span>
