@@ -5,11 +5,27 @@ import {
   Trash2, Plus, Minus, ArrowLeft, ShoppingBag, 
   ShieldCheck, Truck, Zap 
 } from 'lucide-react';
-import { BASE_SERVER_URL } from '../services/apiClient';
+import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
 
 const CartPage: React.FC = () => {
     const { cart, updateQuantity, removeFromCart, subtotal, totalItems } = useCart();
     const navigate = useNavigate();
+    const [config, setConfig] = React.useState({ shippingFee: 250, freeThreshold: 400 });
+
+    React.useEffect(() => {
+        const fetchConfig = async () => {
+            try {
+                const response = await apiClient.get('/config/public');
+                setConfig({
+                    shippingFee: parseInt(response.data.SHIPPING_FEE || '250', 10),
+                    freeThreshold: parseInt(response.data.FREE_SHIPPING_THRESHOLD || '400', 10)
+                });
+            } catch (error) {
+                console.error('Failed to fetch public config:', error);
+            }
+        };
+        fetchConfig();
+    }, []);
 
     if (cart.length === 0) {
         return (
@@ -162,13 +178,17 @@ const CartPage: React.FC = () => {
                                 </div>
                                 <div className="flex justify-between items-center">
                                     <span className="text-sm font-bold text-gray-400 uppercase tracking-widest">Shipping</span>
-                                    <span className="text-xs font-black uppercase text-green-500 italic tracking-[0.1em]">Free Expedited</span>
+                                    <span className={`text-xs font-black uppercase italic tracking-[0.1em] ${subtotal >= config.freeThreshold ? 'text-green-500' : 'text-primary'}`}>
+                                        {subtotal >= config.freeThreshold ? 'Free Expedited' : `₹${config.shippingFee.toLocaleString()}`}
+                                    </span>
                                 </div>
 
                                 <div className="flex justify-between items-end pt-4">
                                     <div>
                                         <p className="text-[10px] font-black uppercase text-gray-500 tracking-widest leading-none">Grand Total</p>
-                                        <span className="text-4xl md:text-5xl font-black italic tracking-tighter leading-none mt-2 block">₹{Math.round(subtotal).toLocaleString()}</span>
+                                        <span className="text-4xl md:text-5xl font-black italic tracking-tighter leading-none mt-2 block">
+                                            ₹{Math.round(subtotal + (subtotal >= config.freeThreshold ? 0 : config.shippingFee)).toLocaleString()}
+                                        </span>
                                     </div>
                                 </div>
                             </div>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useNavigate } from 'react-router-dom';
-import { ShoppingCart, Search, Menu, Phone, Download, Instagram, Facebook, Twitter, LayoutDashboard, User, ShieldCheck, Zap, Heart, LogOut, X, MapPin, Navigation } from 'lucide-react';
+import { ShoppingCart, Search, Menu, Phone, Download, Instagram, Facebook, Twitter, LayoutDashboard, User, ShieldCheck, Zap, Heart, LogOut, X, MapPin, Navigation, Sparkles, PackagePlus } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
@@ -26,7 +26,7 @@ const AppLayout: React.FC = () => {
       {/* Header / Navbar */}
       <header className="sticky top-0 z-50 bg-app-bg-dark text-white border-b border-primary/20 backdrop-blur-md bg-opacity-95">
         <div className="container mx-auto px-4 h-20 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-4">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-3 shrink-0">
               <img src="/logo.png" alt="MAD GARAGE" className="h-10 aspect-square object-contain rounded-full overflow-hidden" />
@@ -36,18 +36,18 @@ const AppLayout: React.FC = () => {
             {/* Location Selector (Blinkit Style) */}
             <div 
               onClick={detectLocation}
-              className="flex items-center gap-3 cursor-pointer group hover:bg-white/5 p-2 rounded-xl transition-all border border-transparent hover:border-white/10"
+              className="flex items-center gap-2 cursor-pointer group hover:bg-white/5 p-1.5 rounded-xl transition-all border border-transparent hover:border-white/10 shrink-0"
             >
-              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                <MapPin size={20} />
+              <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                <MapPin size={14} />
               </div>
               <div className="flex flex-col">
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-primary italic">Delivering to</span>
-                  <Navigation size={10} className={`${locationLoading ? 'animate-spin' : ''} text-primary`} />
+                  <span className="text-[7px] font-black uppercase tracking-widest text-primary italic leading-none">Delivering to</span>
+                  <Navigation size={7} className={`${locationLoading ? 'animate-spin' : ''} text-primary`} />
                 </div>
-                <div className="flex items-center gap-1 max-w-[150px]">
-                  <span className="text-sm font-black italic uppercase tracking-tighter truncate">
+                <div className="flex items-center gap-1 max-w-[80px]">
+                  <span className="text-[10px] font-black italic uppercase tracking-tighter truncate leading-none">
                     {city || 'Select Location'}
                   </span>
                 </div>
@@ -88,8 +88,20 @@ const AppLayout: React.FC = () => {
 
           {/* Right Actions */}
           <nav className="flex items-center gap-6">
-            <Link to="/request-part" className="hidden lg:block text-sm font-bold uppercase tracking-wider hover:text-primary transition-colors">Request Part</Link>
-            <Link to="/chat" className="hidden lg:block text-sm font-bold uppercase tracking-wider text-primary flex items-center gap-2 hover:bg-primary/5 px-3 py-1 rounded-lg transition-all animate-pulse duration-2000">MAD GARAGE AI</Link>
+            <Link 
+              to="/request-part" 
+              className="hidden lg:flex items-center gap-2 bg-white/5 border border-white/10 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-white hover:text-black transition-all active:scale-95 whitespace-nowrap"
+            >
+              <PackagePlus size={14} />
+              Request Part
+            </Link>
+            <Link 
+              to="/chat" 
+              className="hidden lg:flex items-center gap-2 bg-white/5 border border-primary/30 text-primary px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-primary hover:text-white transition-all shadow-lg shadow-red-500/10 group active:scale-95 whitespace-nowrap"
+            >
+              <Sparkles size={14} className="group-hover:rotate-12 transition-transform" />
+              MAD GARAGE AI
+            </Link>
             
             {isAuthenticated ? (
               <div className="flex items-center gap-3">

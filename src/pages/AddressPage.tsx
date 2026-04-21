@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
     Home, Briefcase, MapPin, Navigation, 
     Plus, Trash2, CheckCircle2, ChevronLeft, 
-    Loader2, MoreVertical, ShieldCheck, Globe
+    Loader2, ShieldCheck, Globe
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../services/apiClient';
@@ -32,7 +32,11 @@ const AddressPage: React.FC = () => {
 
     // Form State
     const [formData, setFormData] = useState({
-        address: '',
+        flatNo: '',
+        floorNo: '',
+        buildingName: '',
+        streetAddress: '',
+        landMark: '',
         city: '',
         state: '',
         pincode: '',
@@ -50,7 +54,7 @@ const AddressPage: React.FC = () => {
             setFormData(prev => ({
                 ...prev,
                 city: detectedCity || prev.city,
-                address: detectedAddress || prev.address
+                streetAddress: detectedAddress || prev.streetAddress
             }));
         }
     }, [detectedCity, detectedAddress, showAddForm]);
@@ -58,7 +62,7 @@ const AddressPage: React.FC = () => {
     const fetchAddresses = async () => {
         try {
             setLoading(true);
-            const response = await apiClient.get('/api/addresses');
+            const response = await apiClient.get('/addresses');
             setAddresses(response.data);
         } catch (err) {
             console.error('Failed to fetch addresses:', err);
@@ -73,15 +77,28 @@ const AddressPage: React.FC = () => {
         setSaving(true);
         setError(null);
 
+        // CONCATENATION PROTOCOL: Combine details for legacy backend
+        const fullAddress = [
+            formData.flatNo && `Flat ${formData.flatNo}`,
+            formData.floorNo && `Floor ${formData.floorNo}`,
+            formData.buildingName && `Bldg ${formData.buildingName}`,
+            formData.landMark && `Lnd: ${formData.landMark}`,
+            formData.streetAddress
+        ].filter(Boolean).join(', ');
+
         try {
-            const response = await apiClient.post('/api/addresses', {
+            const response = await apiClient.post('/addresses', {
                 ...formData,
+                address: fullAddress,
                 latitude: detectedCoords?.latitude,
                 longitude: detectedCoords?.longitude
             });
             setAddresses([...addresses, response.data]);
             setShowAddForm(false);
-            setFormData({ address: '', city: '', state: '', pincode: '', tag: 'HOME', isDefault: false });
+            setFormData({ 
+                flatNo: '', floorNo: '', buildingName: '', streetAddress: '', landMark: '',
+                city: '', state: '', pincode: '', tag: 'HOME', isDefault: false 
+            });
         } catch (err) {
             console.error('Save failed:', err);
             setError('Coult not save your address. Please try again.');
@@ -93,7 +110,7 @@ const AddressPage: React.FC = () => {
     const handleDelete = async (id: number) => {
         if (!window.confirm('Erase this location from your protocol?')) return;
         try {
-            await apiClient.delete(`/api/addresses/${id}`);
+            await apiClient.delete(`/addresses/${id}`);
             setAddresses(addresses.filter(a => a.id !== id));
         } catch (err) {
             setError('Deletion failed.');
@@ -104,7 +121,7 @@ const AddressPage: React.FC = () => {
         try {
             const addr = addresses.find(a => a.id === id);
             if (!addr) return;
-            const response = await apiClient.put(`/api/addresses/${id}`, {
+            await apiClient.put(`/addresses/${id}`, {
                 ...addr,
                 isDefault: true
             });
@@ -173,14 +190,55 @@ const AddressPage: React.FC = () => {
                                     </button>
                                 </div>
 
-                                <div className="space-y-4">
-                                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Full Street Address</p>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:col-span-2">
+                                    <div className="space-y-4">
+                                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Flat / Plot No</p>
+                                        <input 
+                                            className="w-full bg-white/5 border border-white/10 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
+                                            value={formData.flatNo}
+                                            onChange={(e) => setFormData({...formData, flatNo: e.target.value})}
+                                            placeholder="G-402 or Site-12"
+                                        />
+                                    </div>
+                                    <div className="space-y-4">
+                                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Floor / Level</p>
+                                        <input 
+                                            className="w-full bg-white/5 border border-white/10 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
+                                            value={formData.floorNo}
+                                            onChange={(e) => setFormData({...formData, floorNo: e.target.value})}
+                                            placeholder="4th Floor"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="md:col-span-2 space-y-4">
+                                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Building Name / Society</p>
+                                    <input 
+                                        className="w-full bg-white/5 border border-white/10 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
+                                        value={formData.buildingName}
+                                        onChange={(e) => setFormData({...formData, buildingName: e.target.value})}
+                                        placeholder="Speedway Apartments"
+                                    />
+                                </div>
+
+                                <div className="md:col-span-2 space-y-4">
+                                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Street / Detailed Area</p>
                                     <input 
                                         required
                                         className="w-full bg-white/5 border border-white/10 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
-                                        value={formData.address}
-                                        onChange={(e) => setFormData({...formData, address: e.target.value})}
-                                        placeholder="Flat No, Building, Sector"
+                                        value={formData.streetAddress}
+                                        onChange={(e) => setFormData({...formData, streetAddress: e.target.value})}
+                                        placeholder="Phoenix Mall Road, Lower Parel"
+                                    />
+                                </div>
+
+                                <div className="md:col-span-2 space-y-4">
+                                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Landmark (Optional)</p>
+                                    <input 
+                                        className="w-full bg-white/5 border border-white/10 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
+                                        value={formData.landMark}
+                                        onChange={(e) => setFormData({...formData, landMark: e.target.value})}
+                                        placeholder="Near HP Petrol Pump"
                                     />
                                 </div>
 
@@ -205,14 +263,25 @@ const AddressPage: React.FC = () => {
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-8">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                                     <div className="space-y-4">
                                         <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">City</p>
                                         <input 
                                             required
-                                            className="w-full bg-white/5 border border-white/10 p-5 rounded-2xl text-sm font-bold text-white outline-none"
+                                            className="w-full bg-white/5 border border-white/10 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
                                             value={formData.city}
                                             onChange={(e) => setFormData({...formData, city: e.target.value})}
+                                            placeholder="Mumbai"
+                                        />
+                                    </div>
+                                    <div className="space-y-4">
+                                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">State</p>
+                                        <input 
+                                            required
+                                            className="w-full bg-white/5 border border-white/10 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
+                                            value={formData.state}
+                                            onChange={(e) => setFormData({...formData, state: e.target.value})}
+                                            placeholder="Maharashtra"
                                         />
                                     </div>
                                     <div className="space-y-4">
@@ -220,9 +289,10 @@ const AddressPage: React.FC = () => {
                                         <input 
                                             required
                                             maxLength={6}
-                                            className="w-full bg-white/5 border border-white/10 p-5 rounded-2xl text-sm font-bold text-white outline-none"
+                                            className="w-full bg-white/5 border border-white/10 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
                                             value={formData.pincode}
                                             onChange={(e) => setFormData({...formData, pincode: e.target.value})}
+                                            placeholder="400001"
                                         />
                                     </div>
                                 </div>
@@ -243,10 +313,11 @@ const AddressPage: React.FC = () => {
                                 </div>
 
                                 <button 
-                                    className="md:col-span-2 bg-primary text-white py-6 rounded-[2rem] font-black uppercase tracking-[0.3em] text-[10px] hover:bg-black transition-all shadow-2xl shadow-red-500/20 disabled:opacity-50"
+                                    type="submit"
+                                    className="md:col-span-2 bg-primary text-white py-6 rounded-[2rem] font-black uppercase tracking-[0.3em] text-[10px] hover:bg-black transition-all shadow-2xl shadow-red-500/20 disabled:opacity-50 active:scale-95"
                                     disabled={saving}
                                 >
-                                    {saving ? 'Transmitting...' : 'Register Endpoint'}
+                                    {saving ? 'Transmitting Protocols...' : 'Register Endpoint'}
                                 </button>
                             </form>
                         </div>

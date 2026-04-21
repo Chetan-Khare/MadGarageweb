@@ -27,7 +27,11 @@ const CheckoutPage: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
 
     // Form State
-    const [address, setAddress] = useState('');
+    const [flatNo, setFlatNo] = useState('');
+    const [floorNo, setFloorNo] = useState('');
+    const [buildingName, setBuildingName] = useState('');
+    const [streetArea, setStreetArea] = useState('');
+    const [landmark, setLandmark] = useState('');
     const [city, setCity] = useState('');
     const [state, setState] = useState('');
     const [pincode, setPincode] = useState('');
@@ -36,11 +40,27 @@ const CheckoutPage: React.FC = () => {
     const [deliveryType, setDeliveryType] = useState<'HOME_DELIVERY' | 'GARAGE_FITTING'>('HOME_DELIVERY');
     const [selectedGarageId, setSelectedGarageId] = useState<number | null>(null);
     const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
+    const [config, setConfig] = useState({ shippingFee: 250, freeThreshold: 400 });
+
+    useEffect(() => {
+        const fetchConfig = async () => {
+            try {
+                const response = await apiClient.get('/config/public');
+                setConfig({
+                    shippingFee: parseInt(response.data.SHIPPING_FEE || '250', 10),
+                    freeThreshold: parseInt(response.data.FREE_SHIPPING_THRESHOLD || '400', 10)
+                });
+            } catch (error) {
+                console.error('Failed to fetch public config:', error);
+            }
+        };
+        fetchConfig();
+    }, []);
 
     useEffect(() => {
         const fetchSavedAddresses = async () => {
             try {
-                const response = await apiClient.get('/api/addresses');
+                const response = await apiClient.get('/addresses');
                 setSavedAddresses(response.data);
             } catch (error) {
                 console.error('Failed to fetch addresses for checkout:', error);
@@ -51,12 +71,19 @@ const CheckoutPage: React.FC = () => {
 
     useEffect(() => {
         // Auto-fill from detection if form is empty and detection results arrive
-        if (detectedCity && !city && !address) setCity(detectedCity);
-        if (detectedAddress && !address && !city) setAddress(detectedAddress);
+        if (detectedCity && !city && !streetArea) setCity(detectedCity);
+        if (detectedAddress && !streetArea && !city) setStreetArea(detectedAddress);
     }, [detectedCity, detectedAddress]);
 
     const useSavedAddress = (addr: any) => {
-        setAddress(addr.address || '');
+        // Since backend currently returns a single concatenated string in 'address',
+        // we'll put it into 'streetArea' for now as a fallback.
+        setStreetArea(addr.address || '');
+        setFlatNo('');
+        setFloorNo('');
+        setBuildingName('');
+        setLandmark('');
+        
         setCity(addr.city || '');
         setState(addr.state || '');
         setPincode(addr.pincode || '');
@@ -64,13 +91,17 @@ const CheckoutPage: React.FC = () => {
     };
 
     const useDetectedLocation = () => {
-        if (detectedAddress) setAddress(detectedAddress);
+        if (detectedAddress) setStreetArea(detectedAddress);
         if (detectedCity) setCity(detectedCity);
         setError(null);
     };
 
     const clearAddress = () => {
-        setAddress('');
+        setFlatNo('');
+        setFloorNo('');
+        setBuildingName('');
+        setStreetArea('');
+        setLandmark('');
         setCity('');
         setState('');
         setPincode('');
@@ -92,7 +123,7 @@ const CheckoutPage: React.FC = () => {
     if (checkoutItems.length === 0) return null;
 
     const subtotal = buyNowProduct ? (buyNowProduct.garagePrice || buyNowProduct.price || 0) * buyNowQuantity : cartSubtotal;
-    const shippingFee = checkoutItems.length > 0 ? 750 : 0;
+    const shippingFee = (checkoutItems.length > 0 && subtotal < config.freeThreshold) ? config.shippingFee : 0;
     const total = subtotal + shippingFee;
 
     const handlePlaceOrder = async (e: React.FormEvent) => {
@@ -107,12 +138,26 @@ const CheckoutPage: React.FC = () => {
         setError(null);
 
         try {
+            const fullAddress = [
+                flatNo ? `Flat ${flatNo}` : '',
+                floorNo ? `Floor ${floorNo}` : '',
+                buildingName,
+                streetArea,
+                landmark ? `Near ${landmark}` : ''
+            ].filter(Boolean).join(', ');
+
+            if (!fullAddress) {
+                setError('Please provide a delivery address.');
+                setLoading(false);
+                return;
+            }
+
             const response = await apiClient.post('/orders/checkout', {
                 items: checkoutItems.map(item => ({ 
                     productId: item.id, 
                     quantity: item.quantity 
                 })),
-                shippingAddress: address,
+                shippingAddress: fullAddress,
                 city,
                 state,
                 pincode,
@@ -292,15 +337,61 @@ const CheckoutPage: React.FC = () => {
                                 </div>
 
                             <form onSubmit={handlePlaceOrder} id="checkout-form" className="space-y-8 p-10 bg-[#121216] rounded-[3rem] border border-white/5">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="flex flex-col">
+                                        <label className="text-[10px] font-black uppercase text-gray-500 mb-3 ml-2">Flat / Shop No.</label>
+                                        <input 
+                                            type="text" 
+                                            placeholder="G-402 / Shop 12"
+                                            className="bg-white/5 border border-white/10 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all" 
+                                            value={flatNo}
+                                            onChange={e => setFlatNo(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <label className="text-[10px] font-black uppercase text-gray-500 mb-3 ml-2">Floor No.</label>
+                                        <input 
+                                            type="text" 
+                                            placeholder="4th Floor"
+                                            className="bg-white/5 border border-white/10 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all" 
+                                            value={floorNo}
+                                            onChange={e => setFloorNo(e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+
                                 <div className="flex flex-col">
-                                    <label className="text-[10px] font-black uppercase text-gray-500 mb-3 ml-2">Full Delivery Address</label>
+                                    <label className="text-[10px] font-black uppercase text-gray-500 mb-3 ml-2">Building / Complex Name</label>
                                     <input 
                                         required 
                                         type="text" 
-                                        placeholder="Flat No, Building, Area"
+                                        placeholder="SpeedWay Apartments"
                                         className="bg-white/5 border border-white/10 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all" 
-                                        value={address}
-                                        onChange={e => setAddress(e.target.value)}
+                                        value={buildingName}
+                                        onChange={e => setBuildingName(e.target.value)}
+                                    />
+                                </div>
+
+                                <div className="flex flex-col">
+                                    <label className="text-[10px] font-black uppercase text-gray-500 mb-3 ml-2">Street / Area</label>
+                                    <input 
+                                        required 
+                                        type="text" 
+                                        placeholder="Main Road, Sector 5"
+                                        className="bg-white/5 border border-white/10 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all" 
+                                        value={streetArea}
+                                        onChange={e => setStreetArea(e.target.value)}
+                                    />
+                                </div>
+
+                                <div className="flex flex-col">
+                                    <label className="text-[10px] font-black uppercase text-gray-500 mb-3 ml-2">Landmark</label>
+                                    <input 
+                                        type="text" 
+                                        placeholder="Near Phoenix Mall"
+                                        className="bg-white/5 border border-white/10 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all" 
+                                        value={landmark}
+                                        onChange={e => setLandmark(e.target.value)}
                                     />
                                 </div>
 

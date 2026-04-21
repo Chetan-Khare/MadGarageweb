@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import apiClient from '../services/apiClient';
+import { useAuth } from './AuthContext';
 
 interface Garage {
   id: number;
@@ -47,6 +48,7 @@ export const LocationProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [nearbyGarages, setNearbyGarages] = useState<Garage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { isAuthenticated } = useAuth();
 
   const fetchGarages = useCallback(async (targetCity: string, coords?: { latitude: number; longitude: number }) => {
     try {
@@ -70,6 +72,41 @@ export const LocationProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setIsLoading(false);
     }
   }, []);
+
+  // SYNC-PROTOCOL: Synchronize with saved addresses from DB
+  React.useEffect(() => {
+    const syncSavedAddress = async () => {
+      if (!isAuthenticated) return;
+      
+      try {
+        setIsLoading(true);
+        const res = await apiClient.get('/addresses');
+        const defaultAddr = res.data.find((a: any) => a.isDefault);
+        
+        if (defaultAddr) {
+          const coords = defaultAddr.latitude && defaultAddr.longitude ? {
+            latitude: defaultAddr.latitude,
+            longitude: defaultAddr.longitude
+          } : null;
+
+          setCity(defaultAddr.city);
+          setAddress(defaultAddr.address);
+          setLocation(coords);
+          
+          if (defaultAddr.city) {
+            await fetchGarages(defaultAddr.city, coords || undefined);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to sync saved addresses with location:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    syncSavedAddress();
+  }, [isAuthenticated, fetchGarages]);
+
 
   const detectLocation = useCallback(async () => {
     if (!navigator.geolocation) {
@@ -148,11 +185,21 @@ export const LocationProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const saveLocationToProfile = useCallback(async () => {
     if (!city) return;
     try {
-      await apiClient.put('/users/profile', { city, address, latitude: location?.latitude, longitude: location?.longitude });
-      alert('Location saved as default in your profile.');
+      // NEW PROTOCOL: Save to Multi-Address Hub instead of legacy profile fields
+      await apiClient.post('/addresses', { 
+        city, 
+        address: address || 'Current Location', 
+        pincode: '', // Default to empty, user can update in Address Page
+        state: '',
+        tag: 'OTHER',
+        isDefault: true,
+        latitude: location?.latitude, 
+        longitude: location?.longitude 
+      });
+      alert('Location registered as your primary hub.');
     } catch (err) {
-      console.error('Failed to save location to profile:', err);
-      alert('Failed to save location.');
+      console.error('Failed to register location:', err);
+      alert('Failed to register location hub.');
     }
   }, [city, address, location]);
 

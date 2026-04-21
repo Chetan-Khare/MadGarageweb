@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { 
   ChevronLeft, ShoppingBag, Star, ShieldCheck, 
-  Zap, Minus, Plus, Info, Heart
+  Zap, Minus, Plus, Info, Heart, Truck
 } from 'lucide-react';
 import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
 import { useAuth } from '../context/AuthContext';
@@ -40,6 +40,22 @@ const ProductDetailsPage: React.FC = () => {
             setLoading(false);
         }
     };
+
+    const [config, setConfig] = useState({ freeThreshold: 400 });
+
+    useEffect(() => {
+        const fetchConfig = async () => {
+            try {
+                const response = await apiClient.get('/config/public');
+                setConfig({
+                    freeThreshold: parseInt(response.data.FREE_SHIPPING_THRESHOLD || '400', 10)
+                });
+            } catch (error) {
+                console.error('Failed to fetch public config:', error);
+            }
+        };
+        fetchConfig();
+    }, []);
 
     if (loading) return <div className="min-h-screen bg-app-bg-dark flex items-center justify-center">
         <div className="h-12 w-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
@@ -97,24 +113,33 @@ const ProductDetailsPage: React.FC = () => {
                         <div className="bg-[#121216] p-10 rounded-[2.5rem] border border-white/5 space-y-8 relative overflow-hidden shadow-2xl shadow-black/20">
                             <div className="absolute top-0 right-0 w-48 h-48 bg-primary/10 rounded-full blur-[80px] -mr-24 -mt-24" />
                             
-                            <div className="relative z-10">
-                                <p className="text-[10px] font-black uppercase text-gray-500 tracking-widest mb-2">
-                                    {isGarage ? 'Wholesale Member Price' : 'Member Price'}
-                                </p>
-                                <div className="flex flex-col gap-1">
-                                    <div className="flex items-baseline gap-4">
-                                        <h2 className="text-5xl font-black italic text-white tracking-tighter">₹{activePrice.toLocaleString()}</h2>
-                                        {isGarage && product.garagePrice && product.price > product.garagePrice && (
-                                            <span className="text-gray-600 line-through font-bold text-lg italic">₹{product.price.toLocaleString()}</span>
-                                        )}
+                            <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+                                <div>
+                                    <p className="text-[10px] font-black uppercase text-gray-500 tracking-widest mb-2">
+                                        {isGarage ? 'Wholesale Member Price' : 'Member Price'}
+                                    </p>
+                                    <div className="flex flex-col gap-1">
+                                        <div className="flex items-baseline gap-4">
+                                            <h2 className="text-5xl font-black italic text-white tracking-tighter">₹{activePrice.toLocaleString()}</h2>
+                                            {isGarage && product.garagePrice && product.price > product.garagePrice && (
+                                                <span className="text-gray-600 line-through font-bold text-lg italic">₹{product.price.toLocaleString()}</span>
+                                            )}
+                                        </div>
                                     </div>
-                                    {isGarage && product.garagePrice && product.price > product.garagePrice && (
-                                        <p className="text-[10px] font-black text-primary uppercase tracking-widest">
-                                            Exclusive {Math.round(((product.price - product.garagePrice) / product.price) * 100)}% Garage Savings Applied
-                                        </p>
-                                    )}
                                 </div>
+                                {activePrice >= config.freeThreshold && (
+                                    <div className="bg-primary/20 border border-primary/30 px-6 py-3 rounded-2xl flex items-center gap-3 animate-pulse">
+                                        <Truck size={16} className="text-primary" />
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-primary">Free Expedited Shipping</span>
+                                    </div>
+                                )}
                             </div>
+                            
+                            {isGarage && product.garagePrice && product.price > product.garagePrice && (
+                                <p className="relative z-10 text-[10px] font-black text-primary uppercase tracking-widest">
+                                    Exclusive {Math.round(((product.price - product.garagePrice) / product.price) * 100)}% Garage Savings Applied
+                                </p>
+                            )}
 
                              <div className="relative z-10 flex flex-col sm:flex-row items-center gap-4">
                                 <div className="flex bg-white/5 border border-white/10 p-1.5 rounded-2xl items-center gap-4">

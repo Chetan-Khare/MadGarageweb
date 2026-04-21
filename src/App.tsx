@@ -34,6 +34,7 @@ import CartPage from './pages/CartPage';
 import OrdersPage from './pages/OrdersPage';
 import WishlistPage from './pages/WishlistPage';
 import AddressPage from './pages/AddressPage';
+import AdminSettingsPage from './pages/AdminSettingsPage';
 
 function App() {
   const { role } = useAuth();
@@ -60,6 +61,7 @@ function App() {
             <Route element={<ProtectedRoute allowedRoles={['ROLE_ADMIN']} />}>
               <Route path="/admin/add-product" element={<AddProductPage />} />
               <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/settings" element={<AdminSettingsPage />} />
               <Route path="/admin/vehicles" element={<AdminVehicleManagement />} />
               <Route path="/admin/requests" element={<AdminPartRequestReview />} />
               <Route path="/admin/users" element={<AdminUserManagement />} />

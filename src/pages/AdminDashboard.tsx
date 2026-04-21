@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
     Users, Package, TrendingUp, FileText,
     ShoppingCart, Car, Fingerprint,
-    Activity,
+    Activity, Settings,
     ChevronRight, PlusCircle, Bot, LogOut, Eye, EyeOff
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -297,6 +297,15 @@ const AdminDashboard: React.FC = () => {
                             bg="from-red-950/20 to-black"
                             border="border-primary/20"
                             onClick={openProvisioning}
+                        />
+                        <OperationHubCard
+                            icon={<Settings size={32} />}
+                            title="System Properties"
+                            subtitle="Live Global Config"
+                            color="text-amber-500"
+                            bg="from-amber-950/20 to-black"
+                            border="border-amber-900/40"
+                            onClick={() => navigate('/admin/settings')}
                         />
                         <OperationHubCard
                             icon={<Bot size={32} />}
