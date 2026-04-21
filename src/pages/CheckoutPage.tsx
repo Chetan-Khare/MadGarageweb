@@ -3,7 +3,8 @@ import { useLocation as useDomLocation, useNavigate } from 'react-router-dom';
 import { 
     ChevronLeft, CreditCard, MapPin, 
     ShieldCheck, Package, ShoppingBag,
-    CheckCircle, AlertCircle, Store, Truck, Navigation
+    CheckCircle, AlertCircle, Store, Truck, Navigation,
+    Home, Briefcase
 } from 'lucide-react';
 import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
 import { useCart } from '../context/CartContext';
@@ -34,11 +35,47 @@ const CheckoutPage: React.FC = () => {
     // Fitting State
     const [deliveryType, setDeliveryType] = useState<'HOME_DELIVERY' | 'GARAGE_FITTING'>('HOME_DELIVERY');
     const [selectedGarageId, setSelectedGarageId] = useState<number | null>(null);
+    const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
 
     useEffect(() => {
-        if (detectedCity && !city) setCity(detectedCity);
-        if (detectedAddress && !address) setAddress(detectedAddress);
+        const fetchSavedAddresses = async () => {
+            try {
+                const response = await apiClient.get('/api/addresses');
+                setSavedAddresses(response.data);
+            } catch (error) {
+                console.error('Failed to fetch addresses for checkout:', error);
+            }
+        };
+        fetchSavedAddresses();
+    }, []);
+
+    useEffect(() => {
+        // Auto-fill from detection if form is empty and detection results arrive
+        if (detectedCity && !city && !address) setCity(detectedCity);
+        if (detectedAddress && !address && !city) setAddress(detectedAddress);
     }, [detectedCity, detectedAddress]);
+
+    const useSavedAddress = (addr: any) => {
+        setAddress(addr.address || '');
+        setCity(addr.city || '');
+        setState(addr.state || '');
+        setPincode(addr.pincode || '');
+        setError(null);
+    };
+
+    const useDetectedLocation = () => {
+        if (detectedAddress) setAddress(detectedAddress);
+        if (detectedCity) setCity(detectedCity);
+        setError(null);
+    };
+
+    const clearAddress = () => {
+        setAddress('');
+        setCity('');
+        setState('');
+        setPincode('');
+        setError(null);
+    };
 
     useEffect(() => {
         if (city && city.length > 2) {
@@ -216,12 +253,43 @@ const CheckoutPage: React.FC = () => {
                                 </div>
                             )}
 
-                            <div className="flex items-center gap-4">
-                                <div className="h-8 w-8 bg-primary/10 text-primary rounded-xl flex items-center justify-center">
-                                    <MapPin size={16} />
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-4">
+                                        <div className="h-8 w-8 bg-primary/10 text-primary rounded-xl flex items-center justify-center">
+                                            <MapPin size={16} />
+                                        </div>
+                                        <h3 className="text-xs font-black uppercase tracking-[0.3em] text-white">Shipping Protocol</h3>
+                                    </div>
+                                    
+                                    <div className="flex items-center gap-2 overflow-x-auto max-w-[300px] scrollbar-hide">
+                                        {savedAddresses.map(addr => (
+                                            <button 
+                                                key={addr.id}
+                                                type="button"
+                                                onClick={() => useSavedAddress(addr)}
+                                                className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-[9px] font-black uppercase tracking-widest text-gray-400 hover:bg-primary hover:text-white hover:border-primary transition-all whitespace-nowrap"
+                                            >
+                                                {addr.tag === 'HOME' ? <Home size={10} className="inline mr-1"/> : addr.tag === 'OFFICE' ? <Briefcase size={10} className="inline mr-1"/> : <MapPin size={10} className="inline mr-1"/>}
+                                                {addr.tag}
+                                            </button>
+                                        ))}
+                                        <button 
+                                            type="button"
+                                            onClick={useDetectedLocation}
+                                            disabled={!detectedAddress}
+                                            className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-[9px] font-black uppercase tracking-widest text-gray-400 hover:bg-primary hover:text-white hover:border-primary transition-all disabled:opacity-30 disabled:hover:bg-white/5 whitespace-nowrap"
+                                        >
+                                            Detected 
+                                        </button>
+                                        <button 
+                                            type="button"
+                                            onClick={clearAddress}
+                                            className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-[9px] font-black uppercase tracking-widest text-primary hover:bg-primary hover:text-white hover:border-primary transition-all whitespace-nowrap"
+                                        >
+                                            Clear
+                                        </button>
+                                    </div>
                                 </div>
-                                <h3 className="text-xs font-black uppercase tracking-[0.3em] text-white">Shipping Protocol</h3>
-                            </div>
 
                             <form onSubmit={handlePlaceOrder} id="checkout-form" className="space-y-8 p-10 bg-[#121216] rounded-[3rem] border border-white/5">
                                 <div className="flex flex-col">

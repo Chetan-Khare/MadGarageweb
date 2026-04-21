@@ -141,6 +141,10 @@ const AppLayout: React.FC = () => {
                 )}
               </Link>
               
+              <Link to="/addresses" className="relative cursor-pointer group p-2">
+                <MapPin size={22} className="group-hover:text-primary transition-colors" />
+              </Link>
+              
               <Link to="/cart" className="relative cursor-pointer group p-2">
                 <ShoppingCart size={22} className="group-hover:text-primary transition-colors" />
                 {cartCount > 0 && (

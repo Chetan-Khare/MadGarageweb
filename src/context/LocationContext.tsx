@@ -80,40 +80,62 @@ export const LocationProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setIsLoading(true);
     setError(null);
 
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const coords = {
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude
-        };
-        setLocation(coords);
+    const getPosition = (options: PositionOptions): Promise<GeolocationPosition> => {
+      return new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, options);
+      });
+    };
 
-        try {
-          // Use OpenStreetMap Nominatim for free reverse geocoding
-          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.latitude}&lon=${coords.longitude}&zoom=18&addressdetails=1`);
-          const data = await res.json();
-          
-          if (data && data.address) {
-            const cityName = data.address.city || data.address.town || data.address.suburb || data.address.state || 'Unknown City';
-            const formattedAddr = data.display_name;
-            
-            setCity(cityName);
-            setAddress(formattedAddr);
-            await fetchGarages(cityName, coords);
+    try {
+      let position: GeolocationPosition;
+      try {
+        // Try with high accuracy first, 15s timeout
+        position = await getPosition({ enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 });
+      } catch (err) {
+        // Fallback to low accuracy if high accuracy fails or times out
+        console.warn('High accuracy location failed, trying low accuracy...', err);
+        position = await getPosition({ enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 });
+      }
+
+      const coords = {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude
+      };
+      setLocation(coords);
+
+      // Use OpenStreetMap Nominatim for free reverse geocoding
+      // NOTE: Added User-Agent and Referer headers to comply with Nominatim's policy
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.latitude}&lon=${coords.longitude}&zoom=18&addressdetails=1`,
+        {
+          headers: {
+            'Accept-Language': 'en-US,en;q=0.9',
+            'User-Agent': 'MadGarage/1.0 (Web Service)'
           }
-        } catch (err) {
-          console.error('Reverse geocoding failed:', err);
-          setError('Failed to resolve address');
-        } finally {
-          setIsLoading(false);
         }
-      },
-      (err) => {
-        setError(err.message);
-        setIsLoading(false);
-      },
-      { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
-    );
+      );
+      const data = await res.json();
+      
+      if (data && data.address) {
+        const cityName = data.address.city || data.address.town || data.address.suburb || data.address.state || 'Unknown City';
+        const formattedAddr = data.display_name;
+        
+        setCity(cityName);
+        setAddress(formattedAddr);
+        await fetchGarages(cityName, coords);
+      } else {
+        setError('Location coordinates found, but address could not be resolved.');
+      }
+    } catch (err: any) {
+      console.error('Location detection system failure:', err);
+      const msg = err.code === 1 ? 'Location permission denied by user.' : 
+                  err.code === 2 ? 'Location unavailable.' :
+                  err.code === 3 ? 'Location detection timed out.' : 
+                  (err.message || 'System error detecting location.');
+      setError(msg);
+    } finally {
+      setIsLoading(false);
+    }
   }, [fetchGarages]);
 
   const setManualCity = useCallback(async (targetCity: string) => {

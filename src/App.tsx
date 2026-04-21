@@ -33,6 +33,7 @@ import { LocationProvider } from './context/LocationContext';
 import CartPage from './pages/CartPage';
 import OrdersPage from './pages/OrdersPage';
 import WishlistPage from './pages/WishlistPage';
+import AddressPage from './pages/AddressPage';
 
 function App() {
   const { role } = useAuth();
@@ -88,6 +89,7 @@ function App() {
               <Route path="/checkout" element={<CheckoutPage />} />
               <Route path="/orders" element={<OrdersPage />} />
               <Route path="/wishlist" element={<WishlistPage />} />
+              <Route path="/addresses" element={<AddressPage />} />
             </Route>
 
             {/* Garage Protected Routes */}

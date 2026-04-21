@@ -3,15 +3,17 @@ import {
   User, Mail, Phone, Lock, 
   ShieldCheck, ChevronLeft, Save, 
   Eye, EyeOff, AlertCircle, CheckCircle2,
-  Camera, Loader2, MapPin
+  Camera, Loader2, MapPin, Navigation
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
 import { useAuth } from '../context/AuthContext';
+import { useLocation } from '../context/LocationContext';
 
 const ProfilePage: React.FC = () => {
     const navigate = useNavigate();
     const { user: authUser, login } = useAuth();
+    const { city: detectedCity, address: detectedAddress, location: detectedLocation, detectLocation, isLoading: detectionLoading } = useLocation();
     
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -39,6 +41,19 @@ const ProfilePage: React.FC = () => {
     useEffect(() => {
         fetchProfile();
     }, []);
+
+    // Sync detection from global location context to local form
+    useEffect(() => {
+        if (detectedCity || detectedAddress || detectedLocation) {
+            setFormData(prev => ({
+                ...prev,
+                city: detectedCity || prev.city,
+                address: detectedAddress || prev.address,
+                latitude: detectedLocation?.latitude.toString() || prev.latitude.toString(),
+                longitude: detectedLocation?.longitude.toString() || prev.longitude.toString()
+            }));
+        }
+    }, [detectedCity, detectedAddress, detectedLocation]);
 
     const fetchProfile = async () => {
         try {
@@ -337,11 +352,22 @@ const ProfilePage: React.FC = () => {
                             {/* Location Logistics Section (Sellers & Garages Only) */}
                             {(authUser?.role === 'ROLE_SELLER' || authUser?.role === 'ROLE_GARAGE') && (
                                 <div className="bg-white rounded-[3rem] p-10 md:p-14 border border-gray-100 shadow-2xl space-y-12">
-                                    <div className="space-y-2">
-                                        <h2 className="text-2xl font-black italic text-app-bg-dark uppercase tracking-tighter flex items-center gap-3">
-                                            <MapPin size={24} className="text-primary" /> Location Logistics
-                                        </h2>
-                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-9">Synchronize your physical workspace with the delivery network</p>
+                                    <div className="flex items-center justify-between">
+                                        <div className="space-y-2">
+                                            <h2 className="text-2xl font-black italic text-app-bg-dark uppercase tracking-tighter flex items-center gap-3">
+                                                <MapPin size={24} className="text-primary" /> Location Logistics
+                                            </h2>
+                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-9">Synchronize your physical workspace with the delivery network</p>
+                                        </div>
+                                        <button 
+                                            type="button"
+                                            onClick={detectLocation}
+                                            disabled={detectionLoading}
+                                            className="flex items-center gap-2 px-4 py-2 bg-gray-50 hover:bg-primary border border-gray-100 rounded-xl transition-all group overflow-hidden"
+                                        >
+                                            <Navigation size={14} className={`${detectionLoading ? 'animate-spin' : 'group-hover:scale-110'} transition-all text-primary group-hover:text-white`} />
+                                            <span className="text-[10px] font-black uppercase tracking-widest group-hover:text-white">{detectionLoading ? 'Detecting...' : 'Detect Location'}</span>
+                                        </button>
                                     </div>
 
                                     <div className="space-y-10">
