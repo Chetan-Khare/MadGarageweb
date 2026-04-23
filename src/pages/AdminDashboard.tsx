@@ -31,6 +31,7 @@ const AdminDashboard: React.FC = () => {
         lastName: '',
         email: '',
         password: '',
+        confirmPassword: '',
         phone: '',
         role: 'ROLE_SELLER' as 'ROLE_SELLER' | 'ROLE_GARAGE' | 'ROLE_ADMIN'
     });
@@ -135,21 +136,29 @@ const AdminDashboard: React.FC = () => {
         e.preventDefault();
         setFormError(''); setFormSuccess('');
         
-        if (!newUser.firstName || !newUser.lastName || !newUser.email) {
-            setFormError('Identity fundamentals (Name/Email) are required.');
+        if (!newUser.firstName || !newUser.lastName || !newUser.email || !newUser.password) {
+            setFormError('Identity fundamentals (Name, Email, and Password) are required.');
+            return;
+        }
+
+        if (newUser.password !== newUser.confirmPassword) {
+            setFormError('Credential mismatch: Passwords do not align.');
             return;
         }
 
         setCreatingUser(true);
         try {
-            // P4 DEFAULT PASSWORD LOGIC: Use password123 if left blank
             const payload = {
-                ...newUser,
-                password: newUser.password
+                firstName: newUser.firstName,
+                lastName: newUser.lastName,
+                email: newUser.email,
+                password: newUser.password,
+                phone: newUser.phone,
+                role: newUser.role
             };
             await apiClient.post('/admin/users', payload);
             setFormSuccess(`${newUser.role} account provisioned!`);
-            setNewUser({ ...newUser, firstName: '', lastName: '', email: '', password: '', phone: '' });
+            setNewUser({ ...newUser, firstName: '', lastName: '', email: '', password: '', confirmPassword: '', phone: '' });
             fetchAnalytics();
         } catch (err: any) {
             setFormError(err.response?.data || 'Provisioning failed.');
@@ -180,7 +189,8 @@ const AdminDashboard: React.FC = () => {
             stockQuantity: 10, 
             category: 'Engine', 
             condition: 'NEW', 
-            description: '' 
+            description: '',
+            wholesale: true
         });
         setShowProvisionModal(true);
     };
@@ -428,21 +438,30 @@ const AdminDashboard: React.FC = () => {
                                     value={newUser.phone}
                                     onChange={e => setNewUser({ ...newUser, phone: e.target.value })}
                                 />
-                                <div className="relative group">
+                                <div className="space-y-4">
+                                    <div className="relative group">
+                                        <input
+                                            type={showPassword ? "text" : "password"}
+                                            placeholder="Secure Root Password"
+                                            className="w-full bg-black/40 border border-white/5 p-4 pr-12 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
+                                            value={newUser.password}
+                                            onChange={e => setNewUser({ ...newUser, password: e.target.value })}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary transition-colors"
+                                        >
+                                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                        </button>
+                                    </div>
                                     <input
                                         type={showPassword ? "text" : "password"}
-                                        placeholder="Root Password (Optional)"
-                                        className="w-full bg-black/40 border border-white/5 p-4 pr-12 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
-                                        value={newUser.password}
-                                        onChange={e => setNewUser({ ...newUser, password: e.target.value })}
+                                        placeholder="Confirm Root Password"
+                                        className="w-full bg-black/40 border border-white/5 p-4 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
+                                        value={newUser.confirmPassword}
+                                        onChange={e => setNewUser({ ...newUser, confirmPassword: e.target.value })}
                                     />
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary transition-colors"
-                                    >
-                                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                                    </button>
                                 </div>
                             </div>
 

@@ -3,7 +3,7 @@ import {
   ArrowLeft, Search, ShoppingBag, 
   Clock, Eye
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import apiClient from '../services/apiClient';
 
 const AdminOrderManagement: React.FC = () => {
@@ -13,7 +13,8 @@ const AdminOrderManagement: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('ALL');
 
-    useEffect(() => { fetchOrders(); }, []);
+    const location = useLocation();
+    useEffect(() => { fetchOrders(); }, [location]);
 
     const fetchOrders = async () => {
         setLoading(true);
@@ -81,7 +82,7 @@ const AdminOrderManagement: React.FC = () => {
                             onChange={e => setStatusFilter(e.target.value)}
                         >
                             <option value="ALL">All Status</option>
-                            {['PAID', 'SHIPPED', 'DELIVERED', 'CANCELLED'].map(s => <option key={s} value={s}>{s}</option>)}
+                            {['PAID', 'SHIPPED', 'ARRIVED_AT_GARAGE', 'DELIVERED', 'CANCELLED'].map(s => <option key={s} value={s}>{s}</option>)}
                         </select>
                     </div>
                 </div>
@@ -99,6 +100,7 @@ const AdminOrderManagement: React.FC = () => {
                                     <div className={`h-14 w-14 rounded-2xl flex items-center justify-center ${
                                         order.status === 'DELIVERED' ? 'bg-green-500/10 text-green-500' :
                                         order.status === 'SHIPPED' ? 'bg-blue-500/10 text-blue-500' :
+                                        order.status === 'ARRIVED_AT_GARAGE' ? 'bg-cyan-500/10 text-cyan-500' :
                                         'bg-primary/10 text-primary'
                                     }`}>
                                         <ShoppingBag size={24} />
@@ -107,14 +109,14 @@ const AdminOrderManagement: React.FC = () => {
                                         <p className="text-[10px] font-black uppercase text-gray-500 tracking-widest">Order #{order.id}</p>
                                         <h4 className="text-md font-black text-white italic uppercase tracking-tight">{order.customerName}</h4>
                                         <p className="text-[10px] font-bold text-gray-600 mt-1 uppercase tracking-widest">
-                                            {new Date(order.orderDate).toLocaleDateString()} • ₹{(order.grandTotal || 0).toLocaleString()}
+                                            {new Date(order.orderDate).toLocaleDateString()} • ₹{(order.grandTotal || 0).toLocaleString()} • {order.status?.replace('_', ' ')}
                                         </p>
                                     </div>
                                 </div>
 
                                 <div className="flex items-center gap-4">
                                     <div className="flex gap-2 p-1 bg-black/40 rounded-xl">
-                                        {['PAID', 'SHIPPED', 'DELIVERED'].map(s => (
+                                        {['SHIPPED', 'ARRIVED_AT_GARAGE', 'DELIVERED'].map(s => (
                                             <button 
                                                 key={s}
                                                 onClick={() => updateStatus(order.id, s)}
@@ -122,7 +124,7 @@ const AdminOrderManagement: React.FC = () => {
                                                     order.status === s ? 'bg-primary text-white' : 'text-gray-500 hover:text-white'
                                                 }`}
                                             >
-                                                {s}
+                                                {s === 'ARRIVED_AT_GARAGE' ? 'ARRIVED' : s}
                                             </button>
                                         ))}
                                     </div>

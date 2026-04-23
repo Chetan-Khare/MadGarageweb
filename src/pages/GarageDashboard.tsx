@@ -4,8 +4,10 @@ import {
   ChevronRight, Package, Clock, RefreshCw, Eye
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
+
+import Marketplace from '../components/Marketplace';
 
 const GarageDashboard: React.FC = () => {
   const { user, logout } = useAuth();
@@ -20,10 +22,11 @@ const GarageDashboard: React.FC = () => {
   const [fittingLoading, setFittingLoading] = useState(false);
 
   // Initial Data Fetch
+  const location = useLocation();
   useEffect(() => {
     fetchOrders();
     fetchFittingOrders();
-  }, []);
+  }, [location]);
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -62,7 +65,7 @@ const GarageDashboard: React.FC = () => {
 
   // Derived Stats Logic
   const activeBuildsCount = orders.filter(o => o.status !== 'DELIVERED').length;
-  const savingsAmount = Math.round(totalSpend * 0.05); // 5% Garage Discount
+  const savingsAmount = totalSpend > 0 ? Math.round(totalSpend * 0.03) : 0; // Dynamic Average Estimate
   const fleetCount = orders.length > 0 ? Array.from(new Set(orders.map(o => o.vehicleId))).length : 0;
 
   return (
@@ -79,7 +82,7 @@ const GarageDashboard: React.FC = () => {
 
         <nav className="flex-1 p-6 space-y-2">
           <SidebarLink icon={<LayoutDashboard size={18} />} label="Workshop Console" active={activeTab === 'garage'} onClick={() => setActiveTab('garage')} />
-          <SidebarLink icon={<ShoppingBag size={18} />} label="Shop Wholesale" onClick={() => navigate('/')} />
+          <SidebarLink icon={<ShoppingBag size={18} />} label="Shop Wholesale" active={activeTab === 'shop'} onClick={() => setActiveTab('shop')} />
           <SidebarLink icon={<Package size={18} />} label="Order History" onClick={() => navigate('/orders')} />
           <SidebarLink icon={<Zap size={18} />} label="Diagnostic AI" onClick={() => navigate('/chat')} />
           <div className="pt-10 mb-4 pb-2 border-b border-white/5 mx-2 text-[10px] font-black uppercase tracking-widest text-gray-600">Preferences</div>
@@ -113,7 +116,7 @@ const GarageDashboard: React.FC = () => {
             </button>
             <div className="text-right hidden sm:block">
               <p className="text-[10px] font-black uppercase text-primary tracking-widest">Wholesale Elite</p>
-              <p className="text-xs font-black text-gray-400 uppercase tracking-tighter">5% Tier Discount Active</p>
+              <p className="text-xs font-black text-gray-400 uppercase tracking-tighter">Multi-Tier Pricing Active</p>
             </div>
             <button
               onClick={() => navigate('/profile')}
@@ -129,7 +132,11 @@ const GarageDashboard: React.FC = () => {
         </header>
 
         <div className="p-6 md:p-12 space-y-12 max-w-7xl mx-auto w-full">
-           {/* Workshop Quick Stats */}
+          {activeTab === 'shop' ? (
+            <Marketplace isGarage={true} />
+          ) : (
+            <>
+              {/* Workshop Quick Stats */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
              <StatusCard icon={<ShoppingBag className="text-blue-500" />} label="Active Builds" value={`${activeBuildsCount} Orders`} />
              <StatusCard icon={<Car className="text-primary" />} label="Fitting Requests" value={`${fittingOrders.length} Expected`} />
@@ -157,16 +164,22 @@ const GarageDashboard: React.FC = () => {
                </button>
              </div>
 
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+             <div className="flex overflow-x-auto gap-8 pb-12 scrollbar-hide snap-x snap-mandatory -mx-4 px-4">
                {fittingLoading ? (
-                 Array(3).fill(0).map((_, i) => <div key={i} className="h-64 bg-white rounded-[2.5rem] animate-pulse border border-gray-100" />)
+                 Array(3).fill(0).map((_, i) => <div key={i} className="flex-shrink-0 w-full md:w-[400px] h-64 bg-white rounded-[2.5rem] animate-pulse border border-gray-100" />)
                ) : fittingOrders.length > 0 ? (
-                 fittingOrders.map((order) => (
-                   <div key={order.id} className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-xl shadow-black/5 space-y-6 group hover:border-primary/20 transition-all relative overflow-hidden">
+                 fittingOrders.filter(o => 
+                   ['SHIPPED', 'ARRIVED_AT_GARAGE'].includes(o.status) || o.fittingStatus !== 'COMPLETED'
+                 ).map((order) => (
+                   <div key={order.id} className="flex-shrink-0 w-full md:w-[400px] snap-center bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-xl shadow-black/5 space-y-6 group hover:border-primary/20 transition-all relative overflow-hidden">
                      <div className="flex items-center justify-between">
                        <span className="text-[10px] font-black uppercase tracking-widest text-primary italic">Reference #{order.id}</span>
-                       <span className={`text-[8px] font-black uppercase px-3 py-1 rounded-full ${order.fittingStatus === 'COMPLETED' ? 'bg-green-100 text-green-600' : 'bg-orange-100 text-orange-600'}`}>
-                         {order.fittingStatus?.replace('_', ' ')}
+                       <span className={`text-[8px] font-black uppercase px-3 py-1 rounded-full ${
+                         order.status === 'ARRIVED_AT_GARAGE' ? 'bg-cyan-100 text-cyan-600' : 
+                         order.status === 'SHIPPED' ? 'bg-blue-100 text-blue-600' :
+                         order.fittingStatus === 'COMPLETED' ? 'bg-green-100 text-green-600' : 'bg-orange-100 text-orange-600'
+                       }`}>
+                         {order.status === 'SHIPPED' ? 'IN TRANSIT' : (order.fittingStatus?.replace('_', ' ') || 'PENDING')}
                        </span>
                      </div>
                      
@@ -181,7 +194,15 @@ const GarageDashboard: React.FC = () => {
                      </div>
 
                      <div className="flex gap-3">
-                       {order.fittingStatus === 'PENDING' && (
+                       {order.status === 'SHIPPED' && (
+                         <button 
+                            onClick={() => updateFittingStatus(order.id, 'ARRIVED_AT_GARAGE')}
+                            className="flex-1 bg-blue-500 text-white py-4 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all"
+                         >
+                           Verify Arrival
+                         </button>
+                       )}
+                       {order.status === 'ARRIVED_AT_GARAGE' && order.fittingStatus === 'PENDING_INSPECTION' && (
                          <button 
                             onClick={() => updateFittingStatus(order.id, 'INSPECTED')}
                             className="flex-1 bg-orange-500 text-white py-4 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-orange-600 transition-all"
@@ -287,9 +308,11 @@ const GarageDashboard: React.FC = () => {
                   Launch AI Terminal <ChevronRight size={18} />
                 </button>
               </div>
-           </div>
-        </div>
-      </main>
+            </div>
+          </>
+        )}
+      </div>
+    </main>
 
       {/* Floating AI Chat Assistant FAB */}
       <button 

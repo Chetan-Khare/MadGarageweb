@@ -26,17 +26,14 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
+  const [token, setToken] = useState<string | null>("COOKIE_MANAGED"); // Token is now HttpOnly
   const [role, setRole] = useState<UserRole | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
 
   // Function to fetch full profile (syncs profileImageUrl across devices)
   const refreshUserProfile = useCallback(async () => {
-    const currentToken = localStorage.getItem('token');
-    if (!currentToken) {
-        setIsInitializing(false);
-        return;
-    }
+    // We no longer check for a local token. 
+    // We attempt to fetch the profile; if the cookie is valid, it succeeds.
 
     try {
       const response = await apiClient.get('/users/me');
@@ -55,7 +52,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         setUser(updatedUser);
         setRole(standardizedRole);
-        setToken(currentToken);
+        setToken("COOKIE_MANAGED");
       }
     } catch (error: any) {
       console.error('Failed to sync user profile:', error);
@@ -78,9 +75,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         userRole = 'ROLE_' + userRole;
     }
 
-    localStorage.setItem('token', newToken);
-    
-    setToken(newToken);
+    setToken("COOKIE_MANAGED");
     setRole(userRole as UserRole);
 
     // Initial state from login response (will be perfected by refreshUserProfile immediately)
@@ -96,8 +91,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     refreshUserProfile();
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
+  const logout = async () => {
+    try {
+      await apiClient.post('/auth/logout');
+    } catch (e) {
+      console.error('Logout sync failed');
+    }
+    localStorage.removeItem('token'); // Clear legacy token if present
     setUser(null);
     setToken(null);
     setRole(null);

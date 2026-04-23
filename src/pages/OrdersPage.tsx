@@ -67,10 +67,11 @@ const OrdersPage: React.FC = () => {
                                                 <span className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Order #{order.id}</span>
                                                 <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase ${
                                                     order.status === 'DELIVERED' ? 'bg-green-100 text-green-600' : 
+                                                    order.status === 'ARRIVED_AT_GARAGE' ? 'bg-cyan-100 text-cyan-600' : 
                                                     order.status === 'CANCELLED' ? 'bg-red-100 text-red-600' : 
                                                     'bg-blue-100 text-blue-600'
                                                 }`}>
-                                                    {order.status}
+                                                    {order.status?.replace('_', ' ')}
                                                 </span>
                                             </div>
                                             <h3 className="text-lg font-black italic text-app-bg-dark uppercase tracking-tight">

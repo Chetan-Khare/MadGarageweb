@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { 
     Settings, Save, RefreshCcw, 
     Truck, Package, ShieldCheck, 
-    AlertCircle, CheckCircle, ChevronLeft 
+    AlertCircle, CheckCircle, ChevronLeft,
+    Tag
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../services/apiClient';
@@ -56,7 +57,13 @@ const AdminSettingsPage: React.FC = () => {
         if (key.includes('SHIPPING')) return <Truck size={20} />;
         if (key.includes('THRESHOLD')) return <Package size={20} />;
         if (key.includes('PLATFORM')) return <ShieldCheck size={20} />;
+        if (key.includes('DISCOUNT') || key.includes('PERCENT')) return <Tag size={20} />;
         return <Settings size={20} />;
+    };
+
+    const getSymbol = (key: string) => {
+        if (key.includes('PERCENT')) return '%';
+        return '₹';
     };
 
     if (loading) return (
@@ -103,7 +110,7 @@ const AdminSettingsPage: React.FC = () => {
 
                             <div className="flex items-center gap-4 w-full md:w-auto">
                                 <div className="relative flex-1 md:w-48">
-                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-primary font-black italic">₹</span>
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-primary font-black italic">{getSymbol(setting.configKey)}</span>
                                     <input 
                                         type="number"
                                         defaultValue={setting.configValue}

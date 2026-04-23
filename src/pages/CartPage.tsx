@@ -8,7 +8,8 @@ import {
 import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
 
 const CartPage: React.FC = () => {
-    const { cart, updateQuantity, removeFromCart, subtotal, totalItems } = useCart();
+    const { cart, updateQuantity, removeFromCart, subtotal, totalItems, savings } = useCart();
+    const baseTotal = subtotal + savings;
     const navigate = useNavigate();
     const [config, setConfig] = React.useState({ shippingFee: 250, freeThreshold: 400, platformFee: 7 });
 
@@ -175,8 +176,14 @@ const CartPage: React.FC = () => {
                             <div className="space-y-6 mb-10 relative z-10">
                                 <div className="flex justify-between items-center">
                                     <span className="text-sm font-bold text-gray-400 uppercase tracking-widest">Subtotal</span>
-                                    <span className="text-lg font-black italic">₹{subtotal.toLocaleString()}</span>
+                                    <span className="text-lg font-black italic">₹{baseTotal.toLocaleString()}</span>
                                 </div>
+                                {savings > 0 && (
+                                    <div className="flex justify-between items-center text-green-500">
+                                        <span className="text-sm font-bold uppercase tracking-widest">Wholesale Discount</span>
+                                        <span className="text-sm font-black italic">-₹{savings.toLocaleString()}</span>
+                                    </div>
+                                )}
                                 <div className="flex justify-between items-center text-gray-400">
                                     <span className="text-sm font-bold uppercase tracking-widest">Platform Fee</span>
                                     <span className="text-sm font-black italic">₹{config.platformFee.toLocaleString()}</span>

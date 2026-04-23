@@ -228,6 +228,11 @@ const AdminInventoryManagement: React.FC = () => {
                                 )}
                                 <div className="absolute top-4 left-4 bg-primary/10 text-primary text-[8px] font-black px-3 py-1 rounded-full border border-primary/20 uppercase tracking-widest">{p.condition}</div>
                                 {p.flagged && <div className="absolute top-4 right-4 bg-orange-500 text-black text-[8px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-lg shadow-orange-500/20">Flagged</div>}
+                                {p.wholesale !== false && (
+                                    <div className={`absolute ${p.flagged ? 'top-12' : 'top-4'} right-4 bg-green-500 text-black text-[8px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-lg shadow-green-500/20 flex items-center gap-1`}>
+                                        <Sparkles size={8} /> Wholesale
+                                    </div>
+                                )}
                                 {p.sellerResponse && <div className="absolute top-12 right-4 bg-green-500 text-black text-[8px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-lg shadow-green-500/20 flex items-center gap-2 animate-pulse">
                                     <CheckCircle size={8} /> Reply
                                 </div>}

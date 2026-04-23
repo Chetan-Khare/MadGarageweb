@@ -5,7 +5,7 @@ import {
   User, Package, Calendar,
   TrendingUp, AlertCircle
 } from 'lucide-react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import apiClient from '../services/apiClient';
 
@@ -17,7 +17,8 @@ const SellerOrderManagement: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('ALL');
 
-    useEffect(() => { fetchOrders(); }, []);
+    const location = useLocation();
+    useEffect(() => { fetchOrders(); }, [location]);
 
     const fetchOrders = async () => {
         setLoading(true);
@@ -134,10 +135,12 @@ const SellerOrderManagement: React.FC = () => {
                                             <h3 className="text-lg font-black italic tracking-tighter text-app-bg-dark uppercase">#{order.id}</h3>
                                         </div>
                                     </div>
-                                    <span className={`text-[8px] font-black uppercase px-3 py-1 rounded-full ${
-                                        order.status === 'PENDING' ? 'bg-orange-100 text-orange-600' : 
-                                        order.status === 'SHIPPED' ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'
-                                    }`}>{order.status}</span>
+                                     <span className={`text-[8px] font-black uppercase px-3 py-1 rounded-full ${
+                                         order.status === 'PENDING' ? 'bg-orange-100 text-orange-600' : 
+                                         order.status === 'SHIPPED' ? 'bg-blue-100 text-blue-600' : 
+                                         order.status === 'ARRIVED_AT_GARAGE' ? 'bg-cyan-100 text-cyan-600' :
+                                         'bg-green-100 text-green-600'
+                                     }`}>{order.status?.replace('_', ' ')}</span>
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t border-gray-50">

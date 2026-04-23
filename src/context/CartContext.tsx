@@ -10,6 +10,7 @@ export interface CartItem {
   brand?: string;
   quantity: number;
   condition?: string;
+  wholesale?: boolean;
 }
 
 interface CartContextType {
@@ -67,6 +68,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         category: product.category,
         brand: product.brand,
         condition: product.condition,
+        wholesale: product.wholesale,
         quantity
       }];
     });
@@ -85,8 +87,13 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
   const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-  const totalValue = cart.reduce((acc, item) => acc + ((item.originalPrice || item.price) * item.quantity), 0);
-  const savings = totalValue - subtotal;
+  const savings = cart.reduce((acc, item) => {
+    if (item.wholesale) {
+        const original = item.originalPrice || (item.price / 0.95);
+        return acc + (original - item.price) * item.quantity;
+    }
+    return acc;
+  }, 0);
 
   return (
     <CartContext.Provider value={{ 

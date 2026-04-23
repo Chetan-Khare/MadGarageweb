@@ -67,7 +67,7 @@ const ProductDetailsPage: React.FC = () => {
     </div>;
 
     const isGarage = role === 'ROLE_GARAGE';
-    const activePrice = isGarage && product.garagePrice ? product.garagePrice : (product.price || 0);
+    const activePrice = isGarage && product.wholesale && product.garagePrice ? product.garagePrice : (product.price || 0);
 
     return (
         <div className="min-h-screen bg-white font-inter">
@@ -121,7 +121,7 @@ const ProductDetailsPage: React.FC = () => {
                                     <div className="flex flex-col gap-1">
                                         <div className="flex items-baseline gap-4">
                                             <h2 className="text-5xl font-black italic text-white tracking-tighter">₹{activePrice.toLocaleString()}</h2>
-                                            {isGarage && product.garagePrice && product.price > product.garagePrice && (
+                                            {isGarage && product.wholesale && product.garagePrice && product.price > product.garagePrice && (
                                                 <span className="text-gray-600 line-through font-bold text-lg italic">₹{product.price.toLocaleString()}</span>
                                             )}
                                         </div>
@@ -135,9 +135,9 @@ const ProductDetailsPage: React.FC = () => {
                                 )}
                             </div>
                             
-                            {isGarage && product.garagePrice && product.price > product.garagePrice && (
+                            {isGarage && product.wholesale && product.garagePrice && product.price > product.garagePrice && (
                                 <p className="relative z-10 text-[10px] font-black text-primary uppercase tracking-widest">
-                                    Exclusive {Math.round(((product.price - product.garagePrice) / product.price) * 100)}% Garage Savings Applied
+                                    SPECIAL GARAGE PRICING APPLIED
                                 </p>
                             )}
 

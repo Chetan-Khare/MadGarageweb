@@ -20,10 +20,10 @@ const Marketplace: React.FC<MarketplaceProps> = ({ isGarage = false }) => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
-  const { user, role } = useAuth();
+  const { user } = useAuth();
   const { city, detectLocation, nearbyGarages, setManualCity } = useLocation();
 
-  const effectiveIsGarage = isGarage || role === 'ROLE_GARAGE';
+  const effectiveIsGarage = isGarage;
 
   const [makes, setMakes] = useState<string[]>([]);
   const [models, setModels] = useState<string[]>([]);
@@ -454,9 +454,11 @@ const Marketplace: React.FC<MarketplaceProps> = ({ isGarage = false }) => {
                     </h3>
                     <div className="mt-auto pt-6 border-t border-gray-50 flex items-center justify-between">
                       <div>
-                        {effectiveIsGarage && product.price && <p className="text-[10px] text-gray-400 line-through font-bold decoration-primary/40">₹{product.price.toLocaleString()}</p>}
+                        {effectiveIsGarage && product.wholesale && product.price && product.garagePrice && product.price > product.garagePrice && (
+                          <p className="text-[10px] text-gray-400 line-through font-bold decoration-primary/40">₹{product.price.toLocaleString()}</p>
+                        )}
                         <p className="text-2xl font-black italic text-app-bg-dark tracking-tighter">
-                          Rs.{(effectiveIsGarage ? (product.garagePrice || product.price || 0) : (product.price || 0)).toLocaleString()}
+                          Rs.{(effectiveIsGarage && product.wholesale && product.garagePrice ? product.garagePrice : (product.price || 0)).toLocaleString()}
                         </p>
                       </div>
                       <div className="flex gap-2">

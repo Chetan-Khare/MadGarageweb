@@ -8,10 +8,12 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import apiClient from '../services/apiClient';
+import { useAuth } from '../context/AuthContext';
 
 const OrderDetailsPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const { role } = useAuth();
     const [order, setOrder] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [tempPartRating, setTempPartRating] = useState(0);
@@ -56,6 +58,24 @@ const OrderDetailsPage: React.FC = () => {
         }
     };
 
+    const handleUpdateStatus = async (status: string) => {
+        try {
+            await apiClient.put(`/orders/${id}/status?status=${status}`);
+            await fetchOrder();
+        } catch (err) {
+            console.error('Status update failed');
+        }
+    };
+
+    const handleUpdateFittingStatus = async (status: string) => {
+        try {
+            await apiClient.patch(`/orders/${id}/fitting-status?status=${status}`);
+            await fetchOrder();
+        } catch (err) {
+            console.error('Fitting status update failed');
+        }
+    };
+
     if (loading) return <div className="min-h-screen bg-app-bg-light flex items-center justify-center">
         <div className="h-10 w-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
     </div>;
@@ -85,7 +105,7 @@ const OrderDetailsPage: React.FC = () => {
                             <div className="flex flex-col items-center md:items-end">
                                 <div className="bg-white/10 border border-white/10 px-6 py-3 rounded-2xl flex items-center gap-3">
                                     <div className="h-3 w-3 bg-green-500 rounded-full animate-pulse shadow-lg shadow-green-500/50" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest">{order.status}</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest">{order.status?.replace('_', ' ')}</span>
                                 </div>
                             </div>
                         </div>
@@ -98,7 +118,9 @@ const OrderDetailsPage: React.FC = () => {
                             <div className="hidden md:block h-px flex-1 bg-gray-100" />
                             <TrackItem icon={<Clock size={20}/>} label="Processing" sub="Allocated" active={order.status !== 'PENDING'} />
                             <div className="hidden md:block h-px flex-1 bg-gray-100" />
-                            <TrackItem icon={<Truck size={20}/>} label={order.fittingGarageId ? "At Garage" : "Shipped"} sub={order.fittingGarageId ? "Terminal" : "In Transit"} active={order.status === 'SHIPPED' || order.status === 'DELIVERED'} />
+                            <TrackItem icon={<Truck size={20}/>} label={order.fittingGarageId ? "Garage Bound" : "Shipped"} sub="In Transit" active={['SHIPPED', 'ARRIVED_AT_GARAGE', 'DELIVERED'].includes(order.status)} />
+                            <div className="hidden md:block h-px flex-1 bg-gray-100" />
+                            <TrackItem icon={<ShieldCheck size={20}/>} label="Arrived" sub="At Terminal" active={['ARRIVED_AT_GARAGE', 'DELIVERED'].includes(order.status)} />
                             <div className="hidden md:block h-px flex-1 bg-gray-100" />
                             <TrackItem icon={<CheckCircle size={20}/>} label={order.fittingGarageId ? "Fitted" : "Delivered"} sub="Completion" active={order.status === 'DELIVERED'} />
                         </div>
@@ -245,6 +267,53 @@ const OrderDetailsPage: React.FC = () => {
 
                         {/* Actions */}
                         <div className="flex flex-wrap gap-4 pt-12 border-t border-gray-100">
+                             {/* Merchant / Garage Action Terminal */}
+                             {(role === 'ROLE_SELLER' || role === 'ROLE_ADMIN' || role === 'ROLE_GARAGE') && (
+                                <div className="w-full flex flex-wrap gap-4 mb-8 bg-gray-50 p-8 rounded-[2.5rem] border border-gray-100">
+                                    <div className="w-full mb-4">
+                                        <h3 className="text-xs font-black uppercase tracking-[0.3em] text-app-bg-dark">Fulfillment Control Terminal</h3>
+                                    </div>
+                                    
+                                    {role === 'ROLE_SELLER' && order.status === 'PAID' && (
+                                        <ActionBtn 
+                                            icon={<MapPin size={16}/>} 
+                                            label="MARK AS SHIPPED" 
+                                            primary 
+                                            onClick={() => handleUpdateStatus('SHIPPED')} 
+                                        />
+                                    )}
+
+                                    {role === 'ROLE_GARAGE' && order.fittingGarageId && (
+                                        <div className="flex flex-wrap gap-4">
+                                            {order.status === 'SHIPPED' && (
+                                                <ActionBtn 
+                                                    icon={<CheckCircle size={16}/>} 
+                                                    label="VERIFY ARRIVAL AT GARAGE" 
+                                                    primary 
+                                                    onClick={() => handleUpdateFittingStatus('ARRIVED_AT_GARAGE')} 
+                                                />
+                                            )}
+                                            {order.status === 'ARRIVED_AT_GARAGE' && order.fittingStatus === 'PENDING_INSPECTION' && (
+                                                <ActionBtn 
+                                                    icon={<ShieldCheck size={16}/>} 
+                                                    label="MARK AS INSPECTED" 
+                                                    primary 
+                                                    onClick={() => handleUpdateFittingStatus('INSPECTED')} 
+                                                />
+                                            )}
+                                            {order.fittingStatus === 'INSPECTED' && (
+                                                <ActionBtn 
+                                                    icon={<CheckCircle size={16}/>} 
+                                                    label="COMPLETE FITTING" 
+                                                    primary 
+                                                    onClick={() => handleUpdateFittingStatus('COMPLETED')} 
+                                                />
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                             )}
+
                             <ActionBtn icon={<Printer size={16}/>} label="Print Manifest" onClick={() => window.print()} />
                             <ActionBtn icon={<Share2 size={16}/>} label="Share Receipt" onClick={() => {
                                 if (navigator.share) {

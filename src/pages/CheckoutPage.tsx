@@ -167,11 +167,22 @@ const CheckoutPage: React.FC = () => {
                 fittingGarageId: deliveryType === 'GARAGE_FITTING' ? selectedGarageId : null
             });
 
-            if (!buyNowProduct) clearCart(); // Clear cart only if this was a cart checkout
+            const orderId = response.data.id;
+
+            // 🛑 TRANSACTION SAFETY: Payment Verification Hook
+            // In a production app, the 'paymentId' and 'signature' would be returned 
+            // by the Payment Gateway (Stripe/Razorpay) via a secure redirect or callback.
+            const mockPaymentId = `PAY-${Math.random().toString(36).substring(7).toUpperCase()}`;
+            const mockSignature = btoa(`${orderId}|${mockPaymentId}`); // Matches backend mock logic
+
+            // Verifying the transaction with the server before showing success
+            await apiClient.post(`/orders/${orderId}/verify-payment?paymentId=${mockPaymentId}&signature=${mockSignature}`);
+
+            if (!buyNowProduct) clearCart(); 
             setSuccess(true);
             setTimeout(() => {
-                navigate(`/order/${response.data.id}`);
-            }, 2000);
+                navigate(`/order/${orderId}`);
+            }, 3000);
         } catch (err: any) {
             console.error('Checkout failed:', err);
             setError(err.response?.data?.message || 'Transaction failed. Please try again.');

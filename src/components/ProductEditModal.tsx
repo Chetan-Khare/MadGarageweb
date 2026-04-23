@@ -152,6 +152,27 @@ const ProductEditModal: React.FC<ProductEditModalProps> = ({
                         </div>
                     </div>
 
+                    {/* Wholesale Eligibility Toggle */}
+                    <div className="flex flex-col p-6 bg-primary/5 border border-primary/10 rounded-2xl gap-4">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <label className="text-[10px] font-black uppercase text-primary tracking-widest">Wholesale / Garage Discount Eligible</label>
+                                <p className="text-[9px] text-gray-500 mt-1">
+                                    {editingProduct.wholesale !== false 
+                                        ? 'Garages will receive tiered pricing on this product' 
+                                        : 'Full retail price for all buyers — no discounts applied'}
+                                </p>
+                            </div>
+                            <button 
+                                type="button"
+                                onClick={() => setEditingProduct({ ...editingProduct, wholesale: editingProduct.wholesale === false ? true : false })}
+                                className={`h-6 w-12 rounded-full transition-all relative ${editingProduct.wholesale !== false ? 'bg-primary' : 'bg-white/10'}`}
+                            >
+                                <div className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-all ${editingProduct.wholesale !== false ? 'left-7' : 'left-1'}`} />
+                            </button>
+                        </div>
+                    </div>
+
                     <div className="flex flex-col p-6 bg-primary/5 border border-primary/10 rounded-2xl gap-4">
                         <div className="flex items-center justify-between">
                             <label className="text-[10px] font-black uppercase text-primary tracking-widest">Administrative Quality Override</label>

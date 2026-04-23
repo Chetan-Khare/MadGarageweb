@@ -167,6 +167,22 @@ const AdminUserManagement: React.FC = () => {
         return matchesSearch && matchesRole && matchesStatus;
     });
 
+    const maskEmail = (email: string) => {
+        if (!email) return '';
+        const parts = email.split('@');
+        if (parts.length !== 2) return email;
+        const [name, domain] = parts;
+        if (name.length <= 2) return `${name}***@${domain}`;
+        return `${name.substring(0, 2)}***@${domain}`;
+    };
+
+    const maskPhone = (phone: string) => {
+        if (!phone) return 'NO DATA';
+        const str = String(phone);
+        if (str.length <= 4) return str;
+        return `***-***-${str.slice(-4)}`;
+    };
+
     return (
         <div className="min-h-screen bg-[#08080C] text-white font-inter">
             {/* Control Header */}
@@ -259,11 +275,11 @@ const AdminUserManagement: React.FC = () => {
                             <div className="space-y-3 pt-4 border-t border-white/5">
                                 <div className="flex items-center gap-3 text-gray-400">
                                     <Mail size={14} className="text-primary" />
-                                    <span className="text-xs font-bold truncate lowercase">{user.email}</span>
+                                    <span className="text-xs font-bold truncate lowercase">{maskEmail(user.email)}</span>
                                 </div>
                                 <div className="flex items-center gap-3 text-gray-400">
                                     <Phone size={14} className="text-primary" />
-                                    <span className="text-xs font-bold">{user.phone || 'NO DATA'}</span>
+                                    <span className="text-xs font-bold">{maskPhone(user.phone)}</span>
                                 </div>
                             </div>
 

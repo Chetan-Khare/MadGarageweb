@@ -75,7 +75,8 @@ const SellerInventory: React.FC = () => {
             rating: editingProduct.rating,
             sellerResponse: editingProduct.sellerResponse,
             flagged: editingProduct.flagged,
-            flagReason: editingProduct.flagReason
+            flagReason: editingProduct.flagReason,
+            wholesale: editingProduct.wholesale !== false
         };
 
         try {
@@ -171,6 +172,9 @@ const SellerInventory: React.FC = () => {
                                                     {p.flagged && (
                                                         <span className="bg-orange-500 text-black text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest shadow-lg shadow-orange-500/20">Flagged</span>
                                                     )}
+                                                    {p.wholesale !== false && (
+                                                        <span className="bg-green-500 text-black text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest shadow-lg shadow-green-500/20">Wholesale</span>
+                                                    )}
                                                 </div>
                                                 {p.flagged && p.flagReason && (
                                                     <p className="text-[10px] font-black text-orange-600 uppercase tracking-widest mt-1 flex items-center gap-1 italic">
@@ -257,6 +261,27 @@ const SellerInventory: React.FC = () => {
                                     <label className="text-[10px] font-black uppercase text-gray-400 mb-3 ml-2">Current Stock</label>
                                     <input required type="number" className="bg-gray-50 border border-gray-100 p-4 rounded-2xl text-sm font-bold outline-none focus:border-primary transition-all disabled:opacity-50" value={editingProduct.stockQuantity || editingProduct.stock || 0} onChange={e => setEditingProduct({ ...editingProduct, stockQuantity: Number(e.target.value) })} disabled={['USED', 'REFURBISHED'].includes(editingProduct.condition)} />
                                     {['USED', 'REFURBISHED'].includes(editingProduct.condition) && <p className="text-[8px] font-black uppercase text-orange-500 mt-2 ml-2 tracking-widest leading-tight">Locked to 1 unit</p>}
+                                </div>
+                            </div>
+
+                            {/* Wholesale Eligibility Toggle */}
+                            <div className="flex flex-col p-6 bg-gray-50 border border-gray-100 rounded-2xl gap-4">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <label className="text-[10px] font-black uppercase text-app-bg-dark tracking-widest">Wholesale / Garage Discount Eligible</label>
+                                        <p className="text-[9px] text-gray-400 mt-1">
+                                            {editingProduct.wholesale !== false 
+                                                ? 'Garages will receive tiered pricing on this product' 
+                                                : 'Full retail price for all buyers — no discounts applied'}
+                                        </p>
+                                    </div>
+                                    <button 
+                                        type="button"
+                                        onClick={() => setEditingProduct({ ...editingProduct, wholesale: editingProduct.wholesale === false ? true : false })}
+                                        className={`h-6 w-12 rounded-full transition-all relative ${editingProduct.wholesale !== false ? 'bg-primary' : 'bg-gray-200'}`}
+                                    >
+                                        <div className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-all ${editingProduct.wholesale !== false ? 'left-7' : 'left-1'}`} />
+                                    </button>
                                 </div>
                             </div>
 

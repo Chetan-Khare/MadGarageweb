@@ -2,14 +2,17 @@ import axios from 'axios';
 
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api',
+  withCredentials: true, // MANDATORY: Required to send/receive HttpOnly Cookies
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Request Interceptor: Attach JWT Token from localStorage
+// Request Interceptor: Transitioning to Cookies
 apiClient.interceptors.request.use(
   (config) => {
+    // If a token is manually present in localStorage (legacy/dev), we still send it as a fallback.
+    // In production, the browser will automatically append the 'mg_auth' cookie.
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
