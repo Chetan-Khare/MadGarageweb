@@ -68,7 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     refreshUserProfile();
   }, [refreshUserProfile]);
 
-  const login = (userData: any, newToken: string) => {
+  const login = (userData: any, _token: string) => {
     // Standardize Role
     let userRole = (userData.role || 'CUSTOMER').toUpperCase();
     if (!userRole.startsWith('ROLE_')) {
