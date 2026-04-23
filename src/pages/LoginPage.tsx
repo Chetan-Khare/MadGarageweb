@@ -51,7 +51,13 @@ const LoginPage: React.FC = () => {
       setShowOtpInput(true);
       setResendTimer(30);
     } catch (err: any) {
-      setError(err.response?.data?.error || err.response?.data || 'Failed to send OTP.');
+      if (err.response?.status === 429) {
+          const waitTime = parseInt(err.response.headers['retry-after'] || err.response.data?.retryAfterSeconds || '900', 10);
+          setResendTimer(waitTime);
+          setError(`Rate Limit Exceeded: Please wait ${Math.ceil(waitTime / 60)} minutes.`);
+      } else {
+          setError(err.response?.data?.error || err.response?.data || 'Failed to send OTP.');
+      }
     } finally {
       setLoading(false);
     }
@@ -80,7 +86,13 @@ const LoginPage: React.FC = () => {
           handleLoginSuccess(data);
       }
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Invalid OTP. Please try again.');
+      if (err.response?.status === 429) {
+          const waitTime = parseInt(err.response.headers['retry-after'] || err.response.data?.retryAfterSeconds || '900', 10);
+          setError(`Brute-force protection: Please wait ${Math.ceil(waitTime / 60)} minutes.`);
+          setResendTimer(waitTime);
+      } else {
+          setError(err.response?.data?.error || 'Invalid OTP. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -101,7 +113,12 @@ const LoginPage: React.FC = () => {
       });
       handleLoginSuccess(response.data);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Authorization failed. Check your keys.');
+      if (err.response?.status === 429) {
+          const waitTime = parseInt(err.response.headers['retry-after'] || err.response.data?.retryAfterSeconds || '900', 10);
+          setError(`Authorization Lockout: Too many failures. Wait ${Math.ceil(waitTime / 60)} minutes.`);
+      } else {
+          setError(err.response?.data?.message || 'Authorization failed. Check your keys.');
+      }
     } finally {
       setLoading(false);
     }
