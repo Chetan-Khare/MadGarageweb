@@ -55,7 +55,7 @@ const SellerDashboard: React.FC = () => {
             const response = await apiClient.get('/seller/inventory');
             // Truthy check handles boolean, number (1), or string "true" from different backend versions
             // Fix H-7: Coerce ID to string for reliable comparison
-            const flagged = response.data.filter((p: any) => p.flagged && (!p.sellerId || p.sellerId.toString() === user?.id));
+            const flagged = response.data.filter((p: any) => p.flagged);
             setFlaggedProducts(flagged);
         } catch (error) {
             console.error('Failed to fetch flagged items:', error);

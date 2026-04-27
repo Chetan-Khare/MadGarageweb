@@ -1,14 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   ChevronRight, Zap, ChevronDown, ChevronUp, ShoppingBag,
   Plus, Heart, X, Navigation, MapPin, ShieldCheck
 } from 'lucide-react';
-import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
+import { BASE_SERVER_URL } from '../services/apiClient';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useAuth } from '../context/AuthContext';
 import { useLocation } from '../context/LocationContext';
+import { useVehicles } from '../hooks/useVehicles';
+import { useProducts } from '../hooks/useProducts';
 
 interface MarketplaceProps {
   isGarage?: boolean;
@@ -23,22 +25,13 @@ const Marketplace: React.FC<MarketplaceProps> = ({ isGarage = false }) => {
   const { user } = useAuth();
   const { city, detectLocation, nearbyGarages, setManualCity } = useLocation();
 
-  const effectiveIsGarage = isGarage;
-
-  const [makes, setMakes] = useState<string[]>([]);
-  const [models, setModels] = useState<string[]>([]);
-  const [years, setYears] = useState<string[]>([]);
-  const [fuels, setFuels] = useState<string[]>([]);
-  const [trims, setTrims] = useState<string[]>([]);
-  const [engines, setEngines] = useState<any[]>([]);
+  // --- Filtering State ---
   const [selectedMake, setSelectedMake] = useState('');
   const [selectedModel, setSelectedModel] = useState('');
   const [selectedYear, setSelectedYear] = useState('');
   const [selectedFuel, setSelectedFuel] = useState('');
   const [selectedTrim, setSelectedTrim] = useState('');
   const [selectedEngine, setSelectedEngine] = useState('');
-  const [products, setProducts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState(q || '');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedCondition, setSelectedCondition] = useState('ALL');
@@ -49,117 +42,62 @@ const Marketplace: React.FC<MarketplaceProps> = ({ isGarage = false }) => {
 
   const categories = ['All', 'Engine', 'Brakes', 'Suspension', 'Exhaust', 'Electrical', 'Exterior'];
 
-  useEffect(() => {
-    fetchMakes();
-    fetchProducts();
-  }, [selectedCategory, selectedCondition, effectiveIsGarage]);
+  // --- Service Hooks ---
+  const v = useVehicles();
+  const { data: makes = [] } = v.useMakes();
+  const { data: models = [] } = v.useModels(selectedMake);
+  const { data: years = [] } = v.useYears(selectedMake, selectedModel);
+  const { data: fuels = [] } = v.useFuels(selectedMake, selectedModel, selectedYear);
+  const { data: trims = [] } = v.useTrims(selectedMake, selectedModel, selectedYear, selectedFuel);
+  const { data: engines = [] } = v.useEngines(selectedMake, selectedModel, selectedYear, selectedFuel, selectedTrim);
+
+  const { data: products = [], isLoading: loading, refetch } = useProducts(isGarage, selectedCategory, selectedEngine);
 
   useEffect(() => {
     if (q) setSearchTerm(q);
   }, [q]);
 
-  const fetchMakes = async () => {
-    try {
-      const res = await apiClient.get('/vehicles/makes');
-      setMakes(res.data);
-    } catch (err) { console.error('Error fetching makes'); }
-  };
-
-  const handleMakeChange = async (make: string) => {
+  const handleMakeChange = (make: string) => {
     setSelectedMake(make);
     setSelectedModel(''); setSelectedYear(''); setSelectedFuel(''); setSelectedTrim(''); setSelectedEngine('');
-    setModels([]); setYears([]); setFuels([]); setTrims([]); setEngines([]);
-    if (make) {
-      try {
-        const res = await apiClient.get(`/vehicles/models?make=${make}`);
-        setModels(res.data);
-      } catch (e) { console.error(e); }
-    }
   };
 
-  const handleModelChange = async (model: string) => {
+  const handleModelChange = (model: string) => {
     setSelectedModel(model);
     setSelectedYear(''); setSelectedFuel(''); setSelectedTrim(''); setSelectedEngine('');
-    if (model) {
-      try {
-        const res = await apiClient.get(`/vehicles/years?make=${selectedMake}&model=${model}`);
-        setYears(res.data.map((y: any) => y.toString()));
-      } catch (e) { console.error(e); }
-    }
   };
 
-  const handleYearChange = async (year: string) => {
+  const handleYearChange = (year: string) => {
     setSelectedYear(year);
     setSelectedFuel(''); setSelectedTrim(''); setSelectedEngine('');
-    if (year) {
-      try {
-        const res = await apiClient.get(`/vehicles/fuels?make=${selectedMake}&model=${selectedModel}&year=${year}`);
-        setFuels(res.data);
-      } catch (e) { console.error(e); }
-    }
   };
 
-  const handleFuelChange = async (fuel: string) => {
+  const handleFuelChange = (fuel: string) => {
     setSelectedFuel(fuel);
     setSelectedTrim(''); setSelectedEngine('');
-    if (fuel) {
-      try {
-        const res = await apiClient.get(`/vehicles/trims?make=${selectedMake}&model=${selectedModel}&year=${selectedYear}&fuel=${fuel}`);
-        setTrims(res.data);
-      } catch (e) { console.error(e); }
-    }
   };
 
-  const handleTrimChange = async (trim: string) => {
+  const handleTrimChange = (trim: string) => {
     setSelectedTrim(trim);
     setSelectedEngine('');
-    if (trim) {
-      try {
-        const res = await apiClient.get(`/vehicles/engines?make=${selectedMake}&model=${selectedModel}&year=${selectedYear}&fuel=${selectedFuel}&trim=${trim}`);
-        setEngines(res.data);
-      } catch (e) { console.error(e); }
-    }
   };
 
-  const fetchProducts = async () => {
-    setLoading(true);
-    try {
-      const params: any = {};
-      if (selectedEngine) params.engineId = selectedEngine;
-      if (selectedCategory !== 'All') params.category = selectedCategory;
-      
-      const endpoint = effectiveIsGarage ? '/products/garage' : '/products';
-      const response = await apiClient.get(endpoint, { params });
-      setProducts(response.data);
-    } catch (error) {
-      console.error('Failed to fetch products:', error);
-      setProducts([]); // Removed demo products fallback
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleFindParts = () => {
-    fetchProducts();
-    document.getElementById('marketplace-section')?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const filteredProducts = products.filter((p: any) => {
-    if (p.flagged) return false;
-    const name = (p.partName || p.name || '').toLowerCase();
-    const matchesSearch = name.includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'All' || p.category === selectedCategory;
-    const matchesCondition = selectedCondition === 'ALL' || p.condition === selectedCondition;
-    return matchesSearch && matchesCategory && matchesCondition;
-  });
+  const filteredProducts = useMemo(() => {
+    return products.filter((p: any) => {
+      if (p.flagged) return false;
+      const nameMatch = (p.partName || '').toLowerCase().includes(searchTerm.toLowerCase());
+      const conditionMatch = selectedCondition === 'ALL' || p.condition === selectedCondition;
+      return nameMatch && conditionMatch;
+    });
+  }, [products, searchTerm, selectedCondition]);
 
   return (
     <div className="flex flex-col w-full">
       {/* Hero / Fitment Section */}
-      <section className={`relative transition-all duration-700 ${effectiveIsGarage ? 'py-10' : 'min-h-[750px] flex items-center justify-center pt-20 pb-10'} bg-app-bg-dark overflow-hidden`}>
+      <section className={`relative transition-all duration-700 ${isGarage ? 'py-10' : 'min-h-[750px] flex items-center justify-center pt-20 pb-10'} bg-app-bg-dark overflow-hidden`}>
         <div className="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_50%_0%,rgba(223,35,36,0.3)_0%,transparent_70%)]" />
         <div className="container mx-auto px-4 relative z-10 text-center">
-          {!effectiveIsGarage && (
+          {!isGarage && (
             <>
               <div className="flex justify-center mb-8">
                 <img src="/logo.png" alt="MAD GARAGE" className="h-24 aspect-square object-contain rounded-full overflow-hidden brightness-110 drop-shadow-[0_0_15px_rgba(223,35,36,0.3)]" />
@@ -173,7 +111,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({ isGarage = false }) => {
             </>
           )}
 
-          {effectiveIsGarage && (
+          {isGarage && (
             <div className="mb-10 text-left">
               <h2 className="text-3xl font-black italic text-white uppercase tracking-tighter">
                 Workshop <span className="text-primary">Catalog</span>
@@ -219,7 +157,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({ isGarage = false }) => {
                     <X size={14} /> Clear Vehicle Profile
                   </button>
                   <button
-                    onClick={handleFindParts}
+                    onClick={() => { refetch(); setShowVehicleFilters(false); document.getElementById('marketplace-section')?.scrollIntoView({ behavior: 'smooth' }); }}
                     disabled={!selectedEngine}
                     className="w-full md:w-auto bg-primary text-white h-16 px-12 rounded-2xl font-black uppercase text-xs flex items-center justify-center gap-3 hover:bg-red-700 transition-all shadow-xl disabled:opacity-50 disabled:pointer-events-none"
                   >
@@ -371,18 +309,12 @@ const Marketplace: React.FC<MarketplaceProps> = ({ isGarage = false }) => {
       </section>
 
       {/* Marketplace Grid Section */}
-      <section id="marketplace-section" className={`py-20 ${effectiveIsGarage ? 'bg-app-bg-light' : 'bg-white'}`}>
+      <section id="marketplace-section" className={`py-20 ${isGarage ? 'bg-app-bg-light' : 'bg-white'}`}>
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-12">
-            <h2 className={`text-4xl font-black italic uppercase tracking-tighter flex items-center gap-4 ${effectiveIsGarage ? 'text-app-bg-dark' : 'text-app-bg-dark'}`}>
+            <h2 className={`text-4xl font-black italic uppercase tracking-tighter flex items-center gap-4 ${isGarage ? 'text-app-bg-dark' : 'text-app-bg-dark'}`}>
               Marketplace <div className="h-1 w-20 bg-primary/20"></div>
             </h2>
-            {effectiveIsGarage && (
-              <div className="text-right hidden sm:block">
-                <p className="text-[10px] font-black uppercase text-primary tracking-widest">Garage Exclusive Pricing</p>
-                <p className="text-xs font-black text-gray-400 uppercase tracking-tighter">Wholesale Tier 1 Active</p>
-              </div>
-            )}
           </div>
 
           <div className="mb-12 flex flex-col md:flex-row items-center justify-between gap-8 py-6 border-b border-gray-100 sticky top-16 z-30 bg-white/95 backdrop-blur-md px-4 rounded-2xl shadow-sm">
@@ -428,7 +360,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({ isGarage = false }) => {
                   <div className="aspect-square bg-gray-50 flex items-center justify-center p-8 relative overflow-hidden">
                     <img
                       src={product.imageUrl ? (product.imageUrl.startsWith('http') ? product.imageUrl : `${BASE_SERVER_URL}${product.imageUrl}`) : 'https://via.placeholder.com/300'}
-                      alt={product.partName || product.name}
+                      alt={product.partName}
                       className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-700"
                       onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
                         (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?q=80&w=400&auto=format&fit=crop';
@@ -446,42 +378,39 @@ const Marketplace: React.FC<MarketplaceProps> = ({ isGarage = false }) => {
                   <div className="p-8 flex flex-col flex-1">
                     <div className="flex items-center gap-2 mb-3">
                       <span className="text-[9px] font-black uppercase text-primary tracking-widest">{product.brand || 'MAD GARAGE'}</span>
-                      <span className="text-gray-300">•</span>
-                      <span className="text-[9px] font-black uppercase text-gray-400 tracking-widest">Available Now</span>
                     </div>
                     <h3 className="text-xl font-black italic text-app-bg-dark uppercase tracking-tighter leading-tight mb-6 group-hover:text-primary transition-colors line-clamp-2">
-                      {product.partName || product.name || product.deviceName}
+                      {product.partName}
                     </h3>
                     <div className="mt-auto pt-6 border-t border-gray-50 flex items-center justify-between">
                       <div>
-                        {effectiveIsGarage && product.wholesale && product.price && product.garagePrice && product.price > product.garagePrice && (
+                        {isGarage && product.wholesale && product.price && product.garagePrice && product.price > product.garagePrice && (
                           <p className="text-[10px] text-gray-400 line-through font-bold decoration-primary/40">₹{product.price.toLocaleString()}</p>
                         )}
                         <p className="text-2xl font-black italic text-app-bg-dark tracking-tighter">
-                          Rs.{(effectiveIsGarage && product.wholesale && product.garagePrice ? product.garagePrice : (product.price || 0)).toLocaleString()}
+                          Rs.{(isGarage && product.wholesale && product.garagePrice ? product.garagePrice : (product.price || 0)).toLocaleString()}
                         </p>
                       </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={(e: React.MouseEvent) => { 
-                            e.stopPropagation(); 
-                            if (!user) {
-                              navigate('/login');
-                              return;
-                            }
-                            toggleWishlist(product); 
-                          }}
-                          className={`h-12 w-12 rounded-2xl flex items-center justify-center transition-all shadow-lg border ${isInWishlist(product.id) ? 'bg-primary text-white border-primary' : 'bg-gray-50 text-app-bg-dark border-gray-100 hover:bg-primary/5 hover:text-primary'}`}
-                        >
-                          <Heart size={20} fill={isInWishlist(product.id) ? 'currentColor' : 'none'} />
-                        </button>
-                        <div
-                          className="h-12 w-12 bg-app-bg-dark text-white rounded-2xl flex items-center justify-center hover:bg-primary transition-all shadow-lg cursor-pointer"
-                          onClick={(e: React.MouseEvent) => { e.stopPropagation(); addToCart(product); }}
-                        >
-                          <Plus size={20} />
+                        <div className="flex gap-2">
+                          <button
+                            onClick={(e: React.MouseEvent) => { 
+                              e.stopPropagation(); 
+                              if (!user) { navigate('/login'); return; }
+                              toggleWishlist(product); 
+                            }}
+                            className={`h-12 w-12 rounded-2xl flex items-center justify-center transition-all shadow-lg border ${isInWishlist(product.id) ? 'bg-primary text-white border-primary' : 'bg-gray-50 text-app-bg-dark border-gray-100 hover:bg-primary/5 hover:text-primary'}`}
+                          >
+                            <Heart size={20} fill={isInWishlist(product.id) ? 'currentColor' : 'none'} />
+                          </button>
+                          {user?.role !== 'ROLE_SELLER' && (
+                            <div
+                              className="h-12 w-12 bg-app-bg-dark text-white rounded-2xl flex items-center justify-center hover:bg-primary transition-all shadow-lg cursor-pointer"
+                              onClick={(e: React.MouseEvent) => { e.stopPropagation(); addToCart(product); }}
+                            >
+                              <Plus size={20} />
+                            </div>
+                          )}
                         </div>
-                      </div>
                     </div>
                   </div>
                 </div>

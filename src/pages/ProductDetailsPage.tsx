@@ -82,7 +82,7 @@ const ProductDetailsPage: React.FC = () => {
                         <div className="aspect-square bg-gray-50 rounded-[3rem] overflow-hidden border border-gray-100 flex items-center justify-center p-12 group relative">
                             <img 
                                 src={product.imageUrl ? (product.imageUrl.startsWith('http') ? product.imageUrl : `${BASE_SERVER_URL}${product.imageUrl}`) : 'https://via.placeholder.com/600'} 
-                                alt={product.partName || product.name}
+                                alt={product.partName}
                                 className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-700" 
                                 onError={(e) => {
                                     (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?q=80&w=600&auto=format&fit=crop';
@@ -105,7 +105,7 @@ const ProductDetailsPage: React.FC = () => {
                                 </div>
                             </div>
                             <h1 className="text-4xl md:text-5xl font-black italic text-app-bg-dark uppercase tracking-tighter leading-none text-wrap break-words">
-                                {product.partName || product.name}
+                                {product.partName}
                             </h1>
                             <div className="pt-2 border-b border-gray-100 hidden md:block w-32" />
                         </div>
@@ -142,52 +142,60 @@ const ProductDetailsPage: React.FC = () => {
                             )}
 
                              <div className="relative z-10 flex flex-col sm:flex-row items-center gap-4">
-                                <div className="flex bg-white/5 border border-white/10 p-1.5 rounded-2xl items-center gap-4">
-                                    <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="h-10 w-10 flex items-center justify-center text-gray-400 hover:text-white transition-all"><Minus size={16}/></button>
-                                    <span className="text-lg font-black text-white italic min-w-8 text-center">{quantity}</span>
-                                    <button onClick={() => setQuantity(quantity + 1)} className="h-10 w-10 flex items-center justify-center text-gray-400 hover:text-white transition-all"><Plus size={16}/></button>
-                                </div>
-                                <div className="flex flex-1 gap-3 w-full">
-                                    <button 
-                                        onClick={() => {
-                                            addToCart(product, quantity);
-                                            // Optional: visual feedback or navigate to /cart
-                                            navigate('/cart');
-                                        }}
-                                        className="flex-1 bg-white/5 text-white border border-white/10 h-16 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 hover:bg-white/10 transition-all"
-                                    >
-                                        Add to Cart <ShoppingBag size={18} />
-                                    </button>
-                                    <button 
-                                        onClick={() => {
-                                            if (!isAuthenticated) {
-                                                navigate('/login', { state: { from: location } });
-                                                return;
-                                            }
-                                            addToCart(product, quantity);
-                                            navigate('/checkout');
-                                        }}
-                                        className="flex-1 bg-primary text-white h-16 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 hover:scale-[1.05] active:scale-[0.95] transition-all shadow-xl shadow-red-500/30"
-                                    >
-                                        Buy Now <Zap size={18} />
-                                    </button>
-                                    <button 
-                                        onClick={() => {
-                                            if (!isAuthenticated) {
-                                                navigate('/login', { state: { from: location } });
-                                                return;
-                                            }
-                                            toggleWishlist(product);
-                                        }}
-                                        className={`h-16 w-16 rounded-2xl flex items-center justify-center transition-all border shadow-lg ${
-                                            isInWishlist(product.id)
-                                                ? 'bg-primary text-white border-primary'
-                                                : 'bg-white/5 text-gray-400 border-white/10 hover:text-primary hover:border-primary'
-                                        }`}
-                                    >
-                                        <Heart size={20} fill={isInWishlist(product.id) ? 'currentColor' : 'none'} />
-                                    </button>
-                                </div>
+                                {role === 'ROLE_SELLER' ? (
+                                     <div className="flex-1 bg-red-500/10 border border-red-500/20 p-6 rounded-3xl text-center">
+                                         <p className="text-primary font-black uppercase tracking-widest text-[10px]">Restricted Account</p>
+                                         <p className="text-gray-400 text-xs font-bold mt-1">Seller accounts are not permitted to purchase parts.</p>
+                                     </div>
+                                 ) : (
+                                     <>
+                                         <div className="flex bg-white/5 border border-white/10 p-1.5 rounded-2xl items-center gap-4">
+                                             <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="h-10 w-10 flex items-center justify-center text-gray-400 hover:text-white transition-all"><Minus size={16}/></button>
+                                             <span className="text-lg font-black text-white italic min-w-8 text-center">{quantity}</span>
+                                             <button onClick={() => setQuantity(quantity + 1)} className="h-10 w-10 flex items-center justify-center text-gray-400 hover:text-white transition-all"><Plus size={16}/></button>
+                                         </div>
+                                         <div className="flex flex-1 gap-3 w-full">
+                                             <button 
+                                                 onClick={() => {
+                                                     addToCart(product, quantity);
+                                                     navigate('/cart');
+                                                 }}
+                                                 className="flex-1 bg-white/5 text-white border border-white/10 h-16 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 hover:bg-white/10 transition-all"
+                                             >
+                                                 Add to Cart <ShoppingBag size={18} />
+                                             </button>
+                                             <button 
+                                                 onClick={() => {
+                                                     if (!isAuthenticated) {
+                                                         navigate('/login', { state: { from: location } });
+                                                         return;
+                                                     }
+                                                     addToCart(product, quantity);
+                                                     navigate('/checkout');
+                                                 }}
+                                                 className="flex-1 bg-primary text-white h-16 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 hover:scale-[1.05] active:scale-[0.95] transition-all shadow-xl shadow-red-500/30"
+                                             >
+                                                 Buy Now <Zap size={18} />
+                                             </button>
+                                         </div>
+                                     </>
+                                 )}
+                                <button 
+                                    onClick={() => {
+                                        if (!isAuthenticated) {
+                                            navigate('/login', { state: { from: location } });
+                                            return;
+                                        }
+                                        toggleWishlist(product);
+                                    }}
+                                    className={`h-16 w-16 rounded-2xl flex items-center justify-center transition-all border shadow-lg ${
+                                        isInWishlist(product.id)
+                                            ? 'bg-primary text-white border-primary'
+                                            : 'bg-white/5 text-gray-400 border-white/10 hover:text-primary hover:border-primary'
+                                    }`}
+                                >
+                                    <Heart size={20} fill={isInWishlist(product.id) ? 'currentColor' : 'none'} />
+                                </button>
                             </div>
                         </div>
 

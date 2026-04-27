@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
+import { useAuth } from '../context/AuthContext';
 
 import { useCart } from '../context/CartContext';
 
@@ -20,6 +21,7 @@ interface ChatMessage {
 const AIChatPage: React.FC = () => {
 
   const { addToCart } = useCart();
+  const { role } = useAuth();
   const navigate = useNavigate();
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -189,12 +191,14 @@ const AIChatPage: React.FC = () => {
                             {p.originalPrice && <p className="text-gray-400 text-[10px] line-through font-bold">₹{(p.originalPrice || 0).toLocaleString()}</p>}
                             <p className="text-lg font-black text-white italic tracking-tighter">₹{(p.garagePrice || p.price || 0).toLocaleString()}</p>
                           </div>
-                           <button 
-                             onClick={(e) => { e.stopPropagation(); addToCart(p); }}
-                             className="h-10 w-10 bg-primary rounded-xl flex items-center justify-center text-white hover:scale-110 transition-all shadow-lg shadow-red-600/20"
-                           >
-                            <ShoppingCart size={18} />
-                          </button>
+                           {role !== 'ROLE_SELLER' && (
+                             <button 
+                               onClick={(e) => { e.stopPropagation(); addToCart(p); }}
+                               className="h-10 w-10 bg-primary rounded-xl flex items-center justify-center text-white hover:scale-110 transition-all shadow-lg shadow-red-600/20"
+                             >
+                              <ShoppingCart size={18} />
+                            </button>
+                           )}
                         </div>
                       </div>
                     ))}

@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from './AuthContext';
 
 export interface CartItem {
   id: number;
-  name: string;
+  partName: string;
   price: number;
   originalPrice?: number;
   imageUrl?: string;
@@ -49,7 +50,13 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('madgarage_cart', JSON.stringify(cart));
   }, [cart]);
 
+  const { role } = useAuth();
+
   const addToCart = (product: any, quantity: number = 1) => {
+    if (role === 'ROLE_SELLER') {
+        alert('Seller accounts are not permitted to purchase parts.');
+        return;
+    }
     setCart(prev => {
       const existing = prev.find(item => item.id === product.id);
       if (existing) {
@@ -61,7 +68,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const price = product.garagePrice || product.price || 0;
       return [...prev, {
         id: product.id,
-        name: product.name || product.partName,
+        partName: product.partName,
         price: price,
         originalPrice: product.originalPrice || (price / 0.95), // Estimate if not provided
         imageUrl: product.imageUrl,

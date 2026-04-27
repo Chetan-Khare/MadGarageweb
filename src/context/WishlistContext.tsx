@@ -4,7 +4,7 @@ import { useAuth } from './AuthContext';
 
 export interface WishlistItem {
   id: number;       // maps to productId from the API
-  name: string;
+  partName: string;
   price: number;
   imageUrl?: string;
   category?: string;
@@ -32,7 +32,7 @@ const GUEST_KEY = 'madgarage_wishlist_guest';
 /** Maps a raw product object (from catalog click) to a WishlistItem */
 const toWishlistItem = (product: any): WishlistItem => ({
   id: product.id,
-  name: product.name || product.partName || 'Unknown Part',
+  partName: product.partName || product.name || 'Unknown Part',
   price: product.garagePrice ?? product.price ?? 0,
   imageUrl: product.imageUrl,
   category: product.category,
@@ -43,7 +43,7 @@ const toWishlistItem = (product: any): WishlistItem => ({
 /** Maps a WishlistItemResponse from the API to a WishlistItem */
 const fromApiItem = (item: any): WishlistItem => ({
   id: item.productId,
-  name: item.name,
+  partName: item.name || item.partName,
   price: item.price,
   imageUrl: item.imageUrl,
   category: item.category,

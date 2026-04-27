@@ -64,8 +64,7 @@ const SellerFlaggedProducts: React.FC = () => {
         const term = searchTerm.toLowerCase();
 
         const matchesSearch = fullName.includes(term) || sku.includes(term) || category.includes(term);
-        const belongsToSeller = !p.sellerId || p.sellerId === user?.id;
-        return matchesSearch && belongsToSeller;
+        return matchesSearch;
     });
 
     return (

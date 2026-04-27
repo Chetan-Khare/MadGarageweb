@@ -1,5 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useMemo, useDeferredValue } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
+import { Product } from '../types';
 import { 
   Search, SlidersHorizontal,
   Cpu, Activity, Database, Boxes,
@@ -14,43 +16,29 @@ const CatalogPage: React.FC = () => {
     const categoryQuery = searchParams.get('category');
     const q = searchParams.get('q');
     
-    const [products, setProducts] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState(q || '');
+    const deferredSearchTerm = useDeferredValue(searchTerm);
     const [selectedCategory, setSelectedCategory] = useState(categoryQuery || 'All');
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
     const [showEditModal, setShowEditModal] = useState(false);
-    const [editingProduct, setEditingProduct] = useState<any | null>(null);
+    const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [isSaving, setIsSaving] = useState(false);
 
-    useEffect(() => {
-        fetchProducts();
-    }, [engineId, categoryQuery]);
-
-    useEffect(() => {
-        if (q) setSearchTerm(q);
-    }, [q]);
-
-    const fetchProducts = async () => {
-        setLoading(true);
-        try {
+    const { data: products = [], isLoading: loading, refetch } = useQuery<Product[]>({
+        queryKey: ['products', engineId, categoryQuery],
+        queryFn: async () => {
             let url = '/products';
             const params: any = {};
             if (engineId) params.engineId = engineId;
             if (categoryQuery && categoryQuery !== 'All') params.category = categoryQuery;
-            
             const response = await apiClient.get(url, { params });
-            setProducts(response.data);
-        } catch (error) {
-            console.error('Failed to fetch products:', error);
-            setProducts([]); // Removed fake fallback data
-        } finally {
-            setLoading(false);
+            return response.data;
         }
-    };
+    });
 
-    const handleSave = async (payload: any) => {
+
+    const handleSave = async (payload: Product) => {
         setIsSaving(true);
         try {
             if (editingProduct?.id) {
@@ -61,7 +49,7 @@ const CatalogPage: React.FC = () => {
                 await apiClient.post('/seller/inventory/base64', payload);
             }
             setShowEditModal(false);
-            fetchProducts();
+            refetch();
         } catch (err) {
             alert(editingProduct?.id ? 'Update failed.' : 'Creation failed.');
         } finally {
@@ -69,20 +57,22 @@ const CatalogPage: React.FC = () => {
         }
     };
 
-    const openEdit = (prod: any) => {
+    const openEdit = (prod: Product) => {
         setEditingProduct({ ...prod });
         setShowEditModal(true);
     };
 
     const categories = ['All', 'Engine', 'Brakes', 'Suspension', 'Exhaust', 'Electrical', 'Exterior'];
 
-    const filteredProducts = products.filter(p => {
-        if (p.flagged) return false;
-        const nameToSearch = (p.partName || p.name || '').toLowerCase();
-        const matchesSearch = nameToSearch.includes(searchTerm.toLowerCase());
-        const matchesCategory = selectedCategory === 'All' || p.category === selectedCategory;
-        return matchesSearch && matchesCategory;
-    });
+    const filteredProducts = useMemo(() => {
+        return products.filter(p => {
+            if (p.flagged) return false;
+            const nameToSearch = (p.partName || p.name || '').toLowerCase();
+            const matchesSearch = nameToSearch.includes(deferredSearchTerm.toLowerCase());
+            const matchesCategory = selectedCategory === 'All' || p.category === selectedCategory;
+            return matchesSearch && matchesCategory;
+        });
+    }, [products, deferredSearchTerm, selectedCategory]);
 
     return (
         <div className="min-h-screen bg-[#0A0A0A] font-inter text-white">
@@ -176,6 +166,8 @@ const CatalogPage: React.FC = () => {
                                      <img 
                                         src={product.imageUrl ? (product.imageUrl.startsWith('http') ? product.imageUrl : `${BASE_SERVER_URL}${product.imageUrl}`) : 'https://via.placeholder.com/300'} 
                                         alt={product.name}
+                                        loading="lazy"
+                                        decoding="async"
                                         className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500 drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]" 
                                         onError={(e) => {
                                             (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?q=80&w=400&auto=format&fit=crop';
@@ -189,7 +181,11 @@ const CatalogPage: React.FC = () => {
                                         <span className="text-[8px] font-black uppercase text-gray-500 tracking-widest">{product.category}</span>
                                         <div className="h-1 w-1 bg-white/20 rounded-full" />
                                         <span className="text-[8px] font-black uppercase text-gray-500 tracking-widest">{product.brand || 'MAD GARAGE'}</span>
-                                        {(product.stockQuantity || product.stock) && <span className={`ml-auto text-[8px] font-black uppercase tracking-widest ${(product.stockQuantity || product.stock) < 5 ? 'text-primary' : 'text-green-500'}`}>{(product.stockQuantity || product.stock) < 5 ? `LOW STOCK: ${product.stockQuantity || product.stock}` : `IN STOCK: ${product.stockQuantity || product.stock}`}</span>}
+                                        {(product.stockQuantity !== undefined || product.stock !== undefined) && (
+                                            <span className={`ml-auto text-[8px] font-black uppercase tracking-widest ${(product.stockQuantity ?? product.stock ?? 0) < 5 ? 'text-primary' : 'text-green-500'}`}>
+                                                {(product.stockQuantity ?? product.stock ?? 0) < 5 ? `LOW STOCK: ${product.stockQuantity ?? product.stock}` : `IN STOCK: ${product.stockQuantity ?? product.stock}`}
+                                            </span>
+                                        )}
                                     </div>
                                     <h3 className="text-lg font-black italic uppercase tracking-tighter leading-none mb-4 group-hover:text-primary transition-colors">
                                         {product.partName || product.name}

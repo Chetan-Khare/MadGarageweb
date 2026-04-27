@@ -49,7 +49,7 @@ const LoginPage: React.FC = () => {
     try {
       await apiClient.post('/auth/send-otp', { phone });
       setShowOtpInput(true);
-      setResendTimer(30);
+      setResendTimer(60);
     } catch (err: any) {
       if (err.response?.status === 429) {
           const waitTime = parseInt(err.response.headers['retry-after'] || err.response.data?.retryAfterSeconds || '900', 10);

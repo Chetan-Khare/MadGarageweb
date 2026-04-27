@@ -55,10 +55,7 @@ const SellerOrderManagement: React.FC = () => {
                              customerNameStr.includes(searchStr);
         const matchesStatus = statusFilter === 'ALL' || o.status === statusFilter;
         
-        // Safety check: ensure this order strictly belongs to the authenticated seller
-        const belongsToSeller = !o.sellerId || o.sellerId === user?.id;
-        
-        return matchesSearch && matchesStatus && belongsToSeller;
+        return matchesSearch && matchesStatus;
     }) : [];
 
     return (

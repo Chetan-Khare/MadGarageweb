@@ -1,5 +1,6 @@
 import React from 'react';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { 
   Trash2, Plus, Minus, ArrowLeft, ShoppingBag, 
@@ -9,6 +10,7 @@ import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
 
 const CartPage: React.FC = () => {
     const { cart, updateQuantity, removeFromCart, subtotal, totalItems, savings } = useCart();
+    const { role } = useAuth();
     const baseTotal = subtotal + savings;
     const navigate = useNavigate();
     const [config, setConfig] = React.useState({ shippingFee: 250, freeThreshold: 400, platformFee: 7 });
@@ -81,7 +83,7 @@ const CartPage: React.FC = () => {
                                             {item.imageUrl ? (
                                                 <img 
                                                     src={item.imageUrl.startsWith('http') ? item.imageUrl : `${BASE_SERVER_URL}${item.imageUrl}`} 
-                                                    alt={item.name} 
+                                                    alt={item.partName} 
                                                     className="w-full h-full object-contain"
                                                 />
                                             ) : (
@@ -101,7 +103,7 @@ const CartPage: React.FC = () => {
                                                     <div>
                                                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{item.category} • {item.brand}</p>
                                                         <h3 className="text-xl font-black italic text-app-bg-dark uppercase tracking-tighter leading-tight mt-1 hover:text-primary cursor-pointer transition-colors">
-                                                            {item.name}
+                                                            {item.partName}
                                                         </h3>
                                                     </div>
                                                     <button 
@@ -205,12 +207,19 @@ const CartPage: React.FC = () => {
                                 </div>
                             </div>
 
-                            <button 
-                                onClick={() => navigate('/checkout', { state: { from: '/checkout' } })}
-                                className="w-full bg-primary text-white py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-sm flex items-center justify-center gap-3 hover:bg-white hover:text-app-bg-dark transition-all shadow-xl shadow-red-500/20 active:scale-95"
-                            >
-                                Proceed to Checkout <Zap size={18} />
-                            </button>
+                            {role === 'ROLE_SELLER' ? (
+                                <div className="w-full bg-red-500/10 border border-red-500/20 p-6 rounded-2xl text-center">
+                                    <p className="text-primary font-black uppercase tracking-widest text-[10px]">Restricted Action</p>
+                                    <p className="text-gray-400 text-xs font-bold mt-1">Seller accounts are not permitted to purchase parts.</p>
+                                </div>
+                            ) : (
+                                <button 
+                                    onClick={() => navigate('/checkout', { state: { from: '/checkout' } })}
+                                    className="w-full bg-primary text-white py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-sm flex items-center justify-center gap-3 hover:bg-white hover:text-app-bg-dark transition-all shadow-xl shadow-red-500/20 active:scale-95"
+                                >
+                                    Proceed to Checkout <Zap size={18} />
+                                </button>
+                            )}
                             
                             <p className="text-center text-[9px] font-black uppercase text-gray-600 tracking-widest mt-8">
                                 Secure Payment Handshake Guaranteed

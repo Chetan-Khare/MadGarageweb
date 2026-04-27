@@ -7,11 +7,15 @@ import { useAuth } from '../context/AuthContext';
 const WishlistPage: React.FC = () => {
     const { wishlist, removeFromWishlist } = useWishlist();
     const { addToCart } = useCart();
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, role } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
 
     const handleMoveToCart = (item: any) => {
+        if (role === 'ROLE_SELLER') {
+            alert('Seller accounts cannot purchase parts.');
+            return;
+        }
         addToCart(item);
         removeFromWishlist(item.id);
     };
@@ -54,7 +58,7 @@ const WishlistPage: React.FC = () => {
                                 <div className="aspect-[4/3] relative overflow-hidden bg-gray-50">
                                     <img
                                         src={item.imageUrl || 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&q=80'}
-                                        alt={item.name}
+                                        alt={item.partName}
                                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                                     />
                                     <button
@@ -74,7 +78,7 @@ const WishlistPage: React.FC = () => {
                                     <div className="mb-4">
                                         <span className="text-[10px] font-black uppercase text-primary tracking-widest">{item.brand || 'High Performance'}</span>
                                         <h3 className="text-xl font-black italic text-app-bg-dark uppercase tracking-tighter leading-tight mt-1 line-clamp-2">
-                                            {item.name}
+                                            {item.partName}
                                         </h3>
                                     </div>
 
