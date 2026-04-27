@@ -10,7 +10,7 @@ import { useAuth } from '../context/AuthContext';
 import apiClient from '../services/apiClient';
 
 const SellerOrderManagement: React.FC = () => {
-    const { user } = useAuth();
+    useAuth();
     const navigate = useNavigate();
     const [orders, setOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);

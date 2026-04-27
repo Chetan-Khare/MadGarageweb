@@ -1,12 +1,14 @@
 export interface Product {
     id: number;
     partName: string;
+    name?: string; // Compatibility for different backend versions
     brand: string;
     category: string;
     price: number;
     description?: string;
     imageUrl?: string;
     stockQuantity: number;
+    stock?: number; // Compatibility for different backend versions
     condition: string;
     rating: number;
     sku?: string;

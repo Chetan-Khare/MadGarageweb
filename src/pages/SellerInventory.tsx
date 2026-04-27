@@ -9,7 +9,7 @@ import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
 import { useAuth } from '../context/AuthContext';
 
 const SellerInventory: React.FC = () => {
-    const { user } = useAuth();
+    useAuth();
     const navigate = useNavigate();
     const location = useLocation();
     const [products, setProducts] = useState<any[]>([]);

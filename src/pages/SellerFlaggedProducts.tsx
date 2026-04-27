@@ -9,7 +9,7 @@ import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
 import { useAuth } from '../context/AuthContext';
 
 const SellerFlaggedProducts: React.FC = () => {
-    const { user } = useAuth();
+    useAuth();
     const [flaggedItems, setFlaggedItems] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
