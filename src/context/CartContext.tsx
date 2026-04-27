@@ -65,17 +65,19 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         );
       }
       
-      const price = product.garagePrice || product.price || 0;
+      const isGarage = role === 'ROLE_GARAGE';
+      const price = (isGarage && product.garagePrice) ? product.garagePrice : (product.price || 0);
+      
       return [...prev, {
         id: product.id,
         partName: product.partName,
         price: price,
-        originalPrice: product.originalPrice || (price / 0.95), // Estimate if not provided
+        originalPrice: product.originalPrice || (price / 0.9), // Estimate 10% markup if not provided
         imageUrl: product.imageUrl,
         category: product.category,
         brand: product.brand,
         condition: product.condition,
-        wholesale: product.wholesale,
+        wholesale: isGarage && product.wholesale,
         quantity
       }];
     });
@@ -95,9 +97,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
   const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
   const savings = cart.reduce((acc, item) => {
-    if (item.wholesale) {
-        const original = item.originalPrice || (item.price / 0.95);
-        return acc + (original - item.price) * item.quantity;
+    // Only show savings if there's an originalPrice > current price
+    if (item.originalPrice && item.originalPrice > item.price) {
+        return acc + (item.originalPrice - item.price) * item.quantity;
     }
     return acc;
   }, 0);

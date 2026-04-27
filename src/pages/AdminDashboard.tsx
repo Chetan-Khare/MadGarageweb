@@ -127,9 +127,10 @@ const AdminDashboard: React.FC = () => {
     };
 
     const formatCurrency = (val: number) => {
+        if (val >= 1000000) return `₹${(val / 1000000).toFixed(2)}M`;
         if (val >= 1000) return `₹${(val / 1000).toFixed(1)}k`;
         if (val === 0) return '₹0';
-        return `₹${val.toFixed(2)}`;
+        return `₹${val.toLocaleString()}`;
     };
 
     const handleCreateUser = async (e: React.FormEvent) => {
@@ -260,7 +261,7 @@ const AdminDashboard: React.FC = () => {
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                     <StatCard onClick={() => navigate('/admin/users')} icon={<Users />} value={stats?.totalUsers || 0} label="Total Users" />
                     <StatCard onClick={() => navigate('/admin/parts-db')} icon={<Package />} value={stats?.totalProducts || 0} label="Parts DB" />
-                    <StatCard icon={<TrendingUp />} value={`₹${((stats?.totalRevenue || 0) / 1000).toFixed(1)}k`} label="Gross Income" />
+                    <StatCard icon={<TrendingUp />} value={formatCurrency(stats?.totalRevenue || 0)} label="Gross Income" />
                     <StatCard onClick={() => navigate('/admin/requests')} icon={<FileText />} value="VIEW" label="Active Requests" />
                 </div>
 

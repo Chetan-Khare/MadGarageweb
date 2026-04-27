@@ -81,7 +81,7 @@ const OrdersPage: React.FC = () => {
                                             </h3>
                                             <div className="flex items-center gap-4 mt-2">
                                                 <p className="text-[10px] font-bold text-gray-500 uppercase flex items-center gap-1">
-                                                    <Clock size={12} className="text-primary" /> {new Date(order.createdAt).toLocaleDateString()}
+                                                    <Clock size={12} className="text-primary" /> {order.orderDate ? new Date(order.orderDate).toLocaleDateString() : 'N/A'}
                                                 </p>
                                                 <div className="h-1 w-1 bg-gray-300 rounded-full" />
                                                 <p className="text-[10px] font-bold text-gray-500 uppercase">₹{order.grandTotal.toLocaleString()}</p>

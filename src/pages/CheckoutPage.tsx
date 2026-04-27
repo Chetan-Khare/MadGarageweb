@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation as useDomLocation, useNavigate } from 'react-router-dom';
-import { 
-    ChevronLeft, CreditCard, MapPin, 
+import {
+    ChevronLeft, CreditCard, MapPin,
     ShieldCheck, Package, ShoppingBag,
     CheckCircle, AlertCircle, Store, Truck, Navigation,
     Home, Briefcase
@@ -9,16 +9,18 @@ import {
 import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
 import { useCart } from '../context/CartContext';
 import { useLocation } from '../context/LocationContext';
+import { useAuth } from '../context/AuthContext';
 
 const CheckoutPage: React.FC = () => {
     const domLocation = useDomLocation();
     const navigate = useNavigate();
-    const { cart, subtotal: cartSubtotal, clearCart } = useCart();
+    const { cart, subtotal: cartSubtotal, clearCart, savings } = useCart();
     const { city: detectedCity, address: detectedAddress, nearbyGarages, fetchGarages } = useLocation();
-    
+    const { role: userRole, user } = useAuth();
+
     // Support both single product "Buy Now" and "Cart Checkout"
     const { product: buyNowProduct, quantity: buyNowQuantity } = domLocation.state || {};
-    
+
     // Final product list for checkout
     const checkoutItems = buyNowProduct ? [{ ...buyNowProduct, quantity: buyNowQuantity }] : cart;
 
@@ -35,7 +37,7 @@ const CheckoutPage: React.FC = () => {
     const [city, setCity] = useState('');
     const [state, setState] = useState('');
     const [pincode, setPincode] = useState('');
-    
+
     // Fitting State
     const [deliveryType, setDeliveryType] = useState<'HOME_DELIVERY' | 'GARAGE_FITTING'>('HOME_DELIVERY');
     const [selectedGarageId, setSelectedGarageId] = useState<number | null>(null);
@@ -84,7 +86,7 @@ const CheckoutPage: React.FC = () => {
         setFloorNo('');
         setBuildingName('');
         setLandmark('');
-        
+
         setCity(addr.city || '');
         setState(addr.state || '');
         setPincode(addr.pincode || '');
@@ -128,6 +130,21 @@ const CheckoutPage: React.FC = () => {
     const platformFee = subtotal > 0 ? config.platformFee : 0;
     const total = subtotal + shippingFee + platformFee;
 
+    const loadRazorpay = () => {
+        return new Promise((resolve) => {
+            if ((window as any).Razorpay) {
+                resolve(true);
+                return;
+            }
+            const script = document.createElement('script');
+            script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+            script.id = 'razorpay-sdk';
+            script.onload = () => resolve(true);
+            script.onerror = () => resolve(false);
+            document.body.appendChild(script);
+        });
+    };
+
     const handlePlaceOrder = async (e: React.FormEvent) => {
         e.preventDefault();
         const pincodeRegex = /^[1-9][0-9]{5}$/;
@@ -154,10 +171,11 @@ const CheckoutPage: React.FC = () => {
                 return;
             }
 
+            // 1. Create Order in Database (Status: PENDING_PAYMENT)
             const response = await apiClient.post('/orders/checkout', {
-                items: checkoutItems.map(item => ({ 
-                    productId: item.id, 
-                    quantity: item.quantity 
+                items: checkoutItems.map(item => ({
+                    productId: item.id,
+                    quantity: item.quantity
                 })),
                 shippingAddress: fullAddress,
                 city,
@@ -168,25 +186,70 @@ const CheckoutPage: React.FC = () => {
             });
 
             const orderId = response.data.id;
+            const amount = total;
 
-            // 🛑 TRANSACTION SAFETY: Payment Verification Hook
-            // In a production app, the 'paymentId' and 'signature' would be returned 
-            // by the Payment Gateway (Stripe/Razorpay) via a secure redirect or callback.
-            const mockPaymentId = `PAY-${Math.random().toString(36).substring(7).toUpperCase()}`;
-            const mockSignature = btoa(`${orderId}|${mockPaymentId}`); // Matches backend mock logic
+            // 2. Create Razorpay Order on Backend (Now uses orderId for server-side validation)
+            const rzpOrderResponse = await apiClient.post('/payments/create-order', {
+                orderId: orderId
+            });
 
-            // Verifying the transaction with the server before showing success
-            await apiClient.post(`/orders/${orderId}/verify-payment?paymentId=${mockPaymentId}&signature=${mockSignature}`);
+            const rzpOrderId = rzpOrderResponse.data.razorpay_order_id;
 
-            if (!buyNowProduct) clearCart(); 
-            setSuccess(true);
-            setTimeout(() => {
-                navigate(`/order/${orderId}`);
-            }, 3000);
+            // 2.5 Link Razorpay Order ID to local Order
+            await apiClient.post(`/orders/${orderId}/rzp-id?rzpOrderId=${rzpOrderId}`);
+
+            // 3. Load and Open Razorpay
+            const res = await loadRazorpay();
+            if (!res) {
+                setError('Razorpay SDK failed to load. Are you online?');
+                setLoading(false);
+                return;
+            }
+
+            const options = {
+                key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+                amount: amount * 100,
+                currency: 'INR',
+                name: 'Mad Garage',
+                description: 'Automotive Parts Purchase',
+                image: 'https://i.imgur.com/3g7nmJC.png',
+                order_id: rzpOrderId,
+                handler: async (response: any) => {
+                    // 4. Verify Payment on Backend
+                    try {
+                        setLoading(true);
+                        await apiClient.post(`/orders/${orderId}/verify-payment?paymentId=${response.razorpay_payment_id}&signature=${response.razorpay_signature}`);
+
+                        if (!buyNowProduct) clearCart();
+                        setSuccess(true);
+                        setTimeout(() => {
+                            navigate(`/order/${orderId}`);
+                        }, 3000);
+                    } catch (err: any) {
+                        setError('Payment verification failed. Please contact support.');
+                        setLoading(false);
+                    }
+                },
+                prefill: {
+                    name: user?.name || 'Customer',
+                    email: user?.email || '',
+                },
+                theme: {
+                    color: '#DF2324'
+                }
+            };
+
+            const rzp = new (window as any).Razorpay(options);
+            rzp.on('payment.failed', function (response: any) {
+                console.error('Razorpay payment failed:', response.error);
+                setError('Payment could not be completed. Please try again or use a different payment method.');
+                setLoading(false);
+            });
+            rzp.open();
+
         } catch (err: any) {
             console.error('Checkout failed:', err);
             setError(err.response?.data?.message || 'Transaction failed. Please try again.');
-        } finally {
             setLoading(false);
         }
     };
@@ -233,7 +296,7 @@ const CheckoutPage: React.FC = () => {
                     {/* Left: Form */}
                     <div className="lg:col-span-7 space-y-12">
                         <div className="space-y-8">
-                             <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-4">
                                 <div className="h-8 w-8 bg-primary/10 text-primary rounded-xl flex items-center justify-center">
                                     <Package size={16} />
                                 </div>
@@ -241,7 +304,7 @@ const CheckoutPage: React.FC = () => {
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <button 
+                                <button
                                     type="button"
                                     onClick={() => setDeliveryType('HOME_DELIVERY')}
                                     className={`p-8 rounded-[2.5rem] border transition-all text-left flex flex-col gap-4 ${deliveryType === 'HOME_DELIVERY' ? 'bg-primary/5 border-primary/20 shadow-xl' : 'bg-[#121216] border-white/5 hover:border-white/10'}`}
@@ -255,7 +318,7 @@ const CheckoutPage: React.FC = () => {
                                     </div>
                                 </button>
 
-                                <button 
+                                <button
                                     type="button"
                                     onClick={() => setDeliveryType('GARAGE_FITTING')}
                                     className={`p-8 rounded-[2.5rem] border transition-all text-left flex flex-col gap-4 ${deliveryType === 'GARAGE_FITTING' ? 'bg-primary/5 border-primary/20 shadow-xl' : 'bg-[#121216] border-white/5 hover:border-white/10'}`}
@@ -278,11 +341,11 @@ const CheckoutPage: React.FC = () => {
                                             <Navigation size={10} /> Local Matching Active
                                         </div>
                                     </div>
-                                    
+
                                     <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
                                         {nearbyGarages.length > 0 ? (
                                             nearbyGarages.map(garage => (
-                                                <div 
+                                                <div
                                                     key={garage.id}
                                                     onClick={() => setSelectedGarageId(garage.id)}
                                                     className={`min-w-[280px] p-6 rounded-[2rem] border cursor-pointer transition-all ${selectedGarageId === garage.id ? 'bg-primary text-white border-primary shadow-2xl' : 'bg-[#121216] border-white/5 hover:border-white/10'}`}
@@ -311,62 +374,62 @@ const CheckoutPage: React.FC = () => {
                                 </div>
                             )}
 
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-4">
-                                        <div className="h-8 w-8 bg-primary/10 text-primary rounded-xl flex items-center justify-center">
-                                            <MapPin size={16} />
-                                        </div>
-                                        <h3 className="text-xs font-black uppercase tracking-[0.3em] text-white">Shipping Protocol</h3>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                    <div className="h-8 w-8 bg-primary/10 text-primary rounded-xl flex items-center justify-center">
+                                        <MapPin size={16} />
                                     </div>
-                                    
-                                    <div className="flex items-center gap-2 overflow-x-auto max-w-[300px] scrollbar-hide">
-                                        {savedAddresses.map(addr => (
-                                            <button 
-                                                key={addr.id}
-                                                type="button"
-                                                onClick={() => useSavedAddress(addr)}
-                                                className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-[9px] font-black uppercase tracking-widest text-gray-400 hover:bg-primary hover:text-white hover:border-primary transition-all whitespace-nowrap"
-                                            >
-                                                {addr.tag === 'HOME' ? <Home size={10} className="inline mr-1"/> : addr.tag === 'OFFICE' ? <Briefcase size={10} className="inline mr-1"/> : <MapPin size={10} className="inline mr-1"/>}
-                                                {addr.tag}
-                                            </button>
-                                        ))}
-                                        <button 
-                                            type="button"
-                                            onClick={useDetectedLocation}
-                                            disabled={!detectedAddress}
-                                            className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-[9px] font-black uppercase tracking-widest text-gray-400 hover:bg-primary hover:text-white hover:border-primary transition-all disabled:opacity-30 disabled:hover:bg-white/5 whitespace-nowrap"
-                                        >
-                                            Detected 
-                                        </button>
-                                        <button 
-                                            type="button"
-                                            onClick={clearAddress}
-                                            className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-[9px] font-black uppercase tracking-widest text-primary hover:bg-primary hover:text-white hover:border-primary transition-all whitespace-nowrap"
-                                        >
-                                            Clear
-                                        </button>
-                                    </div>
+                                    <h3 className="text-xs font-black uppercase tracking-[0.3em] text-white">Shipping Protocol</h3>
                                 </div>
+
+                                <div className="flex items-center gap-2 overflow-x-auto max-w-[300px] scrollbar-hide">
+                                    {savedAddresses.map(addr => (
+                                        <button
+                                            key={addr.id}
+                                            type="button"
+                                            onClick={() => useSavedAddress(addr)}
+                                            className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-[9px] font-black uppercase tracking-widest text-gray-400 hover:bg-primary hover:text-white hover:border-primary transition-all whitespace-nowrap"
+                                        >
+                                            {addr.tag === 'HOME' ? <Home size={10} className="inline mr-1" /> : addr.tag === 'OFFICE' ? <Briefcase size={10} className="inline mr-1" /> : <MapPin size={10} className="inline mr-1" />}
+                                            {addr.tag}
+                                        </button>
+                                    ))}
+                                    <button
+                                        type="button"
+                                        onClick={useDetectedLocation}
+                                        disabled={!detectedAddress}
+                                        className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-[9px] font-black uppercase tracking-widest text-gray-400 hover:bg-primary hover:text-white hover:border-primary transition-all disabled:opacity-30 disabled:hover:bg-white/5 whitespace-nowrap"
+                                    >
+                                        Detected
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={clearAddress}
+                                        className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-[9px] font-black uppercase tracking-widest text-primary hover:bg-primary hover:text-white hover:border-primary transition-all whitespace-nowrap"
+                                    >
+                                        Clear
+                                    </button>
+                                </div>
+                            </div>
 
                             <form onSubmit={handlePlaceOrder} id="checkout-form" className="space-y-8 p-10 bg-[#121216] rounded-[3rem] border border-white/5">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="flex flex-col">
                                         <label className="text-[10px] font-black uppercase text-gray-500 mb-3 ml-2">Flat / Shop No.</label>
-                                        <input 
-                                            type="text" 
+                                        <input
+                                            type="text"
                                             placeholder="G-402 / Shop 12"
-                                            className="bg-white/5 border border-white/10 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all" 
+                                            className="bg-white/5 border border-white/10 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
                                             value={flatNo}
                                             onChange={e => setFlatNo(e.target.value)}
                                         />
                                     </div>
                                     <div className="flex flex-col">
                                         <label className="text-[10px] font-black uppercase text-gray-500 mb-3 ml-2">Floor No.</label>
-                                        <input 
-                                            type="text" 
+                                        <input
+                                            type="text"
                                             placeholder="4th Floor"
-                                            className="bg-white/5 border border-white/10 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all" 
+                                            className="bg-white/5 border border-white/10 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
                                             value={floorNo}
                                             onChange={e => setFloorNo(e.target.value)}
                                         />
@@ -375,11 +438,11 @@ const CheckoutPage: React.FC = () => {
 
                                 <div className="flex flex-col">
                                     <label className="text-[10px] font-black uppercase text-gray-500 mb-3 ml-2">Building / Complex Name</label>
-                                    <input 
-                                        required 
-                                        type="text" 
+                                    <input
+                                        required
+                                        type="text"
                                         placeholder="SpeedWay Apartments"
-                                        className="bg-white/5 border border-white/10 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all" 
+                                        className="bg-white/5 border border-white/10 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
                                         value={buildingName}
                                         onChange={e => setBuildingName(e.target.value)}
                                     />
@@ -387,11 +450,11 @@ const CheckoutPage: React.FC = () => {
 
                                 <div className="flex flex-col">
                                     <label className="text-[10px] font-black uppercase text-gray-500 mb-3 ml-2">Street / Area</label>
-                                    <input 
-                                        required 
-                                        type="text" 
+                                    <input
+                                        required
+                                        type="text"
                                         placeholder="Main Road, Sector 5"
-                                        className="bg-white/5 border border-white/10 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all" 
+                                        className="bg-white/5 border border-white/10 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
                                         value={streetArea}
                                         onChange={e => setStreetArea(e.target.value)}
                                     />
@@ -399,10 +462,10 @@ const CheckoutPage: React.FC = () => {
 
                                 <div className="flex flex-col">
                                     <label className="text-[10px] font-black uppercase text-gray-500 mb-3 ml-2">Landmark</label>
-                                    <input 
-                                        type="text" 
+                                    <input
+                                        type="text"
                                         placeholder="Near Phoenix Mall"
-                                        className="bg-white/5 border border-white/10 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all" 
+                                        className="bg-white/5 border border-white/10 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
                                         value={landmark}
                                         onChange={e => setLandmark(e.target.value)}
                                     />
@@ -411,22 +474,22 @@ const CheckoutPage: React.FC = () => {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     <div className="flex flex-col">
                                         <label className="text-[10px] font-black uppercase text-gray-500 mb-3 ml-2">City</label>
-                                        <input 
-                                            required 
-                                            type="text" 
+                                        <input
+                                            required
+                                            type="text"
                                             placeholder="Mumbai"
-                                            className="bg-white/5 border border-white/10 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all" 
+                                            className="bg-white/5 border border-white/10 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
                                             value={city}
                                             onChange={e => setCity(e.target.value)}
                                         />
                                     </div>
                                     <div className="flex flex-col">
                                         <label className="text-[10px] font-black uppercase text-gray-500 mb-3 ml-2">State</label>
-                                        <input 
-                                            required 
-                                            type="text" 
+                                        <input
+                                            required
+                                            type="text"
                                             placeholder="Maharashtra"
-                                            className="bg-white/5 border border-white/10 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all" 
+                                            className="bg-white/5 border border-white/10 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
                                             value={state}
                                             onChange={e => setState(e.target.value)}
                                         />
@@ -435,13 +498,13 @@ const CheckoutPage: React.FC = () => {
 
                                 <div className="flex flex-col">
                                     <label className="text-[10px] font-black uppercase text-gray-500 mb-3 ml-2">Pincode</label>
-                                    <input 
-                                        required 
-                                        type="tel" 
+                                    <input
+                                        required
+                                        type="tel"
                                         pattern="[0-9]{6}"
                                         maxLength={6}
                                         placeholder="400001"
-                                        className="bg-white/5 border border-white/10 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all w-full md:w-1/2" 
+                                        className="bg-white/5 border border-white/10 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all w-full md:w-1/2"
                                         value={pincode}
                                         onChange={e => setPincode(e.target.value.replace(/\D/g, ''))}
                                     />
@@ -450,13 +513,13 @@ const CheckoutPage: React.FC = () => {
                         </div>
 
                         <div className="p-8 bg-green-500/5 border border-green-500/10 rounded-[2.5rem] flex items-center gap-6">
-                             <div className="h-12 w-12 bg-green-500 text-black rounded-[1.2rem] flex items-center justify-center shrink-0">
+                            <div className="h-12 w-12 bg-green-500 text-black rounded-[1.2rem] flex items-center justify-center shrink-0">
                                 <CreditCard size={24} />
-                             </div>
-                             <div>
+                            </div>
+                            <div>
                                 <p className="text-[10px] font-black uppercase text-green-500 tracking-widest">Payment Security</p>
                                 <p className="text-[11px] text-gray-400 mt-1 font-medium italic italic">"Your financial profile is never stored. All transactions are settled via MAD-SAFE bank integration."</p>
-                             </div>
+                            </div>
                         </div>
 
                         {error && (
@@ -479,14 +542,14 @@ const CheckoutPage: React.FC = () => {
 
                             <div className="bg-[#121216] p-10 rounded-[3rem] border border-white/10 space-y-10 relative overflow-hidden">
                                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-[60px] -mr-16 -mt-16" />
-                                
+
                                 {/* Checkout items in summary */}
                                 <div className="space-y-6 relative z-10 pb-10 border-b border-white/5 max-h-[300px] overflow-y-auto scrollbar-hide">
                                     {checkoutItems.map(item => (
                                         <div key={item.id} className="flex items-center gap-6">
                                             <div className="h-20 w-20 bg-black rounded-2xl overflow-hidden border border-white/10 p-3 shrink-0">
-                                                <img 
-                                                    src={item.imageUrl ? (item.imageUrl.startsWith('http') ? item.imageUrl : `${BASE_SERVER_URL}${item.imageUrl}`) : 'https://via.placeholder.com/100'} 
+                                                <img
+                                                    src={item.imageUrl ? (item.imageUrl.startsWith('http') ? item.imageUrl : `${BASE_SERVER_URL}${item.imageUrl}`) : 'https://via.placeholder.com/100'}
                                                     alt={item.name}
                                                     className="w-full h-full object-contain"
                                                 />
@@ -511,6 +574,12 @@ const CheckoutPage: React.FC = () => {
                                         <span>Secure Infrastructure Fee</span>
                                         <span className="text-white">₹{platformFee.toLocaleString()}</span>
                                     </div>
+                                    {savings > 0 && (
+                                        <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-green-500">
+                                            <span>{userRole === 'ROLE_GARAGE' ? 'Wholesale Discount' : 'Promotional Savings'}</span>
+                                            <span>-₹{Math.round(savings).toLocaleString()}</span>
+                                        </div>
+                                    )}
                                     <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-gray-500">
                                         <span>Logistics & Handling</span>
                                         <span className="text-white">
@@ -535,7 +604,7 @@ const CheckoutPage: React.FC = () => {
                                     </div>
                                 </div>
 
-                                <button 
+                                <button
                                     form="checkout-form"
                                     type="submit"
                                     disabled={loading || (deliveryType === 'GARAGE_FITTING' && !selectedGarageId)}

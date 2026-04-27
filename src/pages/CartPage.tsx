@@ -178,12 +178,14 @@ const CartPage: React.FC = () => {
                             <div className="space-y-6 mb-10 relative z-10">
                                 <div className="flex justify-between items-center">
                                     <span className="text-sm font-bold text-gray-400 uppercase tracking-widest">Subtotal</span>
-                                    <span className="text-lg font-black italic">₹{baseTotal.toLocaleString()}</span>
+                                    <span className="text-lg font-black italic">₹{Math.round(baseTotal).toLocaleString()}</span>
                                 </div>
                                 {savings > 0 && (
                                     <div className="flex justify-between items-center text-green-500">
-                                        <span className="text-sm font-bold uppercase tracking-widest">Wholesale Discount</span>
-                                        <span className="text-sm font-black italic">-₹{savings.toLocaleString()}</span>
+                                        <span className="text-sm font-bold uppercase tracking-widest">
+                                            {role === 'ROLE_GARAGE' ? 'Wholesale Discount' : 'Promotional Savings'}
+                                        </span>
+                                        <span className="text-sm font-black italic">-₹{Math.round(savings).toLocaleString()}</span>
                                     </div>
                                 )}
                                 <div className="flex justify-between items-center text-gray-400">
