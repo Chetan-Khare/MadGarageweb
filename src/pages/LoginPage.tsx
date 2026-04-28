@@ -141,6 +141,8 @@ const LoginPage: React.FC = () => {
 
         if (role === 'ROLE_ADMIN') {
             navigate('/admin');
+        } else if (role === 'ROLE_WORKER') {
+            navigate('/worker');
         } else if (role === 'ROLE_SELLER') {
             navigate('/seller');
         } else if (role === 'ROLE_GARAGE') {

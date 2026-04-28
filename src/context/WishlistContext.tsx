@@ -54,11 +54,15 @@ const fromApiItem = (item: any): WishlistItem => ({
 export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, role } = useAuth();
 
   // ── Load wishlist on mount ───────────────────────────────────────────────
   const reloadWishlist = useCallback(async () => {
     if (isAuthenticated) {
+      if (role === 'ROLE_SELLER' || role === 'ROLE_WORKER') {
+        setWishlist([]);
+        return;
+      }
       setLoading(true);
       try {
         const { data } = await apiClient.get('/wishlist');
@@ -78,7 +82,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setWishlist([]);
       }
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, role]);
 
   useEffect(() => {
     reloadWishlist();
@@ -94,6 +98,10 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // ── Toggle ───────────────────────────────────────────────────────────────
   const toggleWishlist = async (product: any) => {
     if (isAuthenticated) {
+      if (role === 'ROLE_SELLER' || role === 'ROLE_WORKER') {
+        alert('Your role is not authorized to use the wishlist feature.');
+        return;
+      }
       try {
         const { data } = await apiClient.post(`/wishlist/${product.id}`);
         if (data.added) {

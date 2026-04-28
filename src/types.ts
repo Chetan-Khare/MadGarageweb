@@ -30,7 +30,7 @@ export interface User {
     id: number;
     username: string;
     email: string;
-    role: 'ROLE_USER' | 'ROLE_ADMIN' | 'ROLE_SELLER' | 'ROLE_GARAGE';
+    role: 'ROLE_CUSTOMER' | 'ROLE_ADMIN' | 'ROLE_SELLER' | 'ROLE_GARAGE' | 'ROLE_WORKER';
     fullName?: string;
     phoneNumber?: string;
 }

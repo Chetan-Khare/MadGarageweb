@@ -16,6 +16,7 @@ const CompleteProfilePage = lazy(() => import('./pages/CompleteProfilePage'));
 const GarageDashboard = lazy(() => import('./pages/GarageDashboard'));
 const CustomerDashboard = lazy(() => import('./pages/CustomerDashboard'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const WorkerDashboard = lazy(() => import('./pages/WorkerDashboard'));
 const SellerDashboard = lazy(() => import('./pages/SellerDashboard'));
 const AdminVehicleManagement = lazy(() => import('./pages/AdminVehicleManagement'));
 const AdminPartRequestReview = lazy(() => import('./pages/AdminPartRequestReview'));
@@ -68,17 +69,24 @@ function App() {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/complete-profile" element={<CompleteProfilePage />} />
 
-              {/* Admin Specific Routes */}
-              <Route element={<ProtectedRoute allowedRoles={['ROLE_ADMIN']} />}>
-                <Route path="/admin/add-product" element={<AddProductPage />} />
-                <Route path="/admin" element={<AdminDashboard />} />
-                <Route path="/admin/settings" element={<AdminSettingsPage />} />
-                <Route path="/admin/vehicles" element={<AdminVehicleManagement />} />
-                <Route path="/admin/requests" element={<AdminPartRequestReview />} />
+              {/* Admin & Worker Shared / Specific Routes */}
+              <Route element={<ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_WORKER']} />}>
                 <Route path="/admin/users" element={<AdminUserManagement />} />
                 <Route path="/admin/inventory" element={<AdminInventoryManagement />} />
                 <Route path="/admin/orders" element={<AdminOrderManagement />} />
                 <Route path="/admin/parts-db" element={<CatalogPage />} />
+                <Route path="/admin/add-product" element={<AddProductPage />} />
+                <Route path="/admin/requests" element={<AdminPartRequestReview />} />
+                <Route path="/admin/vehicles" element={<AdminVehicleManagement />} />
+              </Route>
+
+              <Route element={<ProtectedRoute allowedRoles={['ROLE_ADMIN']} />}>
+                <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/admin/settings" element={<AdminSettingsPage />} />
+              </Route>
+
+              <Route element={<ProtectedRoute allowedRoles={['ROLE_WORKER']} />}>
+                <Route path="/worker" element={<WorkerDashboard />} />
               </Route>
 
               {/* Redirects */}
@@ -119,6 +127,7 @@ function App() {
               <Route element={<ProtectedRoute />}>
                 <Route path="/user-dashboard" element={
                     role === 'ROLE_ADMIN' ? <Navigate to="/admin" replace /> :
+                    role === 'ROLE_WORKER' ? <Navigate to="/worker" replace /> :
                     role === 'ROLE_SELLER' ? <Navigate to="/seller" replace /> :
                     role === 'ROLE_CUSTOMER' ? <Navigate to="/customer-dashboard" replace /> :
                     <Navigate to="/dashboard" replace />

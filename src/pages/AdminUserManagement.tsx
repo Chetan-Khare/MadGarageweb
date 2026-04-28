@@ -6,9 +6,11 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../services/apiClient';
+import { useAuth } from '../context/AuthContext';
 
 const AdminUserManagement: React.FC = () => {
     const navigate = useNavigate();
+    const { role, user: currentUser } = useAuth();
     const [users, setUsers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -189,7 +191,7 @@ const AdminUserManagement: React.FC = () => {
             <div className="p-8 md:p-12 border-b border-white/5 bg-[#08080C]/80 backdrop-blur-xl fixed top-0 w-full z-40">
                 <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
                     <div className="flex items-center gap-6">
-                        <button onClick={() => navigate('/admin')} className="h-12 w-12 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center hover:bg-primary transition-all">
+                        <button onClick={() => navigate(role === 'ROLE_WORKER' ? '/worker' : '/admin')} className="h-12 w-12 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center hover:bg-primary transition-all">
                             <ArrowLeft size={20} />
                         </button>
                         <div>
@@ -237,6 +239,7 @@ const AdminUserManagement: React.FC = () => {
                         >
                             <option value="ALL">Roles</option>
                             <option value="ROLE_ADMIN">Admins</option>
+                            <option value="ROLE_WORKER">Workers</option>
                             <option value="ROLE_SELLER">Sellers</option>
                             <option value="ROLE_GARAGE">Garages</option>
                             <option value="ROLE_CUSTOMER">Customers</option>
@@ -255,6 +258,7 @@ const AdminUserManagement: React.FC = () => {
                             <div className="absolute top-0 right-0 p-6">
                                 <span className={`text-[8px] font-black uppercase px-3 py-1 rounded-full border ${
                                     user.role === 'ROLE_ADMIN' ? 'text-purple-500 border-purple-500/20 bg-purple-500/5' :
+                                    user.role === 'ROLE_WORKER' ? 'text-amber-500 border-amber-500/20 bg-amber-500/5' :
                                     user.role === 'ROLE_SELLER' ? 'text-blue-500 border-blue-500/20 bg-blue-500/5' :
                                     'text-green-500 border-green-500/20 bg-green-500/5'
                                 }`}>
@@ -288,14 +292,19 @@ const AdminUserManagement: React.FC = () => {
                                     <>
                                         <button 
                                             onClick={() => handleSuspend(user.id)}
-                                            disabled={actionLoading || user.role === 'ROLE_ADMIN'}
-                                            className="flex-1 bg-red-500/10 py-3 rounded-xl text-[9px] font-black uppercase text-red-500 border border-red-500/10 hover:bg-red-500 hover:text-white transition-all disabled:opacity-30"
+                                            disabled={actionLoading || user.role === 'ROLE_ADMIN' || user.id === currentUser?.id || (currentUser?.role === 'ROLE_WORKER' && user.role === 'ROLE_WORKER')}
+                                            className="flex-1 bg-red-500/10 py-3 rounded-xl text-[9px] font-black uppercase text-red-500 border border-red-500/10 hover:bg-red-500 hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-red-500/10 disabled:hover:text-red-500"
                                         >
                                             Delete Account
                                         </button>
                                         <button 
                                             onClick={() => openEditModal(user)}
-                                            className="h-10 w-10 bg-white/5 rounded-xl flex items-center justify-center text-gray-400 hover:bg-white hover:text-black transition-all"
+                                            disabled={actionLoading || (currentUser?.role === 'ROLE_WORKER' && (user.role === 'ROLE_ADMIN' || user.role === 'ROLE_WORKER'))}
+                                            className={`h-10 w-10 bg-white/5 rounded-xl flex items-center justify-center transition-all ${
+                                                actionLoading || (currentUser?.role === 'ROLE_WORKER' && (user.role === 'ROLE_ADMIN' || user.role === 'ROLE_WORKER'))
+                                                ? 'text-gray-600 cursor-not-allowed opacity-50' 
+                                                : 'text-gray-400 hover:bg-white hover:text-black'
+                                            }`}
                                         >
                                             <RefreshCw size={16}/>
                                         </button>
@@ -391,7 +400,12 @@ const AdminUserManagement: React.FC = () => {
                                     <option value="ROLE_CUSTOMER">CUSTOMER</option>
                                     <option value="ROLE_SELLER">SELLER</option>
                                     <option value="ROLE_GARAGE">GARAGE</option>
-                                    <option value="ROLE_ADMIN">ADMIN</option>
+                                    {currentUser?.role === 'ROLE_ADMIN' && (
+                                        <>
+                                            <option value="ROLE_WORKER">WORKER</option>
+                                            <option value="ROLE_ADMIN">ADMIN</option>
+                                        </>
+                                    )}
                                 </select>
                             </div>
 
@@ -498,7 +512,9 @@ const AdminUserManagement: React.FC = () => {
                         {formError && <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-500 text-[10px] font-black uppercase rounded-2xl">{formError}</div>}
 
                         <div className="flex bg-black/40 p-1.5 rounded-2xl">
-                            {['ROLE_SELLER', 'ROLE_GARAGE', 'ROLE_ADMIN'].map(r => (
+                            {['ROLE_SELLER', 'ROLE_GARAGE', 'ROLE_WORKER', 'ROLE_ADMIN']
+                                .filter(r => currentUser?.role === 'ROLE_ADMIN' || (r !== 'ROLE_ADMIN' && r !== 'ROLE_WORKER'))
+                                .map(r => (
                                 <button
                                     key={r}
                                     type="button"

@@ -94,7 +94,7 @@ const OrdersPage: React.FC = () => {
                                             onClick={() => navigate(`/order/${order.id}`)}
                                             className="bg-app-bg-dark text-white px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary transition-all shadow-lg"
                                         >
-                                            View Manifest
+                                            View Receipt
                                         </button>
                                         <button 
                                             onClick={() => navigate(`/order/${order.id}`)}

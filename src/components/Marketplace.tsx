@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   ChevronRight, Zap, ChevronDown, ChevronUp, ShoppingBag,
-  Plus, Heart, X, Navigation, MapPin, ShieldCheck
+  Plus, Heart, X, Navigation, MapPin, ShieldCheck, ChevronLeft
 } from 'lucide-react';
 import { BASE_SERVER_URL } from '../services/apiClient';
 import { useCart } from '../context/CartContext';
@@ -39,6 +39,10 @@ const Marketplace: React.FC<MarketplaceProps> = ({ isGarage = false }) => {
   const [isEditingCity, setIsEditingCity] = useState(false);
   const [manualCity, setManualCityInput] = useState('');
   const [showGaragesDropdown, setShowGaragesDropdown] = useState(false);
+  
+  // --- Pagination State ---
+  const PAGE_SIZE = 20;
+  const [currentPage, setCurrentPage] = useState(1);
 
   const categories = ['All', 'Engine', 'Brakes', 'Suspension', 'Exhaust', 'Electrical', 'Exterior'];
 
@@ -90,6 +94,18 @@ const Marketplace: React.FC<MarketplaceProps> = ({ isGarage = false }) => {
       return nameMatch && conditionMatch;
     });
   }, [products, searchTerm, selectedCondition]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedCategory, selectedCondition, selectedEngine]);
+
+  const pagedProducts = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filteredProducts.slice(start, start + PAGE_SIZE);
+  }, [filteredProducts, currentPage]);
+
+  const totalPages = Math.ceil(filteredProducts.length / PAGE_SIZE);
 
   return (
     <div className="flex flex-col w-full">
@@ -350,59 +366,62 @@ const Marketplace: React.FC<MarketplaceProps> = ({ isGarage = false }) => {
               <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest animate-pulse">Scanning Global Inventory...</p>
             </div>
           ) : filteredProducts.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-              {filteredProducts.map((product: any) => (
-                <div
-                  key={product.id}
-                  className="group bg-white rounded-[2.5rem] border border-gray-100 shadow-xl flex flex-col overflow-hidden hover:translate-y-[-8px] transition-all duration-500 cursor-pointer"
-                  onClick={() => navigate(`/product/${product.id}`, { state: { product } })}
-                >
-                  <div className="aspect-square bg-gray-50 flex items-center justify-center p-8 relative overflow-hidden">
-                    <img
-                      src={product.imageUrl ? (product.imageUrl.startsWith('http') ? product.imageUrl : `${BASE_SERVER_URL}${product.imageUrl}`) : 'https://via.placeholder.com/300'}
-                      alt={product.partName}
-                      className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-700"
-                      onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
-                        (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?q=80&w=400&auto=format&fit=crop';
-                      }}
-                    />
-                    <div className="absolute top-4 left-4 z-10 flex gap-2">
-                      {product.condition && (
-                        <span className="bg-primary/90 backdrop-blur-md text-white text-[8px] font-black uppercase px-3 py-1.5 rounded-full shadow-lg">
-                          {product.condition}
-                        </span>
-                      )}
-                      <span className="bg-app-bg-dark/80 backdrop-blur-md text-white text-[8px] font-black uppercase px-3 py-1.5 rounded-full shadow-lg">{product.category}</span>
-                    </div>
-                  </div>
-                  <div className="p-8 flex flex-col flex-1">
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="text-[9px] font-black uppercase text-primary tracking-widest">{product.brand || 'MAD GARAGE'}</span>
-                    </div>
-                    <h3 className="text-xl font-black italic text-app-bg-dark uppercase tracking-tighter leading-tight mb-6 group-hover:text-primary transition-colors line-clamp-2">
-                      {product.partName}
-                    </h3>
-                    <div className="mt-auto pt-6 border-t border-gray-50 flex items-center justify-between">
-                      <div>
-                        {isGarage && product.wholesale && product.price && product.garagePrice && product.price > product.garagePrice && (
-                          <p className="text-[10px] text-gray-400 line-through font-bold decoration-primary/40">₹{product.price.toLocaleString()}</p>
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                {pagedProducts.map((product: any) => (
+                  <div
+                    key={product.id}
+                    className="group bg-white rounded-[2.5rem] border border-gray-100 shadow-xl flex flex-col overflow-hidden hover:translate-y-[-8px] transition-all duration-500 cursor-pointer"
+                    onClick={() => navigate(`/product/${product.id}`, { state: { product } })}
+                  >
+                    <div className="aspect-square bg-gray-50 flex items-center justify-center p-8 relative overflow-hidden">
+                      <img
+                        src={product.imageUrl ? (product.imageUrl.startsWith('http') ? product.imageUrl : `${BASE_SERVER_URL}${product.imageUrl}`) : 'https://via.placeholder.com/300'}
+                        alt={product.partName}
+                        className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-700"
+                        onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                          (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?q=80&w=400&auto=format&fit=crop';
+                        }}
+                      />
+                      <div className="absolute top-4 left-4 z-10 flex gap-2">
+                        {product.condition && (
+                          <span className="bg-primary/90 backdrop-blur-md text-white text-[8px] font-black uppercase px-3 py-1.5 rounded-full shadow-lg">
+                            {product.condition}
+                          </span>
                         )}
-                        <p className="text-2xl font-black italic text-app-bg-dark tracking-tighter">
-                          Rs.{(isGarage && product.wholesale && product.garagePrice ? product.garagePrice : (product.price || 0)).toLocaleString()}
-                        </p>
+                        <span className="bg-app-bg-dark/80 backdrop-blur-md text-white text-[8px] font-black uppercase px-3 py-1.5 rounded-full shadow-lg">{product.category}</span>
                       </div>
+                    </div>
+                    <div className="p-8 flex flex-col flex-1">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-[9px] font-black uppercase text-primary tracking-widest">{product.brand || 'MAD GARAGE'}</span>
+                      </div>
+                      <h3 className="text-xl font-black italic text-app-bg-dark uppercase tracking-tighter leading-tight mb-6 group-hover:text-primary transition-colors line-clamp-2">
+                        {product.partName}
+                      </h3>
+                      <div className="mt-auto pt-6 border-t border-gray-50 flex items-center justify-between">
+                        <div>
+                          {isGarage && product.wholesale && product.price && product.garagePrice && product.price > product.garagePrice && (
+                            <p className="text-[10px] text-gray-400 line-through font-bold decoration-primary/40">₹{product.price.toLocaleString()}</p>
+                          )}
+                          <p className="text-2xl font-black italic text-app-bg-dark tracking-tighter">
+                            Rs.{(isGarage && product.wholesale && product.garagePrice ? product.garagePrice : (product.price || 0)).toLocaleString()}
+                          </p>
+                        </div>
                         <div className="flex gap-2">
-                          <button
-                            onClick={(e: React.MouseEvent) => { 
-                              e.stopPropagation(); 
-                              if (!user) { navigate('/login'); return; }
-                              toggleWishlist(product); 
-                            }}
-                            className={`h-12 w-12 rounded-2xl flex items-center justify-center transition-all shadow-lg border ${isInWishlist(product.id) ? 'bg-primary text-white border-primary' : 'bg-gray-50 text-app-bg-dark border-gray-100 hover:bg-primary/5 hover:text-primary'}`}
-                          >
-                            <Heart size={20} fill={isInWishlist(product.id) ? 'currentColor' : 'none'} />
-                          </button>
-                          {user?.role !== 'ROLE_SELLER' && (
+                          {user?.role !== 'ROLE_SELLER' && user?.role !== 'ROLE_WORKER' && (
+                            <button
+                              onClick={(e: React.MouseEvent) => { 
+                                e.stopPropagation(); 
+                                if (!user) { navigate('/login'); return; }
+                                toggleWishlist(product); 
+                              }}
+                              className={`h-12 w-12 rounded-2xl flex items-center justify-center transition-all shadow-lg border ${isInWishlist(product.id) ? 'bg-primary text-white border-primary' : 'bg-gray-50 text-app-bg-dark border-gray-100 hover:bg-primary/5 hover:text-primary'}`}
+                            >
+                              <Heart size={20} fill={isInWishlist(product.id) ? 'currentColor' : 'none'} />
+                            </button>
+                          )}
+                          {user?.role !== 'ROLE_SELLER' && user?.role !== 'ROLE_WORKER' && (
                             <div
                               className="h-12 w-12 bg-app-bg-dark text-white rounded-2xl flex items-center justify-center hover:bg-primary transition-all shadow-lg cursor-pointer"
                               onClick={(e: React.MouseEvent) => { e.stopPropagation(); addToCart(product); }}
@@ -411,11 +430,56 @@ const Marketplace: React.FC<MarketplaceProps> = ({ isGarage = false }) => {
                             </div>
                           )}
                         </div>
+                      </div>
                     </div>
                   </div>
+                ))}
+              </div>
+
+              {/* Technical Pagination */}
+              {totalPages > 1 && (
+                <div className="mt-20 flex items-center justify-center gap-2">
+                  <button 
+                    disabled={currentPage === 1}
+                    onClick={() => {
+                      setCurrentPage(prev => prev - 1);
+                      document.getElementById('marketplace-section')?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="h-12 w-12 flex items-center justify-center rounded-2xl bg-gray-50 border border-gray-100 text-gray-400 hover:text-primary hover:border-primary/50 disabled:opacity-30 transition-all group shadow-sm"
+                  >
+                    <ChevronLeft size={20} className="group-hover:-translate-x-0.5 transition-transform" />
+                  </button>
+                  
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                    <button
+                      key={page}
+                      onClick={() => {
+                        setCurrentPage(page);
+                        document.getElementById('marketplace-section')?.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                      className={`h-12 w-12 flex items-center justify-center rounded-2xl font-black text-[10px] transition-all shadow-sm ${
+                        currentPage === page 
+                        ? 'bg-app-bg-dark text-white shadow-xl scale-110' 
+                        : 'bg-gray-50 border border-gray-100 text-gray-400 hover:text-app-bg-dark hover:bg-white'
+                      }`}
+                    >
+                      {page.toString().padStart(2, '0')}
+                    </button>
+                  ))}
+
+                  <button 
+                    disabled={currentPage === totalPages}
+                    onClick={() => {
+                      setCurrentPage(prev => prev + 1);
+                      document.getElementById('marketplace-section')?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="h-12 w-12 flex items-center justify-center rounded-2xl bg-gray-50 border border-gray-100 text-gray-400 hover:text-primary hover:border-primary/50 disabled:opacity-30 transition-all group shadow-sm"
+                  >
+                    <ChevronRight size={20} className="group-hover:translate-x-0.5 transition-transform" />
+                  </button>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           ) : (
             <div className="py-40 text-center space-y-8 bg-gray-50 rounded-[3rem] border border-dashed border-gray-200">
               <ShoppingBag size={64} className="mx-auto text-gray-200" />

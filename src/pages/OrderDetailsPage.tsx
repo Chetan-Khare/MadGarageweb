@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ChevronLeft, Package, MapPin, 
   Truck, CheckCircle, Clock, 
-  Printer, Share2, HelpCircle,
+  Share2, HelpCircle,
   Star, MessageSquare, Send,
   ShieldCheck
 } from 'lucide-react';
@@ -16,6 +16,7 @@ const OrderDetailsPage: React.FC = () => {
     const { role } = useAuth();
     const [order, setOrder] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [tempPartRating, setTempPartRating] = useState(0);
     const [tempDeliveryRating, setTempDeliveryRating] = useState(0);
     const [ratingComment, setRatingComment] = useState('');
@@ -26,6 +27,8 @@ const OrderDetailsPage: React.FC = () => {
     }, [id]);
 
     const fetchOrder = async () => {
+        setLoading(true);
+        setError(null);
         try {
             const response = await apiClient.get(`/orders/${id}`);
             setOrder(response.data);
@@ -34,8 +37,15 @@ const OrderDetailsPage: React.FC = () => {
                 setTempDeliveryRating(response.data.deliveryRating);
                 setRatingComment(response.data.ratingComment || '');
             }
-        } catch (error) {
-            console.error('Failed to fetch order:', error);
+        } catch (err: any) {
+            console.error('Failed to fetch order:', err);
+            if (err.response?.status === 404) {
+                setError('Order not found in our database');
+            } else if (err.response?.status === 403) {
+                setError('You do not have permission to view this order');
+            } else {
+                setError('Failed to establish connection with the logistics terminal');
+            }
         } finally {
             setLoading(false);
         }
@@ -76,14 +86,55 @@ const OrderDetailsPage: React.FC = () => {
         }
     };
 
+    const handleDownloadInvoice = async () => {
+        try {
+            const response = await apiClient.get(`/orders/${id}/invoice`, {
+                responseType: 'blob'
+            });
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `Invoice_${id}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (err) {
+            console.error('Invoice download failed:', err);
+            alert('Failed to retrieve professional invoice from terminal.');
+        }
+    };
+
     if (loading) return <div className="min-h-screen bg-app-bg-light flex items-center justify-center">
         <div className="h-10 w-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
     </div>;
 
-    if (!order) return <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-4">
-        <h2 className="text-2xl font-black uppercase italic">Order not detected</h2>
-        <button onClick={() => navigate(-1)} className="text-primary font-bold hover:underline uppercase tracking-widest text-xs">Return to Dashboard</button>
-    </div>;
+    if (error || !order) return (
+        <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center">
+            <div className="h-24 w-24 bg-gray-50 rounded-[2rem] flex items-center justify-center mb-8 border border-gray-100 shadow-inner">
+                <HelpCircle size={40} className="text-primary opacity-20" />
+            </div>
+            <h2 className="text-2xl font-black uppercase italic tracking-tighter text-app-bg-dark mb-2">
+                {error || "Order Not Detected"}
+            </h2>
+            <p className="text-[10px] font-black uppercase text-gray-400 tracking-[0.3em] mb-10">
+                Transmission Interrupted • Reference ID #{id}
+            </p>
+            <div className="flex gap-4">
+                <button 
+                    onClick={() => navigate(-1)} 
+                    className="px-8 py-4 bg-app-bg-dark text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-primary transition-all active:scale-95 shadow-xl shadow-black/10"
+                >
+                    Return to Dashboard
+                </button>
+                <button 
+                    onClick={() => fetchOrder()} 
+                    className="px-8 py-4 bg-gray-50 text-gray-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-100 transition-all active:scale-95 border border-gray-100"
+                >
+                    Retry Link
+                </button>
+            </div>
+        </div>
+    );
 
     return (
         <div className="min-h-screen bg-app-bg-light font-inter py-12 px-4 md:py-20 lg:px-0">
@@ -168,7 +219,7 @@ const OrderDetailsPage: React.FC = () => {
 
                         {/* Order Items */}
                         <div className="space-y-8">
-                            <h3 className="text-xs font-black uppercase tracking-[0.3em] text-gray-400">Order Manifest</h3>
+                            <h3 className="text-xs font-black uppercase tracking-[0.3em] text-gray-400">Item Manifest</h3>
                             <div className="space-y-6">
                                 {order.items?.map((item: any) => (
                                     <div key={item.id} className="flex items-center justify-between gap-6 pb-6 border-b border-gray-50 last:border-0 last:pb-0">
@@ -208,14 +259,18 @@ const OrderDetailsPage: React.FC = () => {
                                         <span>Subtotal</span>
                                         <span>₹{order.subtotal?.toLocaleString()}</span>
                                     </div>
-                                    <div className="flex justify-between text-xs font-bold text-gray-400 uppercase tracking-widest">
-                                        <span>Logistic & Shipping</span>
-                                        <span>₹{order.shippingFee?.toLocaleString()}</span>
-                                    </div>
-                                    <div className="flex justify-between text-xs font-bold text-gray-400 uppercase tracking-widest">
-                                        <span>Platform Fee</span>
-                                        <span>₹{order.platformFee?.toLocaleString()}</span>
-                                    </div>
+                                    {order.shippingFee > 0 && (
+                                        <div className="flex justify-between text-xs font-bold text-gray-400 uppercase tracking-widest">
+                                            <span>Logistic & Shipping</span>
+                                            <span>₹{order.shippingFee?.toLocaleString()}</span>
+                                        </div>
+                                    )}
+                                    {order.platformFee > 0 && (
+                                        <div className="flex justify-between text-xs font-bold text-gray-400 uppercase tracking-widest">
+                                            <span>Platform Fee</span>
+                                            <span>₹{order.platformFee?.toLocaleString()}</span>
+                                        </div>
+                                    )}
                                     <div className="pt-4 border-t border-white/5 flex justify-between items-end">
                                         <span className="text-[10px] font-black uppercase tracking-widest text-primary">Grand Total</span>
                                         <span className="text-2xl font-black italic text-white">₹{order.grandTotal?.toLocaleString()}</span>
@@ -314,7 +369,7 @@ const OrderDetailsPage: React.FC = () => {
                                 </div>
                              )}
 
-                            <ActionBtn icon={<Printer size={16}/>} label="Print Manifest" onClick={() => window.print()} />
+                            <ActionBtn icon={<ShieldCheck size={16}/>} label="Download Invoice" primary onClick={handleDownloadInvoice} />
                             <ActionBtn icon={<Share2 size={16}/>} label="Share Receipt" onClick={() => {
                                 if (navigator.share) {
                                     navigator.share({

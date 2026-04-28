@@ -180,10 +180,10 @@ const CartPage: React.FC = () => {
                                     <span className="text-sm font-bold text-gray-400 uppercase tracking-widest">Subtotal</span>
                                     <span className="text-lg font-black italic">₹{Math.round(baseTotal).toLocaleString()}</span>
                                 </div>
-                                {savings > 0 && (
+                                {savings > 0 && role === 'ROLE_GARAGE' && (
                                     <div className="flex justify-between items-center text-green-500">
                                         <span className="text-sm font-bold uppercase tracking-widest">
-                                            {role === 'ROLE_GARAGE' ? 'Wholesale Discount' : 'Promotional Savings'}
+                                            Wholesale Discount
                                         </span>
                                         <span className="text-sm font-black italic">-₹{Math.round(savings).toLocaleString()}</span>
                                     </div>
@@ -209,10 +209,10 @@ const CartPage: React.FC = () => {
                                 </div>
                             </div>
 
-                            {role === 'ROLE_SELLER' ? (
+                            {(role === 'ROLE_SELLER' || role === 'ROLE_WORKER') ? (
                                 <div className="w-full bg-red-500/10 border border-red-500/20 p-6 rounded-2xl text-center">
                                     <p className="text-primary font-black uppercase tracking-widest text-[10px]">Restricted Action</p>
-                                    <p className="text-gray-400 text-xs font-bold mt-1">Seller accounts are not permitted to purchase parts.</p>
+                                    <p className="text-gray-400 text-xs font-bold mt-1">Staff and Seller accounts are not permitted to purchase parts.</p>
                                 </div>
                             ) : (
                                 <button 

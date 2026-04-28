@@ -144,27 +144,31 @@ const AppLayout: React.FC = () => {
             )}
 
             <div className="flex items-center gap-4">
-              <Link to="/wishlist" className="relative cursor-pointer group p-2">
-                <Heart size={22} className="group-hover:text-primary transition-colors" />
-                {wishlistCount > 0 && (
-                  <span className="absolute top-0 right-0 bg-primary text-white text-[10px] font-black h-5 w-5 flex items-center justify-center rounded-full border-2 border-app-bg-dark">
-                    {wishlistCount}
-                  </span>
-                )}
-              </Link>
+              {user?.role !== 'ROLE_WORKER' && user?.role !== 'ROLE_SELLER' && (
+                <Link to="/wishlist" className="relative cursor-pointer group p-2">
+                  <Heart size={22} className="group-hover:text-primary transition-colors" />
+                  {wishlistCount > 0 && (
+                    <span className="absolute top-0 right-0 bg-primary text-white text-[10px] font-black h-5 w-5 flex items-center justify-center rounded-full border-2 border-app-bg-dark">
+                      {wishlistCount}
+                    </span>
+                  )}
+                </Link>
+              )}
               
               <Link to="/addresses" className="relative cursor-pointer group p-2">
                 <MapPin size={22} className="group-hover:text-primary transition-colors" />
               </Link>
               
-              <Link to="/cart" className="relative cursor-pointer group p-2">
-                <ShoppingCart size={22} className="group-hover:text-primary transition-colors" />
-                {cartCount > 0 && (
-                  <span className="absolute top-0 right-0 bg-primary text-white text-[10px] font-black h-5 w-5 flex items-center justify-center rounded-full border-2 border-app-bg-dark">
-                    {cartCount}
-                  </span>
-                )}
-              </Link>
+              {user?.role !== 'ROLE_WORKER' && user?.role !== 'ROLE_SELLER' && (
+                <Link to="/cart" className="relative cursor-pointer group p-2">
+                  <ShoppingCart size={22} className="group-hover:text-primary transition-colors" />
+                  {cartCount > 0 && (
+                    <span className="absolute top-0 right-0 bg-primary text-white text-[10px] font-black h-5 w-5 flex items-center justify-center rounded-full border-2 border-app-bg-dark">
+                      {cartCount}
+                    </span>
+                  )}
+                </Link>
+              )}
             </div>
             
             <Menu size={24} className="md:hidden" />

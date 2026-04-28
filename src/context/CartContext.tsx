@@ -53,8 +53,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { role } = useAuth();
 
   const addToCart = (product: any, quantity: number = 1) => {
-    if (role === 'ROLE_SELLER') {
-        alert('Seller accounts are not permitted to purchase parts.');
+    if (role === 'ROLE_SELLER' || role === 'ROLE_WORKER') {
+        alert('Your role is not permitted to purchase parts.');
         return;
     }
     setCart(prev => {

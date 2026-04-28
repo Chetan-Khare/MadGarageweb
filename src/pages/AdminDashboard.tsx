@@ -396,7 +396,7 @@ const AdminDashboard: React.FC = () => {
                             {formSuccess && <div className="p-4 bg-green-500/10 border border-green-500/20 text-green-500 text-[10px] font-black uppercase rounded-2xl">{formSuccess}</div>}
 
                             <div className="flex bg-black/40 p-1.5 rounded-2xl">
-                                {['ROLE_SELLER', 'ROLE_GARAGE', 'ROLE_ADMIN'].map(r => (
+                                {['ROLE_SELLER', 'ROLE_GARAGE', 'ROLE_WORKER', 'ROLE_ADMIN'].map(r => (
                                     <button
                                         key={r}
                                         type="button"

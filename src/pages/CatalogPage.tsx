@@ -1,11 +1,11 @@
-import React, { useState, useMemo, useDeferredValue } from 'react';
+import React, { useState, useMemo, useDeferredValue, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { Product } from '../types';
 import { 
   Search, SlidersHorizontal,
   Cpu, Activity, Database, Boxes,
-  ShieldCheck
+  ShieldCheck, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
 import ProductEditModal from '../components/ProductEditModal';
@@ -24,6 +24,10 @@ const CatalogPage: React.FC = () => {
     const [showEditModal, setShowEditModal] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [isSaving, setIsSaving] = useState(false);
+
+    // Pagination State
+    const PAGE_SIZE = 20;
+    const [currentPage, setCurrentPage] = useState(1);
 
     const { data: products = [], isLoading: loading, refetch } = useQuery<Product[]>({
         queryKey: ['products', engineId, categoryQuery],
@@ -73,6 +77,18 @@ const CatalogPage: React.FC = () => {
             return matchesSearch && matchesCategory;
         });
     }, [products, deferredSearchTerm, selectedCategory]);
+
+    // Reset to page 1 when filters change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [deferredSearchTerm, selectedCategory]);
+
+    const pagedProducts = useMemo(() => {
+        const start = (currentPage - 1) * PAGE_SIZE;
+        return filteredProducts.slice(start, start + PAGE_SIZE);
+    }, [filteredProducts, currentPage]);
+
+    const totalPages = Math.ceil(filteredProducts.length / PAGE_SIZE);
 
     return (
         <div className="min-h-screen bg-[#0A0A0A] font-inter text-white">
@@ -149,7 +165,7 @@ const CatalogPage: React.FC = () => {
                     </div>
                 ) : filteredProducts.length > 0 ? (
                     <div className={viewMode === 'grid' ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" : "space-y-4"}>
-                        {filteredProducts.map((product) => (
+                        {pagedProducts.map((product) => (
                             <div 
                                 key={product.id} 
                                 className={`group bg-white/5 border border-white/10 rounded-[1.5rem] overflow-hidden hover:border-primary/40 transition-all duration-300 relative flex ${viewMode === 'grid' ? 'flex-col' : 'flex-row items-center p-4 gap-8'}`}
@@ -235,6 +251,50 @@ const CatalogPage: React.FC = () => {
                             <h2 className="text-3xl font-black italic text-white uppercase tracking-tighter">Query Returned 0 Results</h2>
                         </div>
                         <button onClick={() => {setSearchTerm(''); setSelectedCategory('All');}} className="px-8 py-3 bg-white text-black rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all">Reset Console Filters</button>
+                    </div>
+                )}
+
+                {/* Technical Pagination */}
+                {totalPages > 1 && (
+                    <div className="mt-12 flex items-center justify-center gap-2">
+                        <button 
+                            disabled={currentPage === 1}
+                            onClick={() => {
+                                setCurrentPage(prev => prev - 1);
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }}
+                            className="h-10 w-10 flex items-center justify-center rounded-lg bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:border-primary/50 disabled:opacity-30 transition-all group"
+                        >
+                            <ChevronLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
+                        </button>
+                        
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                            <button
+                                key={page}
+                                onClick={() => {
+                                    setCurrentPage(page);
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                }}
+                                className={`h-10 w-10 flex items-center justify-center rounded-lg font-black text-[10px] transition-all ${
+                                    currentPage === page 
+                                    ? 'bg-primary text-white shadow-[0_0_15px_rgba(223,35,36,0.4)]' 
+                                    : 'bg-white/5 border border-white/10 text-gray-500 hover:text-white hover:bg-white/10'
+                                }`}
+                            >
+                                {page.toString().padStart(2, '0')}
+                            </button>
+                        ))}
+
+                        <button 
+                            disabled={currentPage === totalPages}
+                            onClick={() => {
+                                setCurrentPage(prev => prev + 1);
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }}
+                            className="h-10 w-10 flex items-center justify-center rounded-lg bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:border-primary/50 disabled:opacity-30 transition-all group"
+                        >
+                            <ChevronRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
+                        </button>
                     </div>
                 )}
             </main>

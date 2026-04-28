@@ -45,6 +45,12 @@ const CheckoutPage: React.FC = () => {
     const [config, setConfig] = useState({ shippingFee: 250, freeThreshold: 400, platformFee: 7 });
 
     useEffect(() => {
+        if (userRole === 'ROLE_WORKER' || userRole === 'ROLE_SELLER') {
+            navigate('/cart');
+        }
+    }, [userRole, navigate]);
+
+    useEffect(() => {
         const fetchConfig = async () => {
             try {
                 const response = await apiClient.get('/config/public');
@@ -574,9 +580,9 @@ const CheckoutPage: React.FC = () => {
                                         <span>Secure Infrastructure Fee</span>
                                         <span className="text-white">₹{platformFee.toLocaleString()}</span>
                                     </div>
-                                    {savings > 0 && (
+                                    {savings > 0 && userRole === 'ROLE_GARAGE' && (
                                         <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-green-500">
-                                            <span>{userRole === 'ROLE_GARAGE' ? 'Wholesale Discount' : 'Promotional Savings'}</span>
+                                            <span>Wholesale Discount</span>
                                             <span>-₹{Math.round(savings).toLocaleString()}</span>
                                         </div>
                                     )}

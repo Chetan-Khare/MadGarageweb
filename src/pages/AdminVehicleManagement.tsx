@@ -6,9 +6,11 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../services/apiClient';
+import { useAuth } from '../context/AuthContext';
 
 const AdminVehicleManagement: React.FC = () => {
     const navigate = useNavigate();
+    const { role } = useAuth();
     const [vehicles, setVehicles] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -85,7 +87,7 @@ const AdminVehicleManagement: React.FC = () => {
             {/* Control Header */}
             <div className="p-8 md:p-12 border-b border-white/5 flex flex-col md:flex-row items-center justify-between gap-6 fixed top-0 w-full z-40 bg-[#08080C]/80 backdrop-blur-xl">
                 <div className="flex items-center gap-6">
-                    <button onClick={() => navigate('/admin')} className="h-12 w-12 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center hover:bg-primary transition-all">
+                    <button onClick={() => navigate(role === 'ROLE_WORKER' ? '/worker' : '/admin')} className="h-12 w-12 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center hover:bg-primary transition-all">
                         <ArrowLeft size={20} />
                     </button>
                     <div>
