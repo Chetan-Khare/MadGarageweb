@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
 import { useAuth } from '../context/AuthContext';
 import { useLocation } from '../context/LocationContext';
+import imageCompression from 'browser-image-compression';
 
 const ProfilePage: React.FC = () => {
     const navigate = useNavigate();
@@ -100,8 +101,17 @@ const ProfilePage: React.FC = () => {
         setError('');
 
         try {
+            // COMPRESSION OPTIONS
+            const options = {
+                maxSizeMB: 1,
+                maxWidthOrHeight: 1024,
+                useWebWorker: true
+            };
+
+            const compressedFile = await imageCompression(file, options);
+            
             const reader = new FileReader();
-            reader.readAsDataURL(file);
+            reader.readAsDataURL(compressedFile);
             reader.onload = async () => {
                 const base64Content = (reader.result as string).split(',')[1];
                 const extension = file.name.split('.').pop() || 'jpg';

@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
+import imageCompression from 'browser-image-compression';
 
 const PART_CATEGORIES = ['Engine', 'Brakes', 'Suspension', 'Exhaust', 'Electrical', 'Exterior', 'Interior', 'others'];
 
@@ -129,21 +130,33 @@ const AddProductPage: React.FC = () => {
         }
     }, [vehicle.trim]);
 
-    const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
         if (files.length + imageFiles.length > 5) {
             setError('Max 5 images allowed');
             return;
         }
 
-        files.forEach(file => {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setImagePreviews(prev => [...prev, reader.result as string]);
-                setImageFiles(prev => [...prev, file]);
-            };
-            reader.readAsDataURL(file);
-        });
+        // COMPRESSION OPTIONS
+        const options = {
+            maxSizeMB: 1,
+            maxWidthOrHeight: 1024,
+            useWebWorker: true
+        };
+
+        for (const file of files) {
+            try {
+                const compressedFile = await imageCompression(file, options);
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    setImagePreviews(prev => [...prev, reader.result as string]);
+                    setImageFiles(prev => [...prev, compressedFile as File]);
+                };
+                reader.readAsDataURL(compressedFile);
+            } catch (err) {
+                console.error("Compression failed", err);
+            }
+        }
     };
 
     const removeImage = (index: number) => {

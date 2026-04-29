@@ -27,7 +27,11 @@ const AdminUserManagement: React.FC = () => {
         role: '',
         isTieUp: false,
         city: '',
+        state: '',
         address: '',
+        floor: '',
+        buildingName: '',
+        pincode: '',
         latitude: '',
         longitude: ''
     });
@@ -43,7 +47,11 @@ const AdminUserManagement: React.FC = () => {
         role: 'ROLE_SELLER',
         isTieUp: false,
         city: '',
+        state: '',
         address: '',
+        floor: '',
+        buildingName: '',
+        pincode: '',
         latitude: '',
         longitude: ''
     });
@@ -101,6 +109,13 @@ const AdminUserManagement: React.FC = () => {
             return;
         }
 
+        if (provisionForm.role === 'ROLE_GARAGE' || provisionForm.role === 'ROLE_SELLER') {
+            if (!provisionForm.address || !provisionForm.city || !provisionForm.state || !provisionForm.pincode) {
+                setFormError(`BUSINESS INTEGRITY ERROR: Full address (Street, City, State, Pincode) is mandatory for all ${provisionForm.role === 'ROLE_GARAGE' ? 'Garages' : 'Sellers'}.`);
+                return;
+            }
+        }
+
         setActionLoading(true);
         try {
             // Remove insecure fallback password123. Use empty string or fail.
@@ -113,7 +128,7 @@ const AdminUserManagement: React.FC = () => {
             setShowProvisionModal(false);
             setProvisionForm({ 
                 firstName: '', lastName: '', email: '', password: '', phone: '', role: 'ROLE_SELLER',
-                isTieUp: false, city: '', address: '', latitude: '', longitude: ''
+                isTieUp: false, city: '', state: '', address: '', floor: '', buildingName: '', pincode: '', latitude: '', longitude: ''
             });
             fetchUsers();
         } catch (err: any) {
@@ -133,7 +148,11 @@ const AdminUserManagement: React.FC = () => {
             role: user.role,
             isTieUp: user.tieUp || false,
             city: user.city || '',
+            state: user.state || '',
             address: user.address || '',
+            floor: user.floor || '',
+            buildingName: user.buildingName || '',
+            pincode: user.pincode || '',
             latitude: user.latitude || '',
             longitude: user.longitude || ''
         });
@@ -145,6 +164,13 @@ const AdminUserManagement: React.FC = () => {
         // Security Guard: Role escalation confirmation
         if (editForm.role === 'ROLE_ADMIN' && editingUser.role !== 'ROLE_ADMIN') {
             if (!window.confirm('SECURITY WARNING: You are elevating this user to ADMINISTRATOR status. This provides unrestricted access to the entire platform. Proceed?')) {
+                return;
+            }
+        }
+
+        if (editForm.role === 'ROLE_GARAGE' || editForm.role === 'ROLE_SELLER') {
+            if (!editForm.address || !editForm.city || !editForm.state || !editForm.pincode) {
+                alert(`REVISION REJECTED: Address, City, State, and Pincode are required for all ${editForm.role === 'ROLE_GARAGE' ? 'Garage' : 'Seller'} profiles.`);
                 return;
             }
         }
@@ -411,7 +437,7 @@ const AdminUserManagement: React.FC = () => {
 
                             {(editForm.role === 'ROLE_GARAGE' || editForm.role === 'ROLE_SELLER') && (
                                 <div className="p-6 bg-primary/5 border border-white/5 rounded-2xl space-y-6">
-                                    {editForm.role === 'ROLE_GARAGE' && (
+                                    {editForm.role === 'ROLE_GARAGE' && role === 'ROLE_ADMIN' && (
                                         <div className="flex items-center justify-between">
                                             <div>
                                                 <p className="text-[10px] font-black uppercase text-white">Verified Fitting Partner</p>
@@ -426,14 +452,25 @@ const AdminUserManagement: React.FC = () => {
                                             </button>
                                         </div>
                                     )}
-                                    <div className="space-y-2">
-                                        <label className="text-[9px] font-black uppercase text-gray-500 ml-2">Operating City / Area</label>
-                                        <input 
-                                            className="bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold w-full outline-none focus:border-primary transition-all"
-                                            placeholder="Mumbai"
-                                            value={editForm.city}
-                                            onChange={e => setEditForm({...editForm, city: e.target.value})}
-                                        />
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <label className="text-[9px] font-black uppercase text-gray-500 ml-2">City</label>
+                                            <input 
+                                                className="bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold w-full outline-none focus:border-primary transition-all"
+                                                placeholder="e.g. Mumbai"
+                                                value={editForm.city}
+                                                onChange={e => setEditForm({...editForm, city: e.target.value})}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[9px] font-black uppercase text-gray-500 ml-2">State</label>
+                                            <input 
+                                                className="bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold w-full outline-none focus:border-primary transition-all"
+                                                placeholder="e.g. Maharashtra"
+                                                value={editForm.state}
+                                                onChange={e => setEditForm({...editForm, state: e.target.value})}
+                                            />
+                                        </div>
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[9px] font-black uppercase text-gray-500 ml-2">Street Address</label>
@@ -443,6 +480,44 @@ const AdminUserManagement: React.FC = () => {
                                             value={editForm.address}
                                             onChange={e => setEditForm({...editForm, address: e.target.value})}
                                         />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <label className="text-[9px] font-black uppercase text-gray-500 ml-2">Building / Floor</label>
+                                            <div className="flex gap-2">
+                                                <input 
+                                                    className="flex-1 bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold outline-none focus:border-primary transition-all"
+                                                    placeholder="Building Name"
+                                                    value={editForm.buildingName}
+                                                    onChange={e => setEditForm({...editForm, buildingName: e.target.value})}
+                                                />
+                                                <input 
+                                                    className="w-24 bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold outline-none focus:border-primary transition-all"
+                                                    placeholder="Floor"
+                                                    value={editForm.floor}
+                                                    onChange={e => setEditForm({...editForm, floor: e.target.value})}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[9px] font-black uppercase text-gray-500 ml-2">Pincode</label>
+                                            <input 
+                                                className="bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold w-full outline-none focus:border-primary transition-all"
+                                                placeholder="400018"
+                                                value={editForm.pincode}
+                                                onChange={e => setEditForm({...editForm, pincode: e.target.value})}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center justify-between ml-2">
+                                        <label className="text-[9px] font-black uppercase text-gray-500">Geographic Coordinates</label>
+                                        <button 
+                                            type="button"
+                                            onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(editForm.address + ' ' + editForm.city)}`, '_blank')}
+                                            className="text-[8px] font-black text-primary uppercase hover:underline"
+                                        >
+                                            Find on Maps
+                                        </button>
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
@@ -570,32 +645,74 @@ const AdminUserManagement: React.FC = () => {
                                 </button>
                             </div>
 
-                            {provisionForm.role === 'ROLE_GARAGE' && (
+                            {(provisionForm.role === 'ROLE_GARAGE' || provisionForm.role === 'ROLE_SELLER') && (
                                 <div className="p-6 bg-primary/5 border border-white/5 rounded-2xl space-y-4">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <span className="text-[9px] font-black uppercase text-primary italic">Garage Network Provisioning</span>
-                                        <label className="flex items-center gap-2 cursor-pointer">
-                                            <input 
-                                                type="checkbox" 
-                                                checked={provisionForm.isTieUp} 
-                                                onChange={e => setProvisionForm({...provisionForm, isTieUp: e.target.checked})}
-                                                className="accent-primary"
-                                            />
-                                            <span className="text-[9px] font-black uppercase text-gray-500">Auto-Verify Tie-up</span>
-                                        </label>
+                                    {provisionForm.role === 'ROLE_GARAGE' && currentUser?.role === 'ROLE_ADMIN' && (
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="text-[9px] font-black uppercase text-primary italic">Garage Network Provisioning</span>
+                                            <label className="flex items-center gap-2 cursor-pointer">
+                                                <input 
+                                                    type="checkbox" 
+                                                    checked={provisionForm.isTieUp} 
+                                                    onChange={e => setProvisionForm({...provisionForm, isTieUp: e.target.checked})}
+                                                    className="accent-primary"
+                                                />
+                                                <span className="text-[9px] font-black uppercase text-gray-500">Auto-Verify Tie-up</span>
+                                            </label>
+                                        </div>
+                                    )}
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <input 
+                                            className="bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold w-full outline-none focus:border-primary transition-all"
+                                            placeholder="Operating City"
+                                            value={provisionForm.city}
+                                            onChange={e => setProvisionForm({...provisionForm, city: e.target.value})}
+                                        />
+                                        <input 
+                                            className="bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold w-full outline-none focus:border-primary transition-all"
+                                            placeholder="State"
+                                            value={provisionForm.state}
+                                            onChange={e => setProvisionForm({...provisionForm, state: e.target.value})}
+                                        />
                                     </div>
-                                    <input 
-                                        className="bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold w-full outline-none focus:border-primary transition-all"
-                                        placeholder="Operating City"
-                                        value={provisionForm.city}
-                                        onChange={e => setProvisionForm({...provisionForm, city: e.target.value})}
-                                    />
                                     <input 
                                         className="bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold w-full outline-none focus:border-primary transition-all"
                                         placeholder="Street Address"
                                         value={provisionForm.address}
                                         onChange={e => setProvisionForm({...provisionForm, address: e.target.value})}
                                     />
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="flex gap-2">
+                                            <input 
+                                                className="flex-1 bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold outline-none focus:border-primary transition-all"
+                                                placeholder="Building Name"
+                                                value={provisionForm.buildingName}
+                                                onChange={e => setProvisionForm({...provisionForm, buildingName: e.target.value})}
+                                            />
+                                            <input 
+                                                className="w-24 bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold outline-none focus:border-primary transition-all"
+                                                placeholder="Floor"
+                                                value={provisionForm.floor}
+                                                onChange={e => setProvisionForm({...provisionForm, floor: e.target.value})}
+                                            />
+                                        </div>
+                                        <input 
+                                            className="bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold w-full outline-none focus:border-primary transition-all"
+                                            placeholder="Pincode"
+                                            value={provisionForm.pincode}
+                                            onChange={e => setProvisionForm({...provisionForm, pincode: e.target.value})}
+                                        />
+                                    </div>
+                                    <div className="flex items-center justify-between ml-2">
+                                        <label className="text-[9px] font-black uppercase text-gray-500">Geographic Coordinates</label>
+                                        <button 
+                                            type="button"
+                                            onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(provisionForm.address + ' ' + provisionForm.city)}`, '_blank')}
+                                            className="text-[8px] font-black text-primary uppercase hover:underline"
+                                        >
+                                            Find on Maps
+                                        </button>
+                                    </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <input 
                                             className="bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold w-full outline-none focus:border-primary transition-all"

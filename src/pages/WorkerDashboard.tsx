@@ -16,24 +16,53 @@ interface WorkerStats {
 }
 
 const WorkerDashboard: React.FC = () => {
-    const { user, logout } = useAuth();
+    const { user, role, logout } = useAuth();
     const navigate = useNavigate();
+
     const [stats, setStats] = useState<WorkerStats | null>(null);
     const [loading, setLoading] = useState(true);
+    const [syncError, setSyncError] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
+
+    // WD-C-1: Route guard — redirect non-workers immediately
+    useEffect(() => {
+        if (role && role !== 'ROLE_WORKER' && role !== 'ROLE_ADMIN') {
+            navigate('/', { replace: true });
+        }
+    }, [role, navigate]);
 
     useEffect(() => { fetchAnalytics(); }, []);
 
     const fetchAnalytics = async () => {
         try {
-            const statsRes = await apiClient.get('/admin/analytics');
+            setSyncError('');
+            const statsRes = await apiClient.get('/admin/worker-stats');
             setStats(statsRes.data);
         } catch (error: any) {
+            setSyncError('Link Failure: Connection to Central HQ lost');
             console.error('Worker Dashboard Sync Failure:', error);
         } finally {
             setLoading(false);
         }
     };
+
+    if (syncError) {
+        return (
+            <div className="min-h-screen bg-[#08080C] flex flex-col items-center justify-center p-8">
+                <div className="bg-red-500/10 border border-red-500/20 rounded-3xl p-8 max-w-md text-center space-y-4">
+                    <Activity size={48} className="text-red-500 mx-auto" />
+                    <h2 className="text-xl font-black italic uppercase text-red-500">Sync Failure</h2>
+                    <p className="text-sm text-red-400/80">{syncError}</p>
+                    <button 
+                        onClick={fetchAnalytics}
+                        className="mt-4 px-6 py-3 bg-red-500/20 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all text-xs font-black uppercase tracking-widest"
+                    >
+                        Retry Connection
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     if (loading) return (
         <div className="min-h-screen bg-[#08080C] flex items-center justify-center">
@@ -111,7 +140,7 @@ const WorkerDashboard: React.FC = () => {
                         <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                         <OperationCard 
                             title="User Fulfillment"
                             desc="Approve Garages & Sellers"
@@ -132,6 +161,13 @@ const WorkerDashboard: React.FC = () => {
                             icon={<Package size={32} />}
                             color="text-amber-500"
                             onClick={() => navigate('/admin/inventory')}
+                        />
+                        <OperationCard 
+                            title="Part Requests"
+                            desc="Source & Fulfill Demands"
+                            icon={<FileText size={32} />}
+                            color="text-emerald-500"
+                            onClick={() => navigate('/admin/requests')}
                         />
                     </div>
                 </div>
@@ -155,20 +191,17 @@ const WorkerDashboard: React.FC = () => {
                             </div>
                         </div>
                         <div className="space-y-4">
-                            {[1, 2, 3].map(i => (
-                                <div key={i} className="bg-black/40 border border-white/5 p-6 rounded-2xl flex items-center justify-between group hover:border-primary/30 transition-all cursor-pointer">
-                                    <div className="flex items-center gap-4">
-                                        <div className="h-10 w-10 bg-white/5 rounded-xl flex items-center justify-center text-gray-500 group-hover:text-primary transition-colors">
-                                            <Activity size={18} />
-                                        </div>
-                                        <div>
-                                            <p className="text-[10px] font-black uppercase text-gray-400">Network Event {i}</p>
-                                            <p className="text-xs font-bold text-white mt-1 uppercase">Order #{(1000 + i)} - Awaiting Logistics Sync</p>
-                                        </div>
+                            <div className="bg-black/40 border border-green-500/20 p-6 rounded-2xl flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                    <div className="h-10 w-10 bg-green-500/10 rounded-xl flex items-center justify-center text-green-500">
+                                        <Activity size={18} />
                                     </div>
-                                    <ChevronRight size={18} className="text-gray-600 group-hover:text-primary transition-colors" />
+                                    <div>
+                                        <p className="text-[10px] font-black uppercase text-gray-400">System Status</p>
+                                        <p className="text-xs font-bold text-white mt-1 uppercase">All Subsystems Nominal</p>
+                                    </div>
                                 </div>
-                            ))}
+                            </div>
                         </div>
                     </div>
                 </div>
