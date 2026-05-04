@@ -3,7 +3,7 @@ import {
   User, Mail, Phone, Lock, 
   ShieldCheck, ChevronLeft, Save, 
   Eye, EyeOff, AlertCircle, CheckCircle2,
-  Camera, Loader2, MapPin, Navigation
+  Camera, Loader2, MapPin, Navigation, Trash2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
@@ -149,6 +149,31 @@ const ProfilePage: React.FC = () => {
         }
     };
 
+    const handleDeleteImage = async () => {
+        if (!window.confirm('Are you sure you want to remove your profile image?')) return;
+        
+        setUploading(true);
+        setError('');
+        
+        try {
+            await apiClient.delete('/users/profile-image');
+            setProfileImageUrl(null);
+            
+            // Sync with AuthContext
+            if (authUser) {
+                login({ ...authUser, profileImageUrl: null }, localStorage.getItem('token') || '');
+            }
+            
+            setSuccess('Profile image removed.');
+            setTimeout(() => setSuccess(''), 3000);
+        } catch (err) {
+            console.error('Failed to delete image:', err);
+            setError('System Error: Could not remove profile image.');
+        } finally {
+            setUploading(false);
+        }
+    };
+
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
@@ -232,17 +257,31 @@ const ProfilePage: React.FC = () => {
                                             </span>
                                         )}
                                         
-                                        {/* Camera Overlay */}
-                                        <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
-                                            <Camera size={24} className="text-white" />
-                                            <input 
-                                                type="file" 
-                                                className="hidden" 
-                                                accept="image/*"
-                                                onChange={handleImageUpload}
-                                                disabled={uploading}
-                                            />
-                                        </label>
+                                        {/* Image Controls Overlay */}
+                                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-4">
+                                            <label className="flex items-center gap-2 cursor-pointer hover:text-primary transition-colors">
+                                                <Camera size={20} className="text-white" />
+                                                <span className="text-[8px] font-black uppercase text-white">Change</span>
+                                                <input 
+                                                    type="file" 
+                                                    className="hidden" 
+                                                    accept="image/*"
+                                                    onChange={handleImageUpload}
+                                                    disabled={uploading}
+                                                />
+                                            </label>
+                                            
+                                            {profileImageUrl && (
+                                                <button 
+                                                    type="button"
+                                                    onClick={handleDeleteImage}
+                                                    className="flex items-center gap-2 hover:text-red-500 transition-colors"
+                                                >
+                                                    <Trash2 size={20} className="text-red-500" />
+                                                    <span className="text-[8px] font-black uppercase text-red-500">Remove</span>
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                                 

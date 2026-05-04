@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, ImageIcon, Sparkles } from 'lucide-react';
+import ModernSelect from './ModernSelect';
+import { Make } from '../types';
+import apiClient from '../services/apiClient';
 
 interface ProductEditModalProps {
     show: boolean;
@@ -23,6 +26,7 @@ const ProductEditModal: React.FC<ProductEditModalProps> = ({
     const [editingProduct, setEditingProduct] = useState<any>(null);
     const [base64Image, setBase64Image] = useState<string | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [makes, setMakes] = useState<Make[]>([]);
 
     useEffect(() => {
         if (product) {
@@ -31,6 +35,10 @@ const ProductEditModal: React.FC<ProductEditModalProps> = ({
             setBase64Image(null);
         }
     }, [product]);
+
+    useEffect(() => {
+        apiClient.get('/vehicles/makes').then(res => setMakes(res.data)).catch(err => console.error(err));
+    }, []);
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -135,21 +143,37 @@ const ProductEditModal: React.FC<ProductEditModalProps> = ({
                         </div>
                     )}
 
+                    <div className="flex flex-col">
+                        <ModernSelect 
+                            label="Manufacturer / Brand"
+                            value={editingProduct.brand || ''}
+                            options={makes.map(m => ({
+                                label: m.name,
+                                value: m.name,
+                                icon: m.logoUrl
+                            }))}
+                            onChange={v => setEditingProduct({ ...editingProduct, brand: v })}
+                            placeholder="Select Brand"
+                        />
+                    </div>
+
                     <div className="grid grid-cols-2 gap-8">
-                        <div className="flex flex-col">
-                            <label className="text-[10px] font-black uppercase text-gray-500 mb-3 ml-2">Category</label>
-                            <select className="bg-white/5 border border-white/10 p-4 rounded-2xl text-xs font-black uppercase tracking-widest text-white outline-none focus:border-primary appearance-none cursor-pointer" value={editingProduct.category || ''} onChange={e => setEditingProduct({ ...editingProduct, category: e.target.value })}>
-                                {['Brakes', 'Engine', 'Suspension', 'Exhaust', 'Exterior', 'Interior'].map(c => <option key={c} value={c} className="bg-[#121216]">{c}</option>)}
-                            </select>
-                        </div>
-                        <div className="flex flex-col">
-                            <label className="text-[10px] font-black uppercase text-gray-500 mb-3 ml-2">Condition</label>
-                            <select className="bg-white/5 border border-white/10 p-4 rounded-2xl text-xs font-black uppercase tracking-widest text-white outline-none focus:border-primary appearance-none cursor-pointer" value={editingProduct.condition || ''} onChange={e => setEditingProduct({ ...editingProduct, condition: e.target.value })}>
-                                <option value="NEW" className="bg-[#121216]">New</option>
-                                <option value="REFURBISHED" className="bg-[#121216]">Refurbished</option>
-                                <option value="USED" className="bg-[#121216]">Used</option>
-                            </select>
-                        </div>
+                        <ModernSelect 
+                            label="Category"
+                            value={editingProduct.category || ''}
+                            options={['Brakes', 'Engine', 'Suspension', 'Exhaust', 'Exterior', 'Interior']}
+                            onChange={v => setEditingProduct({ ...editingProduct, category: v })}
+                        />
+                        <ModernSelect 
+                            label="Condition"
+                            value={editingProduct.condition || ''}
+                            options={[
+                                { label: 'New', value: 'NEW' },
+                                { label: 'Refurbished', value: 'REFURBISHED' },
+                                { label: 'Used', value: 'USED' }
+                            ]}
+                            onChange={v => setEditingProduct({ ...editingProduct, condition: v })}
+                        />
                     </div>
 
                     {/* Wholesale Eligibility Toggle */}

@@ -7,6 +7,8 @@ import {
 import { useNavigate, useLocation } from 'react-router-dom';
 import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
 import imageCompression from 'browser-image-compression';
+import ModernSelect from '../components/ModernSelect';
+import { Make } from '../types';
 
 const PART_CATEGORIES = ['Engine', 'Brakes', 'Suspension', 'Exhaust', 'Electrical', 'Exterior', 'Interior', 'others'];
 
@@ -37,7 +39,7 @@ const AddProductPage: React.FC = () => {
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
     // Vehicle Selection State
-    const [makes, setMakes] = useState<string[]>([]);
+    const [makes, setMakes] = useState<Make[]>([]);
     const [models, setModels] = useState<string[]>([]);
     const [years, setYears] = useState<string[]>([]);
     const [fuels, setFuels] = useState<string[]>([]);
@@ -319,18 +321,26 @@ const AddProductPage: React.FC = () => {
                                     onChange={e => setFormData({...formData, partName: e.target.value})}
                                 />
                                 <div className="grid grid-cols-2 gap-4">
-                                    <input 
-                                        placeholder="Manufacturer"
-                                        className="w-full bg-black/40 border border-white/5 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
+                                    <ModernSelect 
+                                        label="Manufacturer / Brand"
                                         value={formData.brand}
-                                        onChange={e => setFormData({...formData, brand: e.target.value})}
+                                        options={makes.map(m => ({
+                                            label: m.name,
+                                            value: m.name,
+                                            icon: m.logoUrl
+                                        }))}
+                                        onChange={v => setFormData({...formData, brand: v})}
+                                        placeholder="Select Brand"
                                     />
-                                    <input 
-                                        placeholder="SKU Code"
-                                        className="w-full bg-black/40 border border-white/5 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
-                                        value={formData.sku}
-                                        onChange={e => setFormData({...formData, sku: e.target.value})}
-                                    />
+                                    <div className="space-y-4">
+                                        <label className="text-[10px] font-black uppercase text-gray-500 tracking-widest ml-2">SKU Code</label>
+                                        <input 
+                                            placeholder="SKU Code"
+                                            className="w-full bg-black/40 border border-white/5 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
+                                            value={formData.sku}
+                                            onChange={e => setFormData({...formData, sku: e.target.value})}
+                                        />
+                                    </div>
                                 </div>
                             </div>
 
@@ -429,13 +439,17 @@ const AddProductPage: React.FC = () => {
                         {!formData.isUniversal ? (
                             <div className="space-y-6 animate-in fade-in duration-500">
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                    <div className="space-y-2">
-                                        <label className="text-[9px] font-black uppercase text-gray-600 ml-1">Make</label>
-                                        <select className="w-full bg-black/60 border border-white/10 p-4 rounded-xl text-xs font-bold text-white" value={vehicle.make} onChange={e => setVehicle({...vehicle, make: e.target.value})}>
-                                            <option value="">Select Make</option>
-                                            {makes.map(m => <option key={m} value={m}>{m}</option>)}
-                                        </select>
-                                    </div>
+                                    <ModernSelect 
+                                        label="Make"
+                                        value={vehicle.make}
+                                        options={makes.map(m => ({
+                                            label: m.name,
+                                            value: m.name,
+                                            icon: m.logoUrl
+                                        }))}
+                                        onChange={v => setVehicle({...vehicle, make: v})}
+                                        placeholder="Select Make"
+                                    />
                                     <div className="space-y-2">
                                         <label className="text-[9px] font-black uppercase text-gray-600 ml-1">Model</label>
                                         <select disabled={!vehicle.make} className="w-full bg-black/60 border border-white/10 p-4 rounded-xl text-xs font-bold text-white disabled:opacity-30" value={vehicle.model} onChange={e => setVehicle({...vehicle, model: e.target.value})}>

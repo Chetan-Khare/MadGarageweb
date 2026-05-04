@@ -8,19 +8,35 @@ import { BASE_SERVER_URL } from '../services/apiClient';
 import { useLocation } from '../context/LocationContext';
 
 const AppLayout: React.FC = () => {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, logout, role } = useAuth();
   const { totalItems: cartCount } = useCart();
   const { totalItems: wishlistCount } = useWishlist();
   const { city, detectLocation, isLoading: locationLoading } = useLocation();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchTerm.trim()) {
       navigate(`/?q=${encodeURIComponent(searchTerm.trim())}`);
+      setIsMobileSearchOpen(false);
     }
   };
+
+  const getDashboardPath = () => {
+      if (!role) return '/';
+      switch (role) {
+          case 'ROLE_ADMIN': return '/admin';
+          case 'ROLE_WORKER': return '/worker';
+          case 'ROLE_SELLER': return '/seller';
+          case 'ROLE_GARAGE': return '/dashboard';
+          case 'ROLE_CUSTOMER': return '/customer-dashboard';
+          default: return '/';
+      }
+  };
+
   return (
     <div className="min-h-screen flex flex-col font-inter bg-app-bg-light">
       {/* Header / Navbar */}
@@ -28,15 +44,15 @@ const AppLayout: React.FC = () => {
         <div className="container mx-auto px-4 h-20 flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             {/* Logo */}
-            <Link to="/" className="flex items-center gap-3 shrink-0">
+            <Link to="/" className="flex items-center gap-2 sm:gap-3 shrink-0">
               <img src="/logo.png" alt="MAD GARAGE" className="h-10 aspect-square object-contain rounded-full overflow-hidden" />
-              <span className="text-2xl font-black italic tracking-tighter text-primary hidden lg:block">MAD GARAGE</span>
+              <span className="text-lg sm:text-2xl font-black italic tracking-tighter text-primary block">MAD GARAGE</span>
             </Link>
 
-            {/* Location Selector (Blinkit Style) */}
+            {/* Location Selector (Blinkit Style) - Simplified for mobile */}
             <div 
               onClick={detectLocation}
-              className="flex items-center gap-2 cursor-pointer group hover:bg-white/5 p-1.5 rounded-xl transition-all border border-transparent hover:border-white/10 shrink-0"
+              className="hidden sm:flex items-center gap-2 cursor-pointer group hover:bg-white/5 p-1.5 rounded-xl transition-all border border-transparent hover:border-white/10 shrink-0"
             >
               <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
                 <MapPin size={14} />
@@ -87,24 +103,25 @@ const AppLayout: React.FC = () => {
           </form>
 
           {/* Right Actions */}
-          <nav className="flex items-center gap-6">
+          <nav className="flex items-center gap-2 md:gap-4 lg:gap-6">
+            {/* Mobile Search Trigger */}
+            <button 
+                onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}
+                className="md:hidden h-10 w-10 flex items-center justify-center bg-white/5 rounded-full text-gray-400 hover:text-primary transition-all"
+            >
+                <Search size={18} />
+            </button>
+
             <Link 
               to="/request-part" 
-              className="hidden lg:flex items-center gap-2 bg-white/5 border border-white/10 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-white hover:text-black transition-all active:scale-95 whitespace-nowrap"
+              className="hidden xl:flex items-center gap-2 bg-white/5 border border-white/10 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-white hover:text-black transition-all active:scale-95 whitespace-nowrap"
             >
               <PackagePlus size={14} />
               Request Part
             </Link>
-            <Link 
-              to="/chat" 
-              className="hidden lg:flex items-center gap-2 bg-white/5 border border-primary/30 text-primary px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-primary hover:text-white transition-all shadow-lg shadow-red-500/10 group active:scale-95 whitespace-nowrap"
-            >
-              <Sparkles size={14} className="group-hover:rotate-12 transition-transform" />
-              MAD GARAGE AI
-            </Link>
             
             {isAuthenticated ? (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 lg:gap-3">
                 <Link 
                   to="/profile" 
                   className="h-10 w-10 flex items-center justify-center bg-white/5 border border-white/10 rounded-full text-gray-400 hover:text-primary transition-all shadow-lg overflow-hidden"
@@ -112,68 +129,112 @@ const AppLayout: React.FC = () => {
                 >
                   {(user?.profileImageUrl && user.profileImageUrl.startsWith('/uploads/')) ? (
                     <img 
-                      src={`${BASE_SERVER_URL}${user.profileImageUrl}`} 
+                       src={user.profileImageUrl.startsWith('http') ? user.profileImageUrl : `${BASE_SERVER_URL}${user.profileImageUrl}`} 
                       alt="Profile" 
                       className="h-full w-full object-cover"
                       onError={(e) => {
                         (e.target as HTMLImageElement).onerror = null;
                         (e.target as HTMLImageElement).src = ''; 
-                        (e.target as HTMLImageElement).parentElement?.classList.add('flex-col');
                       }}
                     />
                   ) : (
                     <User size={18} />
                   )}
                 </Link>
-                <Link to="/user-dashboard" className="flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full border border-primary/20 hover:bg-primary hover:text-white transition-all group">
+                <Link to={getDashboardPath()} className="hidden sm:flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full border border-primary/20 hover:bg-primary hover:text-white transition-all group">
                   <LayoutDashboard size={14} />
                   <span className="text-[10px] font-black uppercase tracking-widest">Dash</span>
                 </Link>
-                <button 
-                  onClick={() => { logout(); navigate('/'); }}
-                  className="h-10 w-10 flex items-center justify-center bg-white/5 border border-white/10 rounded-full text-gray-400 hover:text-primary transition-all shadow-lg"
-                  title="Logout"
-                >
-                  <LogOut size={16} />
-                </button>
               </div>
             ) : (
-              <Link to="/login" className="bg-primary text-white px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-red-700 transition-all shadow-lg shadow-red-500/20">
+              <Link to="/login" className="bg-primary text-white px-4 md:px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-red-700 transition-all shadow-lg shadow-red-500/20">
                 Sign In
               </Link>
             )}
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1 md:gap-4">
               {user?.role !== 'ROLE_WORKER' && user?.role !== 'ROLE_SELLER' && (
                 <Link to="/wishlist" className="relative cursor-pointer group p-2">
-                  <Heart size={22} className="group-hover:text-primary transition-colors" />
+                  <Heart size={20} className="group-hover:text-primary transition-colors" />
                   {wishlistCount > 0 && (
-                    <span className="absolute top-0 right-0 bg-primary text-white text-[10px] font-black h-5 w-5 flex items-center justify-center rounded-full border-2 border-app-bg-dark">
+                    <span className="absolute top-0 right-0 bg-primary text-white text-[8px] font-black h-4 w-4 flex items-center justify-center rounded-full border-2 border-app-bg-dark">
                       {wishlistCount}
                     </span>
                   )}
                 </Link>
               )}
               
-              <Link to="/addresses" className="relative cursor-pointer group p-2">
-                <MapPin size={22} className="group-hover:text-primary transition-colors" />
+              <Link to="/cart" className="relative cursor-pointer group p-2">
+                <ShoppingCart size={20} className="group-hover:text-primary transition-colors" />
+                {cartCount > 0 && (
+                  <span className="absolute top-0 right-0 bg-primary text-white text-[8px] font-black h-4 w-4 flex items-center justify-center rounded-full border-2 border-app-bg-dark">
+                    {cartCount}
+                  </span>
+                )}
               </Link>
-              
-              {user?.role !== 'ROLE_WORKER' && user?.role !== 'ROLE_SELLER' && (
-                <Link to="/cart" className="relative cursor-pointer group p-2">
-                  <ShoppingCart size={22} className="group-hover:text-primary transition-colors" />
-                  {cartCount > 0 && (
-                    <span className="absolute top-0 right-0 bg-primary text-white text-[10px] font-black h-5 w-5 flex items-center justify-center rounded-full border-2 border-app-bg-dark">
-                      {cartCount}
-                    </span>
-                  )}
-                </Link>
-              )}
             </div>
             
-            <Menu size={24} className="md:hidden" />
+            <button 
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="lg:hidden h-10 w-10 flex items-center justify-center bg-white/5 rounded-xl border border-white/10 hover:text-primary transition-colors"
+            >
+                {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
           </nav>
         </div>
+
+        {/* Mobile Search Overlay */}
+        {isMobileSearchOpen && (
+            <div className="md:hidden bg-app-bg-dark border-t border-white/5 p-4 animate-in slide-in-from-top duration-300">
+                <form onSubmit={handleSearch} className="flex bg-white/5 rounded-xl items-center pl-4 pr-1 py-1 border border-primary/30">
+                    <input 
+                        autoFocus
+                        type="text" 
+                        placeholder="Search parts..." 
+                        className="bg-transparent border-none outline-none flex-1 py-2 text-sm font-medium"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                    <button type="submit" className="bg-primary text-white p-2 rounded-lg">
+                        <Search size={16} />
+                    </button>
+                </form>
+            </div>
+        )}
+
+        {/* Mobile Slide-down Menu */}
+        {isMobileMenuOpen && (
+            <div className="lg:hidden bg-app-bg-dark border-t border-white/5 p-6 space-y-6 animate-in slide-in-from-top duration-300">
+                <div className="grid grid-cols-2 gap-4">
+                    <Link onClick={() => setIsMobileMenuOpen(false)} to="/catalog" className="flex flex-col items-center gap-3 p-4 bg-white/5 rounded-2xl border border-white/5">
+                        <PackagePlus size={20} className="text-primary" />
+                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Catalog</span>
+                    </Link>
+                    <Link onClick={() => setIsMobileMenuOpen(false)} to="/chat" className="flex flex-col items-center gap-3 p-4 bg-white/5 rounded-2xl border border-primary/20">
+                        <Sparkles size={20} className="text-primary" />
+                        <span className="text-[10px] font-black uppercase tracking-widest text-primary">AI Assistant</span>
+                    </Link>
+                    <Link onClick={() => setIsMobileMenuOpen(false)} to="/request-part" className="flex flex-col items-center gap-3 p-4 bg-white/5 rounded-2xl border border-white/5">
+                        <Zap size={20} className="text-gray-400" />
+                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Request</span>
+                    </Link>
+                    <Link onClick={() => setIsMobileMenuOpen(false)} to={getDashboardPath()} className="flex flex-col items-center gap-3 p-4 bg-white/5 rounded-2xl border border-white/5">
+                        <LayoutDashboard size={20} className="text-gray-400" />
+                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Dashboard</span>
+                    </Link>
+                </div>
+                
+                {isAuthenticated && (
+                    <button 
+                        onClick={() => { logout(); setIsMobileMenuOpen(false); navigate('/'); }}
+                        className="w-full py-4 bg-white/5 rounded-2xl border border-white/10 flex items-center justify-center gap-3 text-red-500"
+                    >
+                        <LogOut size={18} />
+                        <span className="text-xs font-black uppercase tracking-[0.2em]">Logout Session</span>
+                    </button>
+                )}
+            </div>
+        )}
       </header>
 
       {/* Main Content Area */}

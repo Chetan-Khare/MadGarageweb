@@ -117,16 +117,16 @@ const AdminOrderManagement: React.FC = () => {
                                 </div>
 
                                 <div className="flex items-center gap-4">
-                                    <div className="flex gap-2 p-1 bg-black/40 rounded-xl">
-                                        {['SHIPPED', 'ARRIVED_AT_GARAGE', 'DELIVERED'].map(s => (
+                                    <div className="flex flex-wrap gap-2 p-2 bg-black/40 rounded-2xl">
+                                        {['PROCESSING', 'SHIPPED', 'ARRIVED_AT_GARAGE', 'DELIVERED', 'CANCELLED'].map(s => (
                                             <button 
                                                 key={s}
                                                 onClick={() => updateStatus(order.id, s)}
-                                                className={`px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all ${
-                                                    order.status === s ? 'bg-primary text-white' : 'text-gray-500 hover:text-white'
+                                                className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${
+                                                    order.status === s ? 'bg-primary text-white shadow-lg shadow-red-500/20' : 'text-gray-500 hover:text-white hover:bg-white/5'
                                                 }`}
                                             >
-                                                {s === 'ARRIVED_AT_GARAGE' ? 'ARRIVED' : s}
+                                                {s === 'ARRIVED_AT_GARAGE' ? 'ARRIVED' : s === 'PROCESSING' ? 'PROCESS' : s}
                                             </button>
                                         ))}
                                     </div>

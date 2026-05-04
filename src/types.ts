@@ -34,3 +34,10 @@ export interface User {
     fullName?: string;
     phoneNumber?: string;
 }
+
+export interface Make {
+    id: number;
+    name: string;
+    logoUrl?: string;
+}
+

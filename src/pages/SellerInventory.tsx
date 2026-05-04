@@ -4,6 +4,8 @@ import {
     Package, CheckCircle, RefreshCcw,
     X, Image as ImageIcon, Sparkles, Filter, AlertTriangle
 } from 'lucide-react';
+import ModernSelect from '../components/ModernSelect';
+import { Make } from '../types';
 import { useNavigate, useLocation } from 'react-router-dom';
 import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
 import { useAuth } from '../context/AuthContext';
@@ -19,8 +21,12 @@ const SellerInventory: React.FC = () => {
     const [isSaving, setIsSaving] = useState(false);
     const [base64Image, setBase64Image] = useState<string | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [makes, setMakes] = useState<Make[]>([]);
 
     useEffect(() => { fetchInventory(); }, []);
+    useEffect(() => {
+        apiClient.get('/vehicles/makes').then(res => setMakes(res.data)).catch(err => console.error(err));
+    }, []);
 
     useEffect(() => {
         if (location.state?.autoEdit) {
@@ -314,28 +320,44 @@ const SellerInventory: React.FC = () => {
                                 </div>
                             )}
 
+                            <div className="flex flex-col">
+                                <ModernSelect 
+                                    label="Manufacturer / Brand"
+                                    value={editingProduct.brand || ''}
+                                    options={makes.map(m => ({
+                                        label: m.name,
+                                        value: m.name,
+                                        icon: m.logoUrl
+                                    }))}
+                                    onChange={v => setEditingProduct({ ...editingProduct, brand: v })}
+                                    placeholder="Select Brand"
+                                />
+                            </div>
+
                             <div className="grid grid-cols-2 gap-8">
-                                <div className="flex flex-col">
-                                    <label className="text-[10px] font-black uppercase text-gray-400 mb-3 ml-2">Condition</label>
-                                    <select className="bg-gray-50 border border-gray-100 p-4 rounded-2xl text-xs font-black uppercase tracking-widest text-app-bg-dark outline-none focus:border-primary appearance-none cursor-pointer" value={editingProduct.condition || 'NEW'} onChange={e => {
-                                        const isUnique = ['USED', 'REFURBISHED'].includes(e.target.value);
+                                <ModernSelect 
+                                    label="Condition"
+                                    value={editingProduct.condition || 'NEW'}
+                                    options={[
+                                        { label: 'New', value: 'NEW' },
+                                        { label: 'Refurbished', value: 'REFURBISHED' },
+                                        { label: 'Used', value: 'USED' }
+                                    ]}
+                                    onChange={v => {
+                                        const isUnique = ['USED', 'REFURBISHED'].includes(v);
                                         setEditingProduct({
                                             ...editingProduct,
-                                            condition: e.target.value,
+                                            condition: v,
                                             stockQuantity: isUnique ? 1 : editingProduct.stockQuantity
                                         });
-                                    }}>
-                                        <option value="NEW">New</option>
-                                        <option value="REFURBISHED">Refurbished</option>
-                                        <option value="USED">Used</option>
-                                    </select>
-                                </div>
-                                <div className="flex flex-col">
-                                    <label className="text-[10px] font-black uppercase text-gray-400 mb-3 ml-2">Category</label>
-                                    <select className="bg-gray-50 border border-gray-100 p-4 rounded-2xl text-xs font-black uppercase tracking-widest text-app-bg-dark outline-none focus:border-primary appearance-none cursor-pointer" value={editingProduct.category || 'Engine'} onChange={e => setEditingProduct({ ...editingProduct, category: e.target.value })}>
-                                        {['Brakes', 'Engine', 'Suspension', 'Exhaust', 'Electrical', 'Exterior', 'Interior'].map(c => <option key={c} value={c}>{c}</option>)}
-                                    </select>
-                                </div>
+                                    }}
+                                />
+                                <ModernSelect 
+                                    label="Category"
+                                    value={editingProduct.category || 'Engine'}
+                                    options={['Brakes', 'Engine', 'Suspension', 'Exhaust', 'Electrical', 'Exterior', 'Interior']}
+                                    onChange={v => setEditingProduct({ ...editingProduct, category: v })}
+                                />
                             </div>
 
                             {editingProduct.id && editingProduct.fitmentCategory !== 'UNIVERSAL' && (

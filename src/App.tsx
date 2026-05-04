@@ -9,20 +9,23 @@ import { WishlistProvider } from './context/WishlistContext';
 import { LocationProvider } from './context/LocationContext';
 
 // Lazy Load Pages
+import AdminDashboard from './pages/AdminDashboard';
+import WorkerDashboard from './pages/WorkerDashboard';
+import AdminUserManagement from './pages/AdminUserManagement';
+import AdminInventoryManagement from './pages/AdminInventoryManagement';
+import AdminOrderManagement from './pages/AdminOrderManagement';
+import CatalogPage from './pages/CatalogPage';
+
+// Lazy Load Pages
 const HomePage = lazy(() => import('./pages/HomePage'));
 const PartRequestPage = lazy(() => import('./pages/PartRequestPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const CompleteProfilePage = lazy(() => import('./pages/CompleteProfilePage'));
 const GarageDashboard = lazy(() => import('./pages/GarageDashboard'));
 const CustomerDashboard = lazy(() => import('./pages/CustomerDashboard'));
-const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
-const WorkerDashboard = lazy(() => import('./pages/WorkerDashboard'));
 const SellerDashboard = lazy(() => import('./pages/SellerDashboard'));
 const AdminVehicleManagement = lazy(() => import('./pages/AdminVehicleManagement'));
 const AdminPartRequestReview = lazy(() => import('./pages/AdminPartRequestReview'));
-const AdminUserManagement = lazy(() => import('./pages/AdminUserManagement'));
-const AdminInventoryManagement = lazy(() => import('./pages/AdminInventoryManagement'));
-const AdminOrderManagement = lazy(() => import('./pages/AdminOrderManagement'));
 const SellerInventory = lazy(() => import('./pages/SellerInventory'));
 const SellerOrderManagement = lazy(() => import('./pages/SellerOrderManagement'));
 const SellerFlaggedProducts = lazy(() => import('./pages/SellerFlaggedProducts'));
@@ -31,7 +34,6 @@ const AddProductPage = lazy(() => import('./pages/AddProductPage'));
 const ProductDetailsPage = lazy(() => import('./pages/ProductDetailsPage'));
 const OrderDetailsPage = lazy(() => import('./pages/OrderDetailsPage'));
 const OrderLookupPage = lazy(() => import('./pages/OrderLookupPage'));
-const CatalogPage = lazy(() => import('./pages/CatalogPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const CheckoutPage = lazy(() => import('./pages/CheckoutPage'));
 const CartPage = lazy(() => import('./pages/CartPage'));
@@ -57,6 +59,20 @@ function App() {
           <ScrollToTop />
           <Suspense fallback={<PageLoader />}>
             <Routes>
+              {/* Staff (Admin & Worker) Unified Control Plane */}
+              <Route element={<ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_WORKER']} />}>
+                <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/worker" element={<WorkerDashboard />} />
+                <Route path="/admin/parts-db" element={<CatalogPage />} />
+                <Route path="/admin/users" element={<AdminUserManagement />} />
+                <Route path="/admin/inventory" element={<AdminInventoryManagement />} />
+                <Route path="/admin/orders" element={<AdminOrderManagement />} />
+                <Route path="/admin/add-product" element={<AddProductPage />} />
+                <Route path="/admin/requests" element={<AdminPartRequestReview />} />
+                <Route path="/admin/vehicles" element={<AdminVehicleManagement />} />
+                <Route path="/admin/settings" element={<AdminSettingsPage />} />
+              </Route>
+
               {/* Public Routes with Layout */}
               <Route path="/" element={<AppLayout />}>
                 <Route index element={<HomePage />} />
@@ -65,32 +81,13 @@ function App() {
                 <Route path="cart" element={<CartPage />} />
               </Route>
 
-              {/* Auth Routes - No Main Layout */}
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/complete-profile" element={<CompleteProfilePage />} />
-
-              {/* Admin & Worker Shared / Specific Routes */}
-              <Route element={<ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_WORKER']} />}>
-                <Route path="/admin/users" element={<AdminUserManagement />} />
-                <Route path="/admin/inventory" element={<AdminInventoryManagement />} />
-                <Route path="/admin/orders" element={<AdminOrderManagement />} />
-                <Route path="/admin/parts-db" element={<CatalogPage />} />
-                <Route path="/admin/add-product" element={<AddProductPage />} />
-                <Route path="/admin/requests" element={<AdminPartRequestReview />} />
-                <Route path="/admin/vehicles" element={<AdminVehicleManagement />} />
-              </Route>
-
-              <Route element={<ProtectedRoute allowedRoles={['ROLE_ADMIN']} />}>
-                <Route path="/admin" element={<AdminDashboard />} />
-                <Route path="/admin/settings" element={<AdminSettingsPage />} />
-              </Route>
-
-              <Route element={<ProtectedRoute allowedRoles={['ROLE_WORKER']} />}>
-                <Route path="/worker" element={<WorkerDashboard />} />
-              </Route>
 
               {/* Redirects */}
               <Route path="/catalog" element={<Navigate to="/" replace />} />
+
+              {/* Auth Routes - No Main Layout */}
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/complete-profile" element={<CompleteProfilePage />} />
               
               {/* Seller Specific Routes */}
               <Route element={<ProtectedRoute allowedRoles={['ROLE_SELLER']} />}>

@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useDeferredValue, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Product } from '../types';
 import { 
   Search, SlidersHorizontal,
@@ -9,8 +9,11 @@ import {
 } from 'lucide-react';
 import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
 import ProductEditModal from '../components/ProductEditModal';
+import { useAuth } from '../context/AuthContext';
 
 const CatalogPage: React.FC = () => {
+    const { role } = useAuth();
+    const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const engineId = searchParams.get('engineId');
     const categoryQuery = searchParams.get('category');
@@ -70,7 +73,9 @@ const CatalogPage: React.FC = () => {
 
     const filteredProducts = useMemo(() => {
         return products.filter(p => {
-            if (p.flagged) return false;
+            // Staff can see flagged items for administrative purposes
+            const isStaff = role === 'ROLE_ADMIN' || role === 'ROLE_WORKER';
+            if (p.flagged && !isStaff) return false;
             const nameToSearch = (p.partName || p.name || '').toLowerCase();
             const matchesSearch = nameToSearch.includes(deferredSearchTerm.toLowerCase());
             const matchesCategory = selectedCategory === 'All' || p.category === selectedCategory;
@@ -96,24 +101,32 @@ const CatalogPage: React.FC = () => {
             <header className="pt-24 pb-12 border-b border-white/5 relative bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]">
                 <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
                 <div className="container mx-auto px-6 relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-8">
-                    <div className="space-y-4">
-                        <div className="flex items-center gap-3">
-                            <span className="h-2 w-2 bg-primary rounded-full animate-pulse shadow-[0_0_10px_rgba(223,35,36,0.8)]" />
-                            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">Parts DB Console</p>
-                        </div>
-                        <h1 className="text-4xl md:text-6xl font-black italic uppercase tracking-tighter leading-none">
-                            Admin <span className="text-white">Parts DB</span>
-                        </h1>
-                        <div className="flex items-center gap-6 text-[10px] font-bold text-gray-500 uppercase tracking-widest bg-white/5 px-4 py-2 rounded-lg border border-white/5 self-start">
-                            <span className="flex items-center gap-2"><Database size={12} /> {filteredProducts.length} Node Entries</span>
-                            <span className="flex items-center gap-2"><Activity size={12} /> System Status: Optimal</span>
+                    <div className="flex items-start gap-8">
+                        <button 
+                            onClick={() => navigate(role === 'ROLE_WORKER' ? '/worker' : '/admin')}
+                            className="mt-2 h-14 w-14 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center hover:bg-primary transition-all group"
+                        >
+                            <ChevronLeft className="group-hover:-translate-x-1 transition-transform" />
+                        </button>
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-3">
+                                <span className="h-2 w-2 bg-primary rounded-full animate-pulse shadow-[0_0_10px_rgba(223,35,36,0.8)]" />
+                                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">Parts DB Console</p>
+                            </div>
+                            <h1 className="text-4xl md:text-6xl font-black italic uppercase tracking-tighter leading-none">
+                                Admin <span className="text-white">Parts DB</span>
+                            </h1>
+                            <div className="flex items-center gap-6 text-[10px] font-bold text-gray-500 uppercase tracking-widest bg-white/5 px-4 py-2 rounded-lg border border-white/5 self-start">
+                                <span className="flex items-center gap-2"><Database size={12} /> {filteredProducts.length} Node Entries</span>
+                                <span className="flex items-center gap-2"><Activity size={12} /> System Status: Optimal</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </header>
 
             {/* Unified Command Bar */}
-            <div className="sticky top-16 z-40 bg-app-bg-dark/80 backdrop-blur-xl border-b border-white/5 py-4">
+            <div className="sticky top-20 z-40 bg-app-bg-dark/80 backdrop-blur-xl border-b border-white/5 py-4">
                 <div className="container mx-auto px-6 flex flex-col lg:flex-row items-center gap-6">
                     <div className="flex-1 w-full flex items-center bg-white/5 rounded-2xl border border-white/10 focus-within:border-primary/40 transition-all group overflow-hidden">
                         <div className="h-12 w-12 flex items-center justify-center border-r border-white/5 bg-white/5">
@@ -314,4 +327,3 @@ const CatalogPage: React.FC = () => {
 };
 
 export default CatalogPage;
-

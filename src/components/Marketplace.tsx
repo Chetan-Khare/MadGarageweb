@@ -11,6 +11,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLocation } from '../context/LocationContext';
 import { useVehicles } from '../hooks/useVehicles';
 import { useProducts } from '../hooks/useProducts';
+import ModernSelect from './ModernSelect';
 
 interface MarketplaceProps {
   isGarage?: boolean;
@@ -158,12 +159,18 @@ const Marketplace: React.FC<MarketplaceProps> = ({ isGarage = false }) => {
             {showVehicleFilters && (
               <div className="bg-white p-8 md:p-12 rounded-[2.8rem] border border-gray-100 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 text-left">
-                  <SelectField label="Make" value={selectedMake} options={makes} onChange={handleMakeChange} />
-                  <SelectField label="Model" value={selectedModel} options={models} onChange={handleModelChange} disabled={!selectedMake} />
-                  <SelectField label="Year" value={selectedYear} options={years} onChange={handleYearChange} disabled={!selectedModel} />
-                  <SelectField label="Fuel" value={selectedFuel} options={fuels} onChange={handleFuelChange} disabled={!selectedYear} />
-                  <SelectField label="Trim" value={selectedTrim} options={trims} onChange={handleTrimChange} disabled={!selectedFuel} />
-                  <SelectField label="Engine" value={selectedEngine} options={engines.map((e: any) => ({ value: e.id, label: `${e.engineCode} - ${e.horsepower}HP` }))} onChange={(v) => setSelectedEngine(v)} disabled={!selectedTrim} />
+                  <ModernSelect 
+                    label="Make" 
+                    value={selectedMake} 
+                    options={makes.map((m: any) => ({ label: m.name, value: m.name, icon: m.logoUrl }))} 
+                    onChange={handleMakeChange} 
+                    placeholder="Select Manufacturer"
+                  />
+                  <ModernSelect label="Model" value={selectedModel} options={models} onChange={handleModelChange} disabled={!selectedMake} placeholder="Select Model" />
+                  <ModernSelect label="Year" value={selectedYear} options={years} onChange={handleYearChange} disabled={!selectedModel} placeholder="Select Year" />
+                  <ModernSelect label="Fuel" value={selectedFuel} options={fuels} onChange={handleFuelChange} disabled={!selectedYear} placeholder="Select Fuel" />
+                  <ModernSelect label="Trim" value={selectedTrim} options={trims} onChange={handleTrimChange} disabled={!selectedFuel} placeholder="Select Trim" />
+                  <ModernSelect label="Engine" value={selectedEngine} options={engines} onChange={(v) => setSelectedEngine(v)} disabled={!selectedTrim} placeholder="Select Engine" />
                 </div>
                 <div className="mt-10 flex flex-col md:flex-row items-center justify-between gap-6 pt-10 border-t border-gray-50">
                   <button
@@ -186,8 +193,8 @@ const Marketplace: React.FC<MarketplaceProps> = ({ isGarage = false }) => {
         </div>
       </section>
 
-      {/* Nearby Garages Dropdown Section */}
-      <section className="bg-white py-4 border-b border-gray-100 z-40 sticky top-[80px]">
+      {/* Nearby Garages / Fitting Hub Section */}
+      <section className="bg-white py-6 border-b border-gray-100 relative">
         <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-4 flex-1">
             <div className="h-10 w-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary shadow-lg shadow-red-500/10 shrink-0">
@@ -325,33 +332,34 @@ const Marketplace: React.FC<MarketplaceProps> = ({ isGarage = false }) => {
       </section>
 
       {/* Marketplace Grid Section */}
-      <section id="marketplace-section" className={`py-20 ${isGarage ? 'bg-app-bg-light' : 'bg-white'}`}>
+      <section id="marketplace-section" className={`py-12 ${isGarage ? 'bg-app-bg-light' : 'bg-white'}`}>
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between mb-12">
-            <h2 className={`text-4xl font-black italic uppercase tracking-tighter flex items-center gap-4 ${isGarage ? 'text-app-bg-dark' : 'text-app-bg-dark'}`}>
+          <div className="flex items-center justify-between mb-8">
+            <h2 className={`text-3xl font-black italic uppercase tracking-tighter flex items-center gap-4 ${isGarage ? 'text-app-bg-dark' : 'text-app-bg-dark'}`}>
               Marketplace <div className="h-1 w-20 bg-primary/20"></div>
             </h2>
           </div>
 
-          <div className="mb-12 flex flex-col md:flex-row items-center justify-between gap-8 py-6 border-b border-gray-100 sticky top-16 z-30 bg-white/95 backdrop-blur-md px-4 rounded-2xl shadow-sm">
-            <div className={`flex flex-col lg:flex-row items-center gap-6 w-full justify-between`}>
-              <div className="flex bg-gray-50 p-1 rounded-xl border border-gray-100 overflow-x-auto max-w-full">
+          {/* COMPACT STICKY CATEGORY BAR */}
+          <div className="mb-10 flex flex-col md:flex-row items-center justify-between gap-4 py-3 border-b border-gray-100 sticky top-20 z-30 bg-white/95 backdrop-blur-md px-4 rounded-2xl shadow-sm">
+            <div className={`flex flex-col lg:flex-row items-center gap-4 w-full justify-between`}>
+              <div className="flex bg-gray-50 p-1 rounded-xl border border-gray-100 overflow-x-auto max-w-full scrollbar-hide">
                 {categories.map(cat => (
                   <button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
-                    className={`px-4 py-2 text-[10px] font-black uppercase rounded-lg transition-all whitespace-nowrap ${selectedCategory === cat ? 'bg-app-bg-dark text-white shadow-lg' : 'text-gray-400 hover:text-app-bg-dark'}`}
+                    className={`px-4 py-2 text-[9px] font-black uppercase rounded-lg transition-all whitespace-nowrap ${selectedCategory === cat ? 'bg-app-bg-dark text-white shadow-lg' : 'text-gray-400 hover:text-app-bg-dark'}`}
                   >
                     {cat}
                   </button>
                 ))}
               </div>
-              <div className="flex bg-gray-50 p-1 rounded-xl border border-gray-100">
+              <div className="flex bg-gray-50 p-1 rounded-xl border border-gray-100 shrink-0">
                 {['ALL', 'NEW', 'REFURBISHED', 'USED'].map(cond => (
                   <button
                     key={cond}
                     onClick={() => setSelectedCondition(cond)}
-                    className={`px-4 py-2 text-[9px] font-black uppercase rounded-lg transition-all ${selectedCondition === cond ? 'bg-primary text-white' : 'text-gray-400 hover:text-primary'}`}
+                    className={`px-3 py-1.5 text-[8px] font-black uppercase rounded-lg transition-all ${selectedCondition === cond ? 'bg-primary text-white' : 'text-gray-400 hover:text-primary'}`}
                   >
                     {cond}
                   </button>
@@ -367,14 +375,14 @@ const Marketplace: React.FC<MarketplaceProps> = ({ isGarage = false }) => {
             </div>
           ) : filteredProducts.length > 0 ? (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-8">
                 {pagedProducts.map((product: any) => (
                   <div
                     key={product.id}
-                    className="group bg-white rounded-[2.5rem] border border-gray-100 shadow-xl flex flex-col overflow-hidden hover:translate-y-[-8px] transition-all duration-500 cursor-pointer"
+                    className="group bg-white rounded-[1.5rem] md:rounded-[2.5rem] border border-gray-100 shadow-xl flex flex-col overflow-hidden hover:translate-y-[-8px] transition-all duration-500 cursor-pointer"
                     onClick={() => navigate(`/product/${product.id}`, { state: { product } })}
                   >
-                    <div className="aspect-square bg-gray-50 flex items-center justify-center p-8 relative overflow-hidden">
+                    <div className="aspect-square bg-gray-50 flex items-center justify-center p-4 md:p-8 relative overflow-hidden">
                       <img
                         src={product.imageUrl ? (product.imageUrl.startsWith('http') ? product.imageUrl : `${BASE_SERVER_URL}${product.imageUrl}`) : 'https://via.placeholder.com/300'}
                         alt={product.partName}
@@ -383,32 +391,29 @@ const Marketplace: React.FC<MarketplaceProps> = ({ isGarage = false }) => {
                           (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?q=80&w=400&auto=format&fit=crop';
                         }}
                       />
-                      <div className="absolute top-4 left-4 z-10 flex gap-2">
+                      <div className="absolute top-2 left-2 md:top-4 md:left-4 z-10 flex flex-col md:flex-row gap-1 md:gap-2">
                         {product.condition && (
-                          <span className="bg-primary/90 backdrop-blur-md text-white text-[8px] font-black uppercase px-3 py-1.5 rounded-full shadow-lg">
+                          <span className="bg-primary/90 backdrop-blur-md text-white text-[6px] md:text-[8px] font-black uppercase px-2 md:px-3 py-1 md:py-1.5 rounded-full shadow-lg">
                             {product.condition}
                           </span>
                         )}
-                        <span className="bg-app-bg-dark/80 backdrop-blur-md text-white text-[8px] font-black uppercase px-3 py-1.5 rounded-full shadow-lg">{product.category}</span>
+                        <span className="bg-app-bg-dark/80 backdrop-blur-md text-white text-[6px] md:text-[8px] font-black uppercase px-2 md:px-3 py-1 md:py-1.5 rounded-full shadow-lg">{product.category}</span>
                       </div>
                     </div>
-                    <div className="p-8 flex flex-col flex-1">
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="text-[9px] font-black uppercase text-primary tracking-widest">{product.brand || 'MAD GARAGE'}</span>
+                    <div className="p-3 md:p-8 flex flex-col flex-1">
+                      <div className="flex items-center gap-1 md:gap-2 mb-1 md:mb-3">
+                        <span className="text-[7px] md:text-[9px] font-black uppercase text-primary tracking-widest">{product.brand || 'MAD GARAGE'}</span>
                       </div>
-                      <h3 className="text-xl font-black italic text-app-bg-dark uppercase tracking-tighter leading-tight mb-6 group-hover:text-primary transition-colors line-clamp-2">
+                      <h3 className="text-xs md:text-xl font-black italic text-app-bg-dark uppercase tracking-tighter leading-tight mb-2 md:mb-6 group-hover:text-primary transition-colors line-clamp-2">
                         {product.partName}
                       </h3>
-                      <div className="mt-auto pt-6 border-t border-gray-50 flex items-center justify-between">
+                      <div className="mt-auto pt-2 md:pt-6 border-t border-gray-50 flex items-center justify-between">
                         <div>
-                          {isGarage && product.wholesale && product.price && product.garagePrice && product.price > product.garagePrice && (
-                            <p className="text-[10px] text-gray-400 line-through font-bold decoration-primary/40">₹{product.price.toLocaleString()}</p>
-                          )}
-                          <p className="text-2xl font-black italic text-app-bg-dark tracking-tighter">
-                            Rs.{(isGarage && product.wholesale && product.garagePrice ? product.garagePrice : (product.price || 0)).toLocaleString()}
+                          <p className="text-xs md:text-2xl font-black italic text-app-bg-dark tracking-tighter">
+                            ₹{(isGarage && product.wholesale && product.garagePrice ? product.garagePrice : (product.price || 0)).toLocaleString()}
                           </p>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-1 md:gap-2">
                           {user?.role !== 'ROLE_SELLER' && user?.role !== 'ROLE_WORKER' && (
                             <button
                               onClick={(e: React.MouseEvent) => { 
@@ -416,17 +421,17 @@ const Marketplace: React.FC<MarketplaceProps> = ({ isGarage = false }) => {
                                 if (!user) { navigate('/login'); return; }
                                 toggleWishlist(product); 
                               }}
-                              className={`h-12 w-12 rounded-2xl flex items-center justify-center transition-all shadow-lg border ${isInWishlist(product.id) ? 'bg-primary text-white border-primary' : 'bg-gray-50 text-app-bg-dark border-gray-100 hover:bg-primary/5 hover:text-primary'}`}
+                              className={`h-7 w-7 md:h-12 md:w-12 rounded-lg md:rounded-2xl flex items-center justify-center transition-all shadow-md border ${isInWishlist(product.id) ? 'bg-primary text-white border-primary' : 'bg-gray-50 text-app-bg-dark border-gray-100 hover:bg-primary/5 hover:text-primary'}`}
                             >
-                              <Heart size={20} fill={isInWishlist(product.id) ? 'currentColor' : 'none'} />
+                              <Heart size={14} fill={isInWishlist(product.id) ? 'currentColor' : 'none'} className="md:w-5 md:h-5" />
                             </button>
                           )}
                           {user?.role !== 'ROLE_SELLER' && user?.role !== 'ROLE_WORKER' && (
                             <div
-                              className="h-12 w-12 bg-app-bg-dark text-white rounded-2xl flex items-center justify-center hover:bg-primary transition-all shadow-lg cursor-pointer"
+                              className="h-7 w-7 md:h-12 md:w-12 bg-app-bg-dark text-white rounded-lg md:rounded-2xl flex items-center justify-center hover:bg-primary transition-all shadow-md cursor-pointer"
                               onClick={(e: React.MouseEvent) => { e.stopPropagation(); addToCart(product); }}
                             >
-                              <Plus size={20} />
+                              <Plus size={14} className="md:w-5 md:h-5" />
                             </div>
                           )}
                         </div>
@@ -494,35 +499,5 @@ const Marketplace: React.FC<MarketplaceProps> = ({ isGarage = false }) => {
     </div>
   );
 };
-
-const SelectField: React.FC<{
-  label: string;
-  value: string;
-  options: any[];
-  onChange: (v: string) => void;
-  disabled?: boolean;
-}> = ({ label, value, options, onChange, disabled }) => (
-  <div className={`flex flex-col ${disabled ? 'opacity-40 pointer-events-none' : ''}`}>
-    <label className="text-[10px] font-black uppercase text-gray-400 mb-2 ml-2 tracking-widest">{label}</label>
-    <div className="relative">
-      <select
-        className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl text-xs font-black uppercase tracking-widest text-app-bg-dark outline-none focus:border-primary transition-all appearance-none cursor-pointer"
-        value={value}
-        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onChange(e.target.value)}
-        disabled={disabled}
-      >
-        <option value="">Select {label}</option>
-        {options.map((opt) => (
-          <option key={typeof opt === 'string' ? opt : opt.value} value={typeof opt === 'string' ? opt : opt.value}>
-            {typeof opt === 'string' ? opt : opt.label}
-          </option>
-        ))}
-      </select>
-      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-        <ChevronRight size={14} className="rotate-90" />
-      </div>
-    </div>
-  </div>
-);
 
 export default Marketplace;
