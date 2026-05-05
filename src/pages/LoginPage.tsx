@@ -333,6 +333,22 @@ const LoginPage: React.FC = () => {
             </form>
           )}
 
+          {/* Partner CTA */}
+          <div className="mt-12 pt-10 border-t border-gray-100">
+             <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100 flex flex-col md:flex-row items-center justify-between gap-6 group hover:border-primary/20 transition-all">
+                <div>
+                   <h4 className="text-[10px] font-black uppercase text-gray-400 tracking-widest mb-1">Business Partnership</h4>
+                   <p className="text-xs font-black text-app-bg-dark uppercase italic">Are you a Seller or a Garage?</p>
+                </div>
+                <Link 
+                    to="/join" 
+                    className="flex items-center gap-2 bg-white text-app-bg-dark px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest border border-gray-100 hover:bg-primary hover:text-white hover:border-primary transition-all shadow-sm group-hover:shadow-md"
+                >
+                    Apply Now <ArrowRight size={14} />
+                </Link>
+             </div>
+          </div>
+
         </div>
       </div>
     </div>

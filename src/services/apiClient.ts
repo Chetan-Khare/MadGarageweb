@@ -11,12 +11,8 @@ const apiClient = axios.create({
 // Request Interceptor: Transitioning to Cookies
 apiClient.interceptors.request.use(
   (config) => {
-    // If a token is manually present in localStorage (legacy/dev), we still send it as a fallback.
     // In production, the browser will automatically append the 'mg_auth' cookie.
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    // Legacy token logic removed to prevent conflicts with HttpOnly cookies.
 
     // Handle File Uploads (Multipart)
     if (config.data instanceof FormData) {

@@ -142,11 +142,11 @@ const WorkerDashboard: React.FC = () => {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                         <OperationCard 
-                            title="User Fulfillment"
-                            desc="Approve Garages & Sellers"
+                            title="Partner Audits"
+                            desc="Review & Contact Applicants"
                             icon={<Users size={32} />}
                             color="text-blue-500"
-                            onClick={() => navigate('/admin/users')}
+                            onClick={() => navigate('/admin/partners')}
                         />
                         <OperationCard 
                             title="Order Pipeline"

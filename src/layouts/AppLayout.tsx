@@ -294,6 +294,7 @@ const AppLayout: React.FC = () => {
               <h3 className="text-white font-bold uppercase tracking-widest text-xs mb-3">Quick Links</h3>
               <Link to="/" className="text-sm hover:text-white transition-colors">Home</Link>
               <Link to="/catalog" className="text-sm hover:text-white transition-colors">Catalog</Link>
+              <Link to="/join" className="text-sm text-primary font-black uppercase italic hover:text-white transition-colors">Partner with Us</Link>
               <Link to="/user-dashboard" className="text-sm hover:text-white transition-colors">My Dashboard</Link>
               <Link to="/request-part" className="text-sm hover:text-white transition-colors">Request Part</Link>
               <a href="#" className="text-sm hover:text-white transition-colors">Privacy Policy</a>

@@ -3,7 +3,7 @@ import {
     Users, Package, TrendingUp, FileText,
     ShoppingCart, Car, Fingerprint,
     Activity, Settings,
-    ChevronRight, PlusCircle, Bot, LogOut, Eye, EyeOff
+    ChevronRight, PlusCircle, LogOut, Eye, EyeOff
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -319,13 +319,13 @@ const AdminDashboard: React.FC = () => {
                             onClick={() => navigate('/admin/settings')}
                         />
                         <OperationHubCard
-                            icon={<Bot size={32} />}
-                            title="MAD GARAGE AI"
-                            subtitle="Neural Diagnostics"
+                            icon={<Users size={32} />}
+                            title="Partner Audits"
+                            subtitle="Review Onboarding"
                             color="text-purple-500"
                             bg="from-purple-950/20 to-black"
                             border="border-purple-900/40"
-                            onClick={() => navigate('/chat')}
+                            onClick={() => navigate('/admin/partners')}
                         />
                     </div>
                 </div>

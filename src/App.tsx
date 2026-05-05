@@ -41,6 +41,8 @@ const OrdersPage = lazy(() => import('./pages/OrdersPage'));
 const WishlistPage = lazy(() => import('./pages/WishlistPage'));
 const AddressPage = lazy(() => import('./pages/AddressPage'));
 const AdminSettingsPage = lazy(() => import('./pages/AdminSettingsPage'));
+const PartnerPage = lazy(() => import('./pages/PartnerPage'));
+import AdminPartnerRequests from './pages/AdminPartnerRequests';
 
 // Fallback Loader Component
 const PageLoader = () => (
@@ -71,12 +73,14 @@ function App() {
                 <Route path="/admin/requests" element={<AdminPartRequestReview />} />
                 <Route path="/admin/vehicles" element={<AdminVehicleManagement />} />
                 <Route path="/admin/settings" element={<AdminSettingsPage />} />
+                <Route path="/admin/partners" element={<AdminPartnerRequests />} />
               </Route>
 
               {/* Public Routes with Layout */}
               <Route path="/" element={<AppLayout />}>
                 <Route index element={<HomePage />} />
                 <Route path="request-part" element={<PartRequestPage />} />
+                <Route path="join" element={<PartnerPage />} />
                 <Route path="product/:id" element={<ProductDetailsPage />} />
                 <Route path="cart" element={<CartPage />} />
               </Route>
