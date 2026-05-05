@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Store, Wrench, Globe, ShieldCheck, Send, CheckCircle, ArrowRight, Building2, MapPin, Sparkles } from 'lucide-react';
+import { Store, Wrench, Globe, ShieldCheck, Send, CheckCircle, Building2, MapPin, Sparkles } from 'lucide-react';
 import apiClient from '../services/apiClient';
 
 const PartnerPage: React.FC = () => {
