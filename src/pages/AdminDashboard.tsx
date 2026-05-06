@@ -9,7 +9,7 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
-import ProductEditModal from '../components/ProductEditModal';
+
 
 interface AdminStats {
     totalUsers: number;
@@ -41,10 +41,7 @@ const AdminDashboard: React.FC = () => {
     const [formError, setFormError] = useState('');
     const [formSuccess, setFormSuccess] = useState('');
 
-    // Provision Modal State
-    const [showProvisionModal, setShowProvisionModal] = useState(false);
-    const [isSavingProvision, setIsSavingProvision] = useState(false);
-    const [provisioningProduct, setProvisioningProduct] = useState<any>(null);
+
 
     useEffect(() => { fetchAnalytics(); }, []);
 
@@ -169,20 +166,7 @@ const AdminDashboard: React.FC = () => {
         }
     };
 
-    const handleSaveProvision = async (payload: any) => {
-        setIsSavingProvision(true);
-        try {
-            // Use existing seller-based create endpoint as per user requirement
-            await apiClient.post('/seller/inventory/base64', payload);
-            setShowProvisionModal(false);
-            setFormSuccess('Part successfully provisioned!');
-            fetchAnalytics();
-        } catch (err) {
-            alert('Provisioning failed.');
-        } finally {
-            setIsSavingProvision(false);
-        }
-    };
+
 
 
 
@@ -469,16 +453,7 @@ const AdminDashboard: React.FC = () => {
                 </div>
             </div>
 
-            {/* Shared Provisioning Modal */}
-            <ProductEditModal
-                show={showProvisionModal}
-                onClose={() => setShowProvisionModal(false)}
-                product={provisioningProduct}
-                onSave={handleSaveProvision}
-                isSaving={isSavingProvision}
-                title="listing Override"
-                subtitle="Express Inventory Provisioning"
-            />
+
         </div>
     );
 };
