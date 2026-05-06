@@ -96,11 +96,7 @@ const AIChatPage: React.FC = () => {
     setImagePreviews(prev => prev.filter((_, i) => i !== index));
   };
 
-  const isGreeting = (msg: string) => {
-    const lower = msg.toLowerCase().replace(/[^a-z ]/g, '').trim();
-    const greetings = ['hi', 'hello', 'hey', 'yo', 'sup', 'help'];
-    return greetings.includes(lower) || (lower.length <= 4 && !/\d/.test(lower));
-  };
+
 
   const sendMessage = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -313,7 +309,7 @@ const AIChatPage: React.FC = () => {
             />
             <button 
               type="submit"
-              disabled={isThinking || (!inputText.trim() && !selectedImage)}
+              disabled={isThinking || (!inputText.trim() && selectedImages.length === 0)}
               className="h-12 w-12 shrink-0 bg-primary rounded-full flex items-center justify-center text-white hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100 transition-all shadow-lg shadow-red-600/30"
             >
               <Send size={20} />

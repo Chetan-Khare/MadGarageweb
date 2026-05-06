@@ -3,7 +3,7 @@ import {
     Users, Package, TrendingUp, FileText,
     ShoppingCart, Car, Fingerprint,
     Activity, Settings,
-    ChevronRight, PlusCircle, LogOut, Eye, EyeOff,
+    ChevronRight, LogOut, Eye, EyeOff,
     MessageSquare
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -184,18 +184,7 @@ const AdminDashboard: React.FC = () => {
         }
     };
 
-    const openProvisioning = () => {
-        setProvisioningProduct({ 
-            partName: '', 
-            price: 0, 
-            stockQuantity: 10, 
-            category: 'Engine', 
-            condition: 'NEW', 
-            description: '',
-            wholesale: true
-        });
-        setShowProvisionModal(true);
-    };
+
 
     if (loading) return <div className="min-h-screen bg-app-bg-dark flex items-center justify-center">
         <div className="text-center space-y-4">
