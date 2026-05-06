@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, ShieldAlert, Phone, Hash, ChevronLeft, ShieldCheck, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import apiClient from '../services/apiClient';
+import { useTranslation } from 'react-i18next';
 
 const LoginPage: React.FC = () => {
   const [authTab, setAuthTab] = useState<'CUSTOMER' | 'STAFF'>('CUSTOMER');
@@ -19,6 +20,7 @@ const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuth();
+  const { t } = useTranslation();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -199,12 +201,12 @@ const LoginPage: React.FC = () => {
           </div>
 
           <h1 className="text-4xl font-black italic text-app-bg-dark uppercase tracking-tighter mb-2">
-            {authTab === 'CUSTOMER' ? 'Secure Login' : 'Admin Access'}
+            {authTab === 'CUSTOMER' ? t('login.title') : 'Admin Access'}
           </h1>
           <p className="text-gray-500 font-medium mb-10">
             {authTab === 'CUSTOMER' 
               ? 'Enter your phone number to receive a secure access code.' 
-              : 'Enter your enterprise credentials to manage operations.'}
+              : t('login.subtitle')}
           </p>
 
           {error && (
@@ -287,7 +289,7 @@ const LoginPage: React.FC = () => {
           ) : (
             <form className="space-y-6" onSubmit={handleStaffLogin}>
                 <div className="flex flex-col">
-                    <label className="text-[10px] font-black uppercase text-gray-400 mb-3 ml-2">Enterprise Email</label>
+                    <label className="text-[10px] font-black uppercase text-gray-400 mb-3 ml-2">{t('login.email_label')}</label>
                     <div className="relative group">
                         <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors" size={20} />
                         <input 
@@ -302,7 +304,7 @@ const LoginPage: React.FC = () => {
                 </div>
 
                 <div className="flex flex-col">
-                    <label className="text-[10px] font-black uppercase text-gray-400 mb-3 ml-2">Secret Key</label>
+                    <label className="text-[10px] font-black uppercase text-gray-400 mb-3 ml-2">{t('login.password_label')}</label>
                     <div className="relative group">
                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors" size={20} />
                         <input 
@@ -328,7 +330,7 @@ const LoginPage: React.FC = () => {
                     disabled={loading}
                     className="w-full bg-app-bg-dark text-white py-5 rounded-2xl font-black uppercase tracking-widest text-sm flex items-center justify-center gap-3 hover:bg-black transition-all shadow-xl shadow-black/10"
                 >
-                    {loading ? 'Authorizing...' : 'Authorize Session'} <ArrowRight size={18} />
+                    {loading ? 'Authorizing...' : t('login.submit')} <ArrowRight size={18} />
                 </button>
             </form>
           )}

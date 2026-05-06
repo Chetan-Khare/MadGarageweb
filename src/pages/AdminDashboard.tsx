@@ -3,7 +3,8 @@ import {
     Users, Package, TrendingUp, FileText,
     ShoppingCart, Car, Fingerprint,
     Activity, Settings,
-    ChevronRight, PlusCircle, LogOut, Eye, EyeOff
+    ChevronRight, PlusCircle, LogOut, Eye, EyeOff,
+    MessageSquare
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -300,15 +301,7 @@ const AdminDashboard: React.FC = () => {
                             border="border-green-900/40"
                             onClick={() => navigate('/admin/vehicles')}
                         />
-                        <OperationHubCard
-                            icon={<PlusCircle size={32} />}
-                            title="Provision Part"
-                            subtitle="List New Inventory"
-                            color="text-primary"
-                            bg="from-red-950/20 to-black"
-                            border="border-primary/20"
-                            onClick={openProvisioning}
-                        />
+
                         <OperationHubCard
                             icon={<Settings size={32} />}
                             title="System Properties"
@@ -326,6 +319,15 @@ const AdminDashboard: React.FC = () => {
                             bg="from-purple-950/20 to-black"
                             border="border-purple-900/40"
                             onClick={() => navigate('/admin/partners')}
+                        />
+                        <OperationHubCard
+                            icon={<MessageSquare size={32} />}
+                            title="AI Chat Audit"
+                            subtitle="Review Neural Logs"
+                            color="text-primary"
+                            bg="from-red-950/20 to-black"
+                            border="border-primary/20"
+                            onClick={() => navigate('/admin/ai-audit')}
                         />
                     </div>
                 </div>

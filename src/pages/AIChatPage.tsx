@@ -23,17 +23,11 @@ const AIChatPage: React.FC = () => {
   const { addToCart } = useCart();
   const { role } = useAuth();
   const navigate = useNavigate();
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: '0',
-      role: 'ai',
-      text: "Hey there! 👋 I'm your Virtual Mechanic at **MAD GARAGE**!\n\nI can help you find the right parts for your vehicle. Just tell me what you're looking for, or upload a photo of the part or damage! 🔧"
-    }
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [isThinking, setIsThinking] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -43,19 +37,63 @@ const AIChatPage: React.FC = () => {
   };
 
   useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const response = await apiClient.get('/assistant/history');
+        const history = response.data.map((msg: any) => ({
+          id: msg.id.toString(),
+          role: msg.sender.toLowerCase() as 'user' | 'ai',
+          text: msg.message,
+          imagePreview: msg.imageUrl
+        }));
+        
+        if (history.length === 0) {
+          setMessages([
+            {
+              id: '0',
+              role: 'ai',
+              text: "Hey there! 👋 I'm your Virtual Mechanic at **MAD GARAGE**!\n\nI can help you find the right parts for your vehicle. Just tell me what you're looking for, or upload a photo of the part or damage! 🔧"
+            }
+          ]);
+        } else {
+          setMessages(history);
+        }
+      } catch (error) {
+        console.error("Failed to fetch history:", error);
+      }
+    };
+    fetchHistory();
+  }, []);
+
+  useEffect(() => {
     scrollToBottom();
   }, [messages, isThinking]);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedImage(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
+      const newFiles = [...selectedImages, ...files].slice(0, 5);
+      setSelectedImages(newFiles);
+      
+      const newPreviews: string[] = [];
+      let loaded = 0;
+      newFiles.forEach(file => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          newPreviews.push(reader.result as string);
+          loaded++;
+          if (loaded === newFiles.length) {
+            setImagePreviews(newPreviews);
+          }
+        };
+        reader.readAsDataURL(file);
+      });
     }
+  };
+
+  const removeImage = (index: number) => {
+    setSelectedImages(prev => prev.filter((_, i) => i !== index));
+    setImagePreviews(prev => prev.filter((_, i) => i !== index));
   };
 
   const isGreeting = (msg: string) => {
@@ -66,41 +104,34 @@ const AIChatPage: React.FC = () => {
 
   const sendMessage = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if ((!inputText.trim() && !selectedImage) || isThinking) return;
+    if ((!inputText.trim() && selectedImages.length === 0) || isThinking) return;
 
-    const userText = inputText.trim() || (selectedImage ? 'Attached image for analysis.' : '');
+    const userText = inputText.trim() || (selectedImages.length > 0 ? 'Attached images for analysis.' : '');
     
-    // Greeting check
-    if (!selectedImage && isGreeting(userText)) {
-      const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', text: userText };
-      const aiMsg: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: 'ai',
-        text: "Hey! 👋 I'm your Virtual Mechanic!\n\nTell me your vehicle's Year, Make & Model and what part you need, and I'll find the perfect match for you. 🔧"
-      };
-      setMessages(prev => [...prev, userMsg, aiMsg]);
-      setInputText('');
-      return;
-    }
+    // Greeting check removed to rely on backend saving and logic
 
     const userMsg: ChatMessage = { 
       id: Date.now().toString(), 
       role: 'user', 
       text: userText,
-      imagePreview: imagePreview || undefined
+      imagePreview: imagePreviews[0] || undefined
     };
     
     setMessages(prev => [...prev, userMsg]);
     setInputText('');
-    const imageToSend = selectedImage;
-    setSelectedImage(null);
-    setImagePreview(null);
+    const filesToSend = [...selectedImages];
+    setSelectedImages([]);
+    setImagePreviews([]);
     setIsThinking(true);
 
     try {
       const formData = new FormData();
       if (userText) formData.append('message', userText);
-      if (imageToSend) formData.append('image', imageToSend);
+      if (filesToSend.length > 0) {
+        filesToSend.forEach(file => {
+          formData.append('images', file);
+        });
+      }
 
       const response = await apiClient.post('/assistant/chat', formData);
       const result = response.data;
@@ -113,10 +144,13 @@ const AIChatPage: React.FC = () => {
       };
       setMessages(prev => [...prev, aiMsg]);
     } catch (error: any) {
+      const is413 = error?.response?.status === 413;
       const aiMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'ai',
-        text: "I'm having trouble connecting to the garage network. Please try again in a moment! ⚠️"
+        text: is413
+          ? "That image is too large (max 5MB). Please compress it or use a smaller photo and try again! 📸"
+          : "I'm having trouble connecting to the garage network. Please try again in a moment! ⚠️"
       };
       setMessages(prev => [...prev, aiMsg]);
     } finally {
@@ -227,16 +261,26 @@ const AIChatPage: React.FC = () => {
       {/* Input Bar */}
       <div className="p-6 md:p-8 bg-black/40 backdrop-blur-xl border-t border-white/5 z-30">
         <div className="max-w-4xl mx-auto space-y-4">
-          {imagePreview && (
-            <div className="flex items-center gap-4 bg-white/5 border border-white/10 p-3 rounded-2xl animate-in slide-in-from-bottom-4">
-              <img src={imagePreview} className="h-16 w-16 object-cover rounded-lg border border-white/10" alt="Preview" />
-              <div className="flex-1">
-                <p className="text-[10px] font-black uppercase tracking-widest text-primary">Capture Ready</p>
-                <p className="text-xs text-gray-400">Image will be sent for diagnostic analysis</p>
+          {imagePreviews.length > 0 && (
+            <div className="flex flex-wrap gap-4 bg-white/5 border border-white/10 p-3 rounded-2xl animate-in slide-in-from-bottom-4">
+              {imagePreviews.map((preview, idx) => (
+                <div key={idx} className="relative group">
+                  <img src={preview} className="h-16 w-16 object-cover rounded-lg border border-white/10" alt="Preview" />
+                  <button 
+                    onClick={() => removeImage(idx)}
+                    className="absolute -top-2 -right-2 h-6 w-6 bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
+              ))}
+              <div className="flex-1 flex flex-col justify-center min-w-[120px]">
+                <p className="text-[10px] font-black uppercase tracking-widest text-primary">{imagePreviews.length} Diagnostics Ready</p>
+                <p className="text-[10px] text-gray-400">Multi-image analysis active</p>
               </div>
               <button 
-                onClick={() => { setSelectedImage(null); setImagePreview(null); }}
-                className="h-10 w-10 bg-red-500/10 text-red-500 rounded-xl flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"
+                onClick={() => { setSelectedImages([]); setImagePreviews([]); }}
+                className="h-10 w-10 bg-red-500/10 text-red-500 rounded-xl flex items-center justify-center hover:bg-red-500 hover:text-white transition-all self-center"
               >
                 <Trash2 size={18} />
               </button>
@@ -249,12 +293,14 @@ const AIChatPage: React.FC = () => {
               className="hidden" 
               ref={fileInputRef} 
               accept="image/*" 
+              multiple
               onChange={handleImageSelect}
             />
             <button 
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className={`h-12 w-12 shrink-0 rounded-full flex items-center justify-center transition-all ${imagePreview ? 'bg-primary text-white' : 'bg-white/5 text-gray-400 hover:text-primary hover:bg-white/10'}`}
+              disabled={selectedImages.length >= 5}
+              className={`h-12 w-12 shrink-0 rounded-full flex items-center justify-center transition-all ${imagePreviews.length > 0 ? 'bg-primary text-white' : 'bg-white/5 text-gray-400 hover:text-primary hover:bg-white/10'}`}
             >
               <Camera size={20} />
             </button>

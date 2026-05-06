@@ -42,6 +42,8 @@ const WishlistPage = lazy(() => import('./pages/WishlistPage'));
 const AddressPage = lazy(() => import('./pages/AddressPage'));
 const AdminSettingsPage = lazy(() => import('./pages/AdminSettingsPage'));
 const PartnerPage = lazy(() => import('./pages/PartnerPage'));
+const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
+const AdminChatAuditPage = lazy(() => import('./pages/AdminChatAuditPage'));
 import AdminPartnerRequests from './pages/AdminPartnerRequests';
 
 // Fallback Loader Component
@@ -74,6 +76,7 @@ function App() {
                 <Route path="/admin/vehicles" element={<AdminVehicleManagement />} />
                 <Route path="/admin/settings" element={<AdminSettingsPage />} />
                 <Route path="/admin/partners" element={<AdminPartnerRequests />} />
+                <Route path="/admin/ai-audit" element={<AdminChatAuditPage />} />
               </Route>
 
               {/* Public Routes with Layout */}
@@ -83,6 +86,7 @@ function App() {
                 <Route path="join" element={<PartnerPage />} />
                 <Route path="product/:id" element={<ProductDetailsPage />} />
                 <Route path="cart" element={<CartPage />} />
+                <Route path="privacy" element={<PrivacyPolicyPage />} />
               </Route>
 
 

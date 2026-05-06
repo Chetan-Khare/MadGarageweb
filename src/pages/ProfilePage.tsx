@@ -249,8 +249,8 @@ const ProfilePage: React.FC = () => {
                                     <div className="relative h-32 w-32 bg-white/5 border-2 border-primary/30 rounded-[2.5rem] flex items-center justify-center overflow-hidden shadow-2xl group-hover:border-primary/60 transition-all duration-300">
                                         {uploading ? (
                                             <Loader2 size={32} className="text-primary animate-spin" />
-                                        ) : (profileImageUrl && profileImageUrl.startsWith('/uploads/')) ? (
-                                            <img src={`${BASE_SERVER_URL}${profileImageUrl}`} alt="Profile" className="h-full w-full object-cover" />
+                                        ) : (profileImageUrl) ? (
+                                            <img src={profileImageUrl.startsWith('http') ? profileImageUrl : `${BASE_SERVER_URL}${profileImageUrl}`} alt="Profile" className="h-full w-full object-cover" />
                                         ) : (
                                             <span className="text-4xl font-black text-primary italic">
                                                 {formData.firstName?.[0]}{formData.lastName?.[0] || 'G'}

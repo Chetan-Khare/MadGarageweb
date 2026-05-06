@@ -12,6 +12,7 @@ import { useLocation } from '../context/LocationContext';
 import { useVehicles } from '../hooks/useVehicles';
 import { useProducts } from '../hooks/useProducts';
 import ModernSelect from './ModernSelect';
+import { useTranslation, Trans } from 'react-i18next';
 
 interface MarketplaceProps {
   isGarage?: boolean;
@@ -25,6 +26,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({ isGarage = false }) => {
   const { toggleWishlist, isInWishlist } = useWishlist();
   const { user } = useAuth();
   const { city, detectLocation, nearbyGarages, setManualCity } = useLocation();
+  const { t } = useTranslation();
 
   // --- Filtering State ---
   const [selectedMake, setSelectedMake] = useState('');
@@ -120,10 +122,13 @@ const Marketplace: React.FC<MarketplaceProps> = ({ isGarage = false }) => {
                 <img src="/logo.png" alt="MAD GARAGE" className="h-24 aspect-square object-contain rounded-full overflow-hidden brightness-110 drop-shadow-[0_0_15px_rgba(223,35,36,0.3)]" />
               </div>
               <h1 className="text-6xl md:text-8xl font-black italic tracking-tighter text-white mb-6 uppercase">
-                Built for <span className="text-primary italic">SPEED.</span>
+                <Trans 
+                  i18nKey="home.hero_title"
+                  components={[<span className="text-primary italic" />]}
+                />
               </h1>
               <p className="text-xl md:text-2xl text-gray-400 font-medium max-w-3xl mx-auto mb-12 leading-relaxed">
-                Premium performance parts for the serious enthusiast.
+                {t('home.hero_subtitle')}
               </p>
             </>
           )}
@@ -148,7 +153,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({ isGarage = false }) => {
                 </div>
                 <div className="text-left">
                   <h3 className={`text-sm md:text-base font-black uppercase tracking-widest ${selectedEngine ? 'text-primary italic' : 'text-app-bg-dark'}`}>
-                    {selectedEngine ? `${selectedYear} ${selectedMake} ${selectedModel} ${selectedTrim}` : 'Identify Your Build'}
+                    {selectedEngine ? `${selectedYear} ${selectedMake} ${selectedModel} ${selectedTrim}` : t('home.hero_button')}
                   </h3>
                   <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Select vehicle for precision fitment matching</p>
                 </div>

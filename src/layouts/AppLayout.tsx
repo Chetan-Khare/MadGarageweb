@@ -6,12 +6,15 @@ import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { BASE_SERVER_URL } from '../services/apiClient';
 import { useLocation } from '../context/LocationContext';
+import { useTranslation } from 'react-i18next';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 const AppLayout: React.FC = () => {
   const { user, isAuthenticated, logout, role } = useAuth();
   const { totalItems: cartCount } = useCart();
   const { totalItems: wishlistCount } = useWishlist();
   const { city, detectLocation, isLoading: locationLoading } = useLocation();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -111,6 +114,8 @@ const AppLayout: React.FC = () => {
             >
                 <Search size={18} />
             </button>
+            
+            <LanguageSwitcher />
 
             <Link 
               to="/request-part" 
@@ -127,7 +132,7 @@ const AppLayout: React.FC = () => {
                   className="h-10 w-10 flex items-center justify-center bg-white/5 border border-white/10 rounded-full text-gray-400 hover:text-primary transition-all shadow-lg overflow-hidden"
                   title="My Profile"
                 >
-                  {(user?.profileImageUrl && user.profileImageUrl.startsWith('/uploads/')) ? (
+                  {(user?.profileImageUrl) ? (
                     <img 
                        src={user.profileImageUrl.startsWith('http') ? user.profileImageUrl : `${BASE_SERVER_URL}${user.profileImageUrl}`} 
                       alt="Profile" 
@@ -143,12 +148,12 @@ const AppLayout: React.FC = () => {
                 </Link>
                 <Link to={getDashboardPath()} className="hidden sm:flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full border border-primary/20 hover:bg-primary hover:text-white transition-all group">
                   <LayoutDashboard size={14} />
-                  <span className="text-[10px] font-black uppercase tracking-widest">Dash</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest">{t('nav.dashboard')}</span>
                 </Link>
               </div>
             ) : (
               <Link to="/login" className="bg-primary text-white px-4 md:px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-red-700 transition-all shadow-lg shadow-red-500/20">
-                Sign In
+                {t('nav.login')}
               </Link>
             )}
 
@@ -230,7 +235,7 @@ const AppLayout: React.FC = () => {
                         className="w-full py-4 bg-white/5 rounded-2xl border border-white/10 flex items-center justify-center gap-3 text-red-500"
                     >
                         <LogOut size={18} />
-                        <span className="text-xs font-black uppercase tracking-[0.2em]">Logout Session</span>
+                        <span className="text-xs font-black uppercase tracking-[0.2em]">{t('nav.logout')}</span>
                     </button>
                 )}
             </div>
@@ -294,10 +299,10 @@ const AppLayout: React.FC = () => {
               <h3 className="text-white font-bold uppercase tracking-widest text-xs mb-3">Quick Links</h3>
               <Link to="/" className="text-sm hover:text-white transition-colors">Home</Link>
               <Link to="/catalog" className="text-sm hover:text-white transition-colors">Catalog</Link>
-              <Link to="/join" className="text-sm text-primary font-black uppercase italic hover:text-white transition-colors">Partner with Us</Link>
-              <Link to="/user-dashboard" className="text-sm hover:text-white transition-colors">My Dashboard</Link>
-              <Link to="/request-part" className="text-sm hover:text-white transition-colors">Request Part</Link>
-              <a href="#" className="text-sm hover:text-white transition-colors">Privacy Policy</a>
+              <Link to="/join" className="text-sm text-primary font-black uppercase italic hover:text-white transition-all">Partner with Us</Link>
+              <Link to="/user-dashboard" className="text-sm hover:text-white transition-all">My Dashboard</Link>
+              <Link to="/request-part" className="text-sm hover:text-white transition-all">Request Part</Link>
+              <Link to="/privacy" className="text-sm hover:text-white transition-all">Privacy Policy</Link>
             </div>
 
           {/* Contact */}

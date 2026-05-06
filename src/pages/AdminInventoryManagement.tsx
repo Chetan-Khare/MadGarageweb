@@ -128,7 +128,7 @@ const AdminInventoryManagement: React.FC = () => {
                             onClick={() => openEdit({ partName: '', price: 0, stockQuantity: 0, category: 'Engine', condition: 'NEW', description: '' })}
                             className="bg-primary text-white h-12 px-8 rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center gap-2 hover:bg-red-700 transition-all shadow-xl shadow-red-500/20"
                         >
-                            <Plus size={18} /> listing Override
+                            <Plus size={18} /> Add Part
                         </button>
                     </div>
 
@@ -294,7 +294,7 @@ const AdminInventoryManagement: React.FC = () => {
                 product={editingProduct}
                 onSave={handleSave}
                 isSaving={isSaving}
-                title={editingProduct?.id ? "Administrative Edit" : "listing Override"}
+                title={editingProduct?.id ? "Administrative Edit" : "Add Part"}
             />
         </div>
     );
