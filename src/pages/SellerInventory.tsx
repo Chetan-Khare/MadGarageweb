@@ -81,7 +81,9 @@ const SellerInventory: React.FC = () => {
             sellerResponse: editingProduct.sellerResponse,
             flagged: editingProduct.flagged,
             flagReason: editingProduct.flagReason,
-            wholesale: editingProduct.wholesale !== false
+            wholesale: editingProduct.wholesale !== false,
+            mrp: editingProduct.mrp || editingProduct.price,
+            discountPercentage: editingProduct.discountPercentage || null
         };
 
         try {
@@ -259,13 +261,34 @@ const SellerInventory: React.FC = () => {
 
                             <div className="grid grid-cols-2 gap-8">
                                 <div className="flex flex-col">
-                                    <label className="text-[10px] font-black uppercase text-gray-400 mb-3 ml-2">Wholesale Price (₹)</label>
+                                    <label className="text-[10px] font-black uppercase text-gray-400 mb-3 ml-2">MRP (₹)</label>
+                                    <input required type="number" className="bg-gray-50 border border-gray-100 p-4 rounded-2xl text-sm font-bold text-app-bg-dark outline-none focus:border-primary transition-all" value={editingProduct.mrp || editingProduct.price || 0} onChange={e => setEditingProduct({ ...editingProduct, mrp: Number(e.target.value) })} />
+                                </div>
+                                <div className="flex flex-col">
+                                    <label className="text-[10px] font-black uppercase text-gray-400 mb-3 ml-2">Retail Price (₹)</label>
                                     <input required type="number" className="bg-gray-50 border border-gray-100 p-4 rounded-2xl text-sm font-bold text-app-bg-dark outline-none focus:border-primary transition-all" value={editingProduct.price || 0} onChange={e => setEditingProduct({ ...editingProduct, price: Number(e.target.value) })} />
                                 </div>
+                            </div>
+
+                            {editingProduct.mrp > editingProduct.price && (
+                                <div className="flex items-center gap-2 ml-2">
+                                    <Sparkles size={12} className="text-green-500" />
+                                    <p className="text-[10px] font-black uppercase text-green-500 tracking-widest">
+                                        Retail Discount: {Math.round((1 - editingProduct.price / editingProduct.mrp) * 100)}% off MRP
+                                    </p>
+                                </div>
+                            )}
+
+                            <div className="grid grid-cols-2 gap-8">
                                 <div className="flex flex-col">
                                     <label className="text-[10px] font-black uppercase text-gray-400 mb-3 ml-2">Current Stock</label>
                                     <input required type="number" className="bg-gray-50 border border-gray-100 p-4 rounded-2xl text-sm font-bold text-app-bg-dark outline-none focus:border-primary transition-all disabled:opacity-50" value={editingProduct.stockQuantity || editingProduct.stock || 0} onChange={e => setEditingProduct({ ...editingProduct, stockQuantity: Number(e.target.value) })} disabled={['USED', 'REFURBISHED'].includes(editingProduct.condition)} />
                                     {['USED', 'REFURBISHED'].includes(editingProduct.condition) && <p className="text-[8px] font-black uppercase text-orange-500 mt-2 ml-2 tracking-widest leading-tight">Locked to 1 unit</p>}
+                                </div>
+                                <div className="flex flex-col">
+                                    <label className="text-[10px] font-black uppercase text-gray-400 mb-3 ml-2">Garage Discount %</label>
+                                    <input type="number" className="bg-gray-50 border border-gray-100 p-4 rounded-2xl text-sm font-bold text-app-bg-dark outline-none focus:border-primary transition-all" value={editingProduct.discountPercentage || ''} onChange={e => setEditingProduct({ ...editingProduct, discountPercentage: e.target.value ? Number(e.target.value) : null })} placeholder="Optional override" />
+                                    <p className="text-[8px] font-black uppercase text-gray-400 mt-2 ml-2 tracking-widest">Forces this % for garages</p>
                                 </div>
                             </div>
 

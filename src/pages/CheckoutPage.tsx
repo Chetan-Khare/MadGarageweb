@@ -4,12 +4,13 @@ import {
     ChevronLeft, CreditCard, MapPin,
     ShieldCheck, Package, ShoppingBag,
     CheckCircle, AlertCircle, Store, Truck, Navigation,
-    Home, Briefcase
+    Home, Briefcase, Tag, ChevronRight
 } from 'lucide-react';
 import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
 import { useCart } from '../context/CartContext';
 import { useLocation } from '../context/LocationContext';
 import { useAuth } from '../context/AuthContext';
+import CouponDrawer from '../components/CouponDrawer';
 
 const CheckoutPage: React.FC = () => {
     const domLocation = useDomLocation();
@@ -43,6 +44,10 @@ const CheckoutPage: React.FC = () => {
     const [selectedGarageId, setSelectedGarageId] = useState<number | null>(null);
     const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
     const [config, setConfig] = useState({ shippingFee: 250, freeThreshold: 400, platformFee: 7 });
+
+    // Coupon State
+    const [isCouponDrawerOpen, setIsCouponDrawerOpen] = useState(false);
+    const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
 
     useEffect(() => {
         if (userRole === 'ROLE_WORKER' || userRole === 'ROLE_SELLER') {
@@ -134,7 +139,8 @@ const CheckoutPage: React.FC = () => {
     const subtotal = buyNowProduct ? (buyNowProduct.garagePrice || buyNowProduct.price || 0) * buyNowQuantity : cartSubtotal;
     const shippingFee = (checkoutItems.length > 0 && subtotal < config.freeThreshold) ? config.shippingFee : 0;
     const platformFee = subtotal > 0 ? config.platformFee : 0;
-    const total = subtotal + shippingFee + platformFee;
+    const discountAmount = appliedCoupon ? appliedCoupon.discountAmount : 0;
+    const total = subtotal + shippingFee + platformFee - discountAmount;
 
     const loadRazorpay = () => {
         return new Promise((resolve) => {
@@ -187,6 +193,7 @@ const CheckoutPage: React.FC = () => {
                 city,
                 state,
                 pincode,
+                couponCode: appliedCoupon?.code,
                 deliveryType,
                 fittingGarageId: deliveryType === 'GARAGE_FITTING' ? selectedGarageId : null
             });
@@ -604,6 +611,47 @@ const CheckoutPage: React.FC = () => {
                                         </div>
                                     )}
 
+                                    {/* Coupon Section */}
+                                    {!appliedCoupon ? (
+                                        <button 
+                                            type="button"
+                                            onClick={() => setIsCouponDrawerOpen(true)}
+                                            className="w-full p-6 bg-white/5 border border-white/10 rounded-[1.5rem] flex items-center justify-between group hover:border-primary/30 transition-all"
+                                        >
+                                            <div className="flex items-center gap-4">
+                                                <Tag size={16} className="text-primary" />
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-white">Have a coupon code?</span>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-primary font-black text-[10px] uppercase italic">
+                                                View Offers <ChevronRight size={14} />
+                                            </div>
+                                        </button>
+                                    ) : (
+                                        <div className="p-6 bg-green-500/10 border border-green-500/20 rounded-[1.5rem] flex items-center justify-between group animate-in zoom-in-95">
+                                            <div className="flex items-center gap-4">
+                                                <CheckCircle size={16} className="text-green-500" />
+                                                <div>
+                                                    <span className="text-[10px] font-black uppercase tracking-widest text-green-500">Applied: {appliedCoupon.code}</span>
+                                                    <p className="text-[9px] font-bold text-gray-400 uppercase mt-0.5">₹{appliedCoupon.discountAmount} SAVED!</p>
+                                                </div>
+                                            </div>
+                                            <button 
+                                                type="button"
+                                                onClick={() => setAppliedCoupon(null)}
+                                                className="text-[9px] font-black uppercase text-gray-400 hover:text-primary tracking-widest"
+                                            >
+                                                Remove
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {discountAmount > 0 && (
+                                        <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-green-500">
+                                            <span>Coupon Discount</span>
+                                            <span>-₹{discountAmount.toLocaleString()}</span>
+                                        </div>
+                                    )}
+
                                     <div className="pt-6 mt-6 border-t border-white/10 flex justify-between items-center">
                                         <span className="text-xs font-black uppercase tracking-[0.2em] text-white italic">Total Amount</span>
                                         <span className="text-3xl font-black italic text-primary tracking-tighter uppercase leading-none">₹{total.toLocaleString()}</span>
@@ -623,6 +671,12 @@ const CheckoutPage: React.FC = () => {
                     </div>
                 </div>
             </div>
+            <CouponDrawer 
+                isOpen={isCouponDrawerOpen} 
+                onClose={() => setIsCouponDrawerOpen(false)} 
+                onApply={(coupon) => setAppliedCoupon(coupon)} 
+                orderAmount={subtotal} 
+            />
         </div>
     );
 };

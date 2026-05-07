@@ -5,7 +5,7 @@ import {
   Truck, CheckCircle, Clock, 
   Share2, HelpCircle,
   Star, MessageSquare, Send,
-  ShieldCheck
+  ShieldCheck, Info
 } from 'lucide-react';
 import apiClient from '../services/apiClient';
 import { useAuth } from '../context/AuthContext';
@@ -21,6 +21,14 @@ const OrderDetailsPage: React.FC = () => {
     const [tempDeliveryRating, setTempDeliveryRating] = useState(0);
     const [ratingComment, setRatingComment] = useState('');
     const [submittingRating, setSubmittingRating] = useState(false);
+
+    // Return System State
+    const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
+    const [returnReason, setReturnReason] = useState('WRONG_FITMENT');
+    const [returnType, setReturnType] = useState('REPLACEMENT');
+    const [returnDescription, setReturnDescription] = useState('');
+    const [submittingReturn, setSubmittingReturn] = useState(false);
+    const [activeReturn, setActiveReturn] = useState<any>(null);
 
     useEffect(() => {
         fetchOrder();
@@ -50,6 +58,22 @@ const OrderDetailsPage: React.FC = () => {
             setLoading(false);
         }
     };
+
+    const fetchReturnRequest = async () => {
+        try {
+            const response = await apiClient.get(`/returns/my`);
+            const request = response.data.find((r: any) => Number(r.orderId) === Number(id));
+            if (request) setActiveReturn(request);
+        } catch (err) {
+            console.error('Failed to fetch return status');
+        }
+    };
+
+    useEffect(() => {
+        if (order) {
+            fetchReturnRequest();
+        }
+    }, [order]);
 
     const handleSubmitRating = async () => {
         if (!tempPartRating || !tempDeliveryRating) return;
@@ -101,6 +125,26 @@ const OrderDetailsPage: React.FC = () => {
         } catch (err) {
             console.error('Invoice download failed:', err);
             alert('Failed to retrieve professional invoice from terminal.');
+        }
+    };
+    const handleSubmitReturn = async () => {
+        if (!returnDescription.trim()) return;
+        setSubmittingReturn(true);
+        try {
+            await apiClient.post('/returns', {
+                orderId: parseInt(id!),
+                reason: returnReason,
+                requestType: returnType,
+                description: returnDescription,
+                imageUrls: [] // Mock images for now
+            });
+            setIsReturnModalOpen(false);
+            await fetchOrder();
+        } catch (error) {
+            console.error('Return request failed');
+            alert('Failed to transmit return protocol.');
+        } finally {
+            setSubmittingReturn(false);
         }
     };
 
@@ -156,7 +200,7 @@ const OrderDetailsPage: React.FC = () => {
                             <div className="flex flex-col items-center md:items-end">
                                 <div className="bg-white/10 border border-white/10 px-6 py-3 rounded-2xl flex items-center gap-3">
                                     <div className="h-3 w-3 bg-green-500 rounded-full animate-pulse shadow-lg shadow-green-500/50" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest">{order.status?.replace('_', ' ')}</span>
+                                    <span className="text-[10px] font-black uppercase text-white tracking-widest">{order.status?.replace(/_/g, ' ')}</span>
                                 </div>
                             </div>
                         </div>
@@ -229,7 +273,12 @@ const OrderDetailsPage: React.FC = () => {
                                             </div>
                                             <div>
                                                 <h4 className="text-md font-black text-app-bg-dark italic uppercase">{item.productName}</h4>
-                                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Qty: {item.quantity} • Unit: ₹{item.priceAtPurchase.toLocaleString()}</p>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Qty: {item.quantity} • Unit: ₹{item.priceAtPurchase.toLocaleString()}</p>
+                                                    {!item.isReturnable && (
+                                                        <span className="text-[8px] font-black bg-red-500/10 text-red-600 px-2 py-0.5 rounded-full uppercase tracking-tighter border border-red-500/20">Non-Returnable</span>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                         <p className="text-lg font-black text-app-bg-dark italic underline decoration-primary decoration-2 underline-offset-4">₹{(item.priceAtPurchase * item.quantity).toLocaleString()}</p>
@@ -269,6 +318,12 @@ const OrderDetailsPage: React.FC = () => {
                                         <div className="flex justify-between text-xs font-bold text-gray-400 uppercase tracking-widest">
                                             <span>Platform Fee</span>
                                             <span>₹{order.platformFee?.toLocaleString()}</span>
+                                        </div>
+                                    )}
+                                    {(order.discountAmount > 0 || order.appliedCouponCode) && (
+                                        <div className="flex justify-between text-xs font-bold text-green-400 uppercase tracking-widest animate-pulse">
+                                            <span>Protocol Discount {order.appliedCouponCode && `[${order.appliedCouponCode}]`}</span>
+                                            <span>- ₹{order.discountAmount?.toLocaleString()}</span>
                                         </div>
                                     )}
                                     <div className="pt-4 border-t border-white/5 flex justify-between items-end">
@@ -317,6 +372,83 @@ const OrderDetailsPage: React.FC = () => {
                                         <p className="text-xs font-bold text-gray-500 italic leading-loose">"{order.ratingComment || 'Part performance meets engineering standards.'}"</p>
                                     </div>
                                 )}
+                            </div>
+                        )}
+
+                        {/* Active Return Status Display */}
+                        {activeReturn && (
+                            <div className="bg-primary/5 rounded-[2.5rem] p-10 border border-primary/20 animate-in zoom-in-95">
+                                <div className="flex items-center justify-between mb-8">
+                                    <div className="flex items-center gap-4">
+                                        <div className="h-12 w-12 bg-primary text-white rounded-2xl flex items-center justify-center shadow-lg shadow-red-500/20">
+                                            <Package size={24} />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-xl font-black italic text-app-bg-dark uppercase">Return Protocol <span className="text-primary">Active</span></h3>
+                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Resolution: {activeReturn.requestType} • Status: {activeReturn.status}</p>
+                                        </div>
+                                    </div>
+                                    <div className="bg-app-bg-dark px-6 py-2 rounded-full border border-white/5">
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-white">#{activeReturn.id}</span>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
+                                        <h4 className="text-[9px] font-black uppercase text-primary tracking-widest mb-4">Reason for Return</h4>
+                                        <p className="text-[11px] font-bold text-app-bg-dark uppercase">{activeReturn.reason?.replace('_', ' ')}</p>
+                                        <p className="text-[10px] text-gray-500 mt-4 leading-relaxed font-medium italic">"{activeReturn.description}"</p>
+                                    </div>
+                                    <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
+                                        <h4 className="text-[9px] font-black uppercase text-primary tracking-widest mb-4">Terminal Timeline</h4>
+                                        <div className="space-y-4">
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-[9px] font-black uppercase text-gray-400">Requested</span>
+                                                <span className="text-[9px] font-black uppercase text-app-bg-dark">{new Date(activeReturn.requestedAt).toLocaleDateString()}</span>
+                                            </div>
+                                            {activeReturn.resolvedAt && (
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-[9px] font-black uppercase text-gray-400">Resolved</span>
+                                                    <span className="text-[9px] font-black uppercase text-app-bg-dark">{new Date(activeReturn.resolvedAt).toLocaleDateString()}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        {activeReturn.adminNote && (
+                                            <div className="mt-6 pt-6 border-t border-gray-50">
+                                                <p className="text-[9px] font-black uppercase text-primary mb-2">Admin Transmission</p>
+                                                <p className="text-[10px] font-bold text-app-bg-dark italic">"{activeReturn.adminNote}"</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Customer Delivery Confirmation */}
+                        {(order.status === 'SHIPPED' || order.status === 'ARRIVED_AT_GARAGE' || order.status === 'PAID') && order.isOwner && (
+                            <div className="flex justify-center pt-8">
+                                <button 
+                                    onClick={() => handleUpdateStatus('DELIVERED')}
+                                    className="px-10 py-5 bg-app-bg-dark text-white rounded-[2rem] font-black uppercase italic tracking-widest text-[10px] transition-all shadow-xl hover:bg-primary active:scale-95 shadow-red-500/10"
+                                >
+                                    Confirm Delivery Received
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Customer Post-Delivery Actions */}
+                        {order.status === 'DELIVERED' && order.isOwner && !activeReturn && (
+                            <div className="flex justify-center pt-8">
+                                <button 
+                                    onClick={() => setIsReturnModalOpen(true)}
+                                    disabled={!order.items?.some((i: any) => i.isReturnable)}
+                                    className={`px-10 py-5 rounded-[2rem] font-black uppercase italic tracking-widest text-[10px] transition-all shadow-xl active:scale-95 ${
+                                        order.items?.some((i: any) => i.isReturnable)
+                                            ? 'bg-white border-2 border-primary text-primary hover:bg-primary hover:text-white shadow-red-500/5'
+                                            : 'bg-gray-100 border-2 border-gray-200 text-gray-400 cursor-not-allowed grayscale'
+                                    }`}
+                                >
+                                    {order.items?.some((i: any) => i.isReturnable) ? 'Initiate Return / Replacement' : 'Returns Unavailable (Final Sale)'}
+                                </button>
                             </div>
                         )}
 
@@ -391,6 +523,89 @@ const OrderDetailsPage: React.FC = () => {
                      Precision Parts Terminal • Secure Transmission
                 </p>
             </div>
+
+            {/* Return Request Modal */}
+            {isReturnModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-app-bg-dark/80 backdrop-blur-md" onClick={() => setIsReturnModalOpen(false)} />
+                    <div className="relative w-full max-w-2xl bg-white rounded-[3.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+                        <div className="bg-app-bg-dark p-10 md:p-14 text-white relative">
+                            <div className="absolute top-0 right-0 w-48 h-48 bg-primary/20 rounded-full blur-[80px] -mr-24 -mt-24" />
+                            <div className="relative z-10">
+                                <h2 className="text-3xl font-black italic uppercase tracking-tighter leading-none mb-2">Initiate <span className="text-primary">Return</span></h2>
+                                <p className="text-[10px] font-black uppercase text-gray-500 tracking-[0.3em]">Hardware Recall Protocol • Order #{order.id}</p>
+                                {order.items?.some((i: any) => !i.isReturnable) && (
+                                    <div className="mt-4 bg-red-500/20 border border-red-500/30 p-4 rounded-2xl flex items-center gap-3">
+                                        <Info size={14} className="text-red-400" />
+                                        <p className="text-[8px] font-black uppercase text-red-400 tracking-widest">Protocol Warning: Some items in this order are non-returnable and will be excluded from resolution.</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="p-10 md:p-14 space-y-10">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="space-y-4">
+                                    <label className="text-[10px] font-black uppercase text-gray-400 ml-4">Select Reason</label>
+                                    <div className="grid grid-cols-1 gap-3">
+                                        {['WRONG_FITMENT', 'DAMAGED', 'OTHER'].map(reason => (
+                                            <button 
+                                                key={reason}
+                                                onClick={() => setReturnReason(reason)}
+                                                className={`p-5 rounded-2xl border-2 text-[10px] font-black uppercase tracking-widest transition-all text-left flex justify-between items-center ${returnReason === reason ? 'border-primary bg-primary/5 text-primary' : 'border-gray-50 bg-gray-50 text-gray-400 hover:border-gray-100'}`}
+                                            >
+                                                {reason.replace('_', ' ')}
+                                                {returnReason === reason && <CheckCircle size={14} />}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="space-y-4">
+                                    <label className="text-[10px] font-black uppercase text-gray-400 ml-4">Select Resolution</label>
+                                    <div className="grid grid-cols-1 gap-3">
+                                        {['REPLACEMENT', 'REFUND'].map(type => (
+                                            <button 
+                                                key={type}
+                                                onClick={() => setReturnType(type)}
+                                                className={`p-5 rounded-2xl border-2 text-[10px] font-black uppercase tracking-widest transition-all text-left flex justify-between items-center ${returnType === type ? 'border-primary bg-primary/5 text-primary' : 'border-gray-50 bg-gray-50 text-gray-400 hover:border-gray-100'}`}
+                                            >
+                                                {type === 'REPLACEMENT' ? 'Send Replacement Part' : 'Issue Full Refund'}
+                                                {returnType === type && <CheckCircle size={14} />}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                <label className="text-[10px] font-black uppercase text-gray-400 ml-4">Technical Details</label>
+                                <textarea 
+                                    className="w-full bg-gray-50 border border-gray-100 rounded-[2rem] p-6 text-sm font-bold text-app-bg-dark outline-none focus:border-primary/30 transition-all min-h-[120px] placeholder:text-gray-400"
+                                    placeholder="Please describe the fitment issue or damage details for our technical team..."
+                                    value={returnDescription}
+                                    onChange={(e) => setReturnDescription(e.target.value)}
+                                />
+                            </div>
+
+                            <div className="flex gap-4 pt-6">
+                                <button 
+                                    onClick={() => setIsReturnModalOpen(false)}
+                                    className="flex-1 py-5 bg-gray-50 text-gray-400 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-gray-100 transition-all"
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    onClick={handleSubmitReturn}
+                                    disabled={!returnDescription.trim() || submittingReturn}
+                                    className="flex-[2] py-5 bg-app-bg-dark text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-primary transition-all shadow-xl shadow-black/10 disabled:opacity-30"
+                                >
+                                    {submittingReturn ? 'Transmitting...' : 'Transmit Request'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

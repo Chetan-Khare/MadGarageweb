@@ -68,6 +68,8 @@ const ProductDetailsPage: React.FC = () => {
 
     const isGarage = role === 'ROLE_GARAGE';
     const activePrice = isGarage && product.wholesale && product.garagePrice ? product.garagePrice : (product.price || 0);
+    const mrpPrice = product.mrp || product.originalPrice;
+    const hasDiscount = !!mrpPrice && mrpPrice > activePrice;
 
     return (
         <div className="min-h-screen bg-white font-inter">
@@ -121,8 +123,8 @@ const ProductDetailsPage: React.FC = () => {
                                     <div className="flex flex-col gap-1">
                                         <div className="flex items-baseline gap-4">
                                             <h2 className="text-5xl font-black italic text-white tracking-tighter">₹{activePrice.toLocaleString()}</h2>
-                                            {isGarage && product.wholesale && product.garagePrice && product.price > product.garagePrice && (
-                                                <span className="text-gray-600 line-through font-bold text-lg italic">₹{product.price.toLocaleString()}</span>
+                                            {hasDiscount && (
+                                                <span className="text-gray-600 line-through font-bold text-lg italic">₹{mrpPrice.toLocaleString()}</span>
                                             )}
                                         </div>
                                     </div>
@@ -135,9 +137,11 @@ const ProductDetailsPage: React.FC = () => {
                                 )}
                             </div>
                             
-                            {isGarage && product.wholesale && product.garagePrice && product.price > product.garagePrice && (
+                             {hasDiscount && (
                                 <p className="relative z-10 text-[10px] font-black text-primary uppercase tracking-widest">
-                                    SPECIAL GARAGE PRICING APPLIED
+                                    {isGarage && product.wholesale && product.garagePrice && product.price > product.garagePrice 
+                                        ? 'SPECIAL GARAGE PRICING APPLIED' 
+                                        : `SAVE ${Math.round((1 - activePrice / mrpPrice) * 100)}% TODAY`}
                                 </p>
                             )}
 
@@ -205,7 +209,7 @@ const ProductDetailsPage: React.FC = () => {
                                 <SpecRow label="Condition" value={product.condition || 'NEW'} highlighted />
                                 <SpecRow label="Category" value={product.category || 'Standard'} />
                                 <SpecRow label="Fitment" value={product.fitmentCategory === 'UNIVERSAL' ? 'Universal Fit' : 'Vehicle Specific'} highlighted />
-                                <SpecRow label="Fitment Note" value={product.fitmentCategory === 'UNIVERSAL' ? 'Fits all makes and models' : 'Engineered for specific build profile'} />
+                                <SpecRow label="Return Policy" value={product.isReturnable ? 'Returnable' : 'Final Sale'} highlighted={!product.isReturnable} />
                             </div>
                         </div>
 
@@ -217,6 +221,15 @@ const ProductDetailsPage: React.FC = () => {
                                     </h3>
                                     <div className="prose prose-sm text-gray-500 font-medium leading-loose space-y-4 max-w-none break-words overflow-hidden text-wrap">
                                         {product.description || 'No description provided. Please contact Mad Garage support for technical specifications and fitment advice.'}
+                                        {product.isReturnable ? (
+                                            <p className="mt-4 text-xs font-bold text-green-600 uppercase tracking-widest flex items-center gap-2">
+                                                <ShieldCheck size={14} /> 10-Day Easy Return Policy Included
+                                            </p>
+                                        ) : (
+                                            <p className="mt-4 text-xs font-bold text-red-600 uppercase tracking-widest flex items-center gap-2">
+                                                <Info size={14} /> Non-Returnable Item (Final Sale)
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
 

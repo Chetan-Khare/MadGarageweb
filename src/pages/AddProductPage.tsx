@@ -32,7 +32,8 @@ const AddProductPage: React.FC = () => {
         fitmentCategory: 'ENGINE',
         condition: 'NEW',
         color: 'Black',
-        isUniversal: false
+        isUniversal: false,
+        isReturnable: true
     });
 
     const [imageFiles, setImageFiles] = useState<File[]>([]);
@@ -69,7 +70,8 @@ const AddProductPage: React.FC = () => {
                 fitmentCategory: editProduct.fitmentCategory || 'ENGINE',
                 condition: editProduct.condition || 'NEW',
                 color: editProduct.color || 'Black',
-                isUniversal: editProduct.fitmentCategory === 'UNIVERSAL'
+                isUniversal: editProduct.fitmentCategory === 'UNIVERSAL',
+                isReturnable: editProduct.isReturnable !== undefined ? editProduct.isReturnable : true
             });
 
             if (editProduct.imageUrl) {
@@ -237,6 +239,7 @@ const AddProductPage: React.FC = () => {
                 price: parseFloat(formData.price),
                 stockQuantity: parseInt(formData.stockQuantity),
                 fitmentCategory: formData.isUniversal ? 'UNIVERSAL' : formData.fitmentCategory,
+                isReturnable: formData.isReturnable,
                 vehicleIds,
                 base64Images
             };
@@ -398,6 +401,37 @@ const AddProductPage: React.FC = () => {
                                 </div>
                             </div>
                         </div>
+
+                        {/* Policies Section */}
+                        <div className="mt-8 pt-8 border-t border-white/5 grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div className="bg-black/40 p-6 rounded-[2rem] border border-white/5 flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                    <div className={`h-12 w-12 rounded-xl flex items-center justify-center transition-all ${formData.isReturnable ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-gray-500/10 text-gray-500 border border-white/5'}`}>
+                                        <ArrowUpRight className={formData.isReturnable ? '' : 'rotate-90 opacity-30'} size={20} />
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Return Policy</p>
+                                        <h4 className="text-sm font-black italic uppercase text-white">{formData.isReturnable ? 'Returnable' : 'Non-Returnable'}</h4>
+                                    </div>
+                                </div>
+                                <button 
+                                    type="button"
+                                    onClick={() => setFormData({...formData, isReturnable: !formData.isReturnable})}
+                                    className={`h-8 w-14 rounded-full relative transition-all duration-300 ${formData.isReturnable ? 'bg-primary' : 'bg-white/10'}`}
+                                >
+                                    <div className={`absolute top-1 h-6 w-6 bg-white rounded-full transition-all duration-300 ${formData.isReturnable ? 'left-7' : 'left-1'}`} />
+                                </button>
+                            </div>
+                            <div className="flex items-center gap-4 px-6">
+                                <Info size={16} className="text-gray-600 flex-shrink-0" />
+                                <p className="text-[9px] font-medium text-gray-500 leading-relaxed italic">
+                                    {formData.isReturnable 
+                                        ? "This part can be returned within 10 days if fitment issues or defects are found." 
+                                        : "Final sale item. Returns or replacements are NOT allowed for this product."}
+                                </p>
+                            </div>
+                        </div>
+
                         <div className="mt-8 space-y-4">
                             <label className="text-[10px] font-black uppercase text-gray-500 tracking-widest ml-2">Specifications</label>
                             <textarea 

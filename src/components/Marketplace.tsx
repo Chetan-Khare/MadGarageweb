@@ -403,6 +403,21 @@ const Marketplace: React.FC<MarketplaceProps> = ({ isGarage = false }) => {
                           </span>
                         )}
                         <span className="bg-app-bg-dark/80 backdrop-blur-md text-white text-[6px] md:text-[8px] font-black uppercase px-2 md:px-3 py-1 md:py-1.5 rounded-full shadow-lg">{product.category}</span>
+                        {(() => {
+                          const sellingPrice = isGarage && product.wholesale && product.garagePrice ? product.garagePrice : (product.price || 0);
+                          const strikePrice = product.mrp || product.originalPrice;
+                          if (strikePrice && strikePrice > sellingPrice) {
+                            const pct = Math.round((1 - sellingPrice / strikePrice) * 100);
+                            if (pct > 0) {
+                              return (
+                                <span className="bg-green-500 text-white text-[6px] md:text-[8px] font-black uppercase px-2 md:px-3 py-1 md:py-1.5 rounded-full shadow-lg animate-pulse">
+                                  {pct}% OFF
+                                </span>
+                              );
+                            }
+                          }
+                          return null;
+                        })()}
                       </div>
                     </div>
                     <div className="p-3 md:p-8 flex flex-col flex-1">
@@ -417,6 +432,11 @@ const Marketplace: React.FC<MarketplaceProps> = ({ isGarage = false }) => {
                           <p className="text-xs md:text-2xl font-black italic text-app-bg-dark tracking-tighter">
                             ₹{(isGarage && product.wholesale && product.garagePrice ? product.garagePrice : (product.price || 0)).toLocaleString()}
                           </p>
+                          {(product.mrp || product.originalPrice) && (product.mrp || product.originalPrice) > (isGarage && product.wholesale && product.garagePrice ? product.garagePrice : (product.price || 0)) && (
+                            <p className="text-[8px] md:text-xs text-gray-400 line-through font-bold">
+                              ₹{(product.mrp || product.originalPrice).toLocaleString()}
+                            </p>
+                          )}
                         </div>
                         <div className="flex gap-1 md:gap-2">
                           {user?.role !== 'ROLE_SELLER' && user?.role !== 'ROLE_WORKER' && (

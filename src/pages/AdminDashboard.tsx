@@ -4,7 +4,7 @@ import {
     ShoppingCart, Car, Fingerprint,
     Activity, Settings,
     ChevronRight, LogOut, Eye, EyeOff,
-    MessageSquare
+    MessageSquare, Ticket
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -276,6 +276,15 @@ const AdminDashboard: React.FC = () => {
                         />
 
                         <OperationHubCard
+                            icon={<Ticket size={32} />}
+                            title="Coupon Engine"
+                            subtitle="Manage Promotions"
+                            color="text-rose-500"
+                            bg="from-rose-950/20 to-black"
+                            border="border-rose-900/40"
+                            onClick={() => navigate('/admin/coupons')}
+                        />
+                        <OperationHubCard
                             icon={<Settings size={32} />}
                             title="System Properties"
                             subtitle="Live Global Config"
@@ -292,6 +301,15 @@ const AdminDashboard: React.FC = () => {
                             bg="from-purple-950/20 to-black"
                             border="border-purple-900/40"
                             onClick={() => navigate('/admin/partners')}
+                        />
+                        <OperationHubCard
+                            icon={<Clock size={32} />}
+                            title="Return Recalls"
+                            subtitle="Review Protocols"
+                            color="text-pink-500"
+                            bg="from-pink-950/20 to-black"
+                            border="border-pink-900/40"
+                            onClick={() => navigate('/admin/orders?tab=returns')}
                         />
                         <OperationHubCard
                             icon={<MessageSquare size={32} />}

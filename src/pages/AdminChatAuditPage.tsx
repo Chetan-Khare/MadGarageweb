@@ -71,7 +71,9 @@ const AdminChatAuditPage: React.FC = () => {
     setChatLoading(true);
     try {
       const response = await apiClient.get(`/assistant/admin/history/${userId}`);
-      setMessages(response.data);
+      // Handle Spring Data Page object or direct array
+      const chatData = response.data.content ? response.data.content : response.data;
+      setMessages(chatData);
     } catch (error) {
       console.error("Failed to fetch user history:", error);
     } finally {
@@ -153,7 +155,7 @@ const AdminChatAuditPage: React.FC = () => {
                   <div>
                     <h4 className="text-xs font-black uppercase tracking-tighter leading-none mb-1">{user.fullName}</h4>
                     <p className={`text-[9px] font-bold uppercase tracking-widest leading-none ${selectedUser?.id === user.id ? 'text-white/70' : 'text-gray-400'}`}>
-                      {user.role.replace('ROLE_', '')}
+                      {user.role?.replace('ROLE_', '') || 'USER'}
                     </p>
                   </div>
                 </div>
