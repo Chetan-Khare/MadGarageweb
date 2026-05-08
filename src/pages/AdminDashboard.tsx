@@ -4,7 +4,7 @@ import {
     ShoppingCart, Car, Fingerprint,
     Activity, Settings,
     ChevronRight, LogOut, Eye, EyeOff,
-    MessageSquare, Ticket
+    MessageSquare, Ticket, Clock
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
