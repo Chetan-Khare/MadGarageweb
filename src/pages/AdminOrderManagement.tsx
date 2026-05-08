@@ -185,6 +185,51 @@ const AdminOrderManagement: React.FC = () => {
                                             <p className="text-[10px] font-bold text-gray-600 mt-1 uppercase tracking-widest">
                                                 {new Date(order.orderDate).toLocaleDateString()} • ₹{(order.grandTotal || 0).toLocaleString()} • {order.status?.replace('_', ' ')}
                                             </p>
+                                            {order.status === 'RETURN_REQUESTED' && (order.returnReason || order.returnDescription) && (
+                                                <div className="mt-4 p-4 bg-pink-500/5 border-l-2 border-pink-500 rounded-r-xl space-y-3">
+                                                    <div>
+                                                        <p className="text-[9px] font-black uppercase text-pink-500 tracking-widest">Return Protocol: {order.returnReason?.replace('_', ' ')}</p>
+                                                        {order.returnDescription && <p className="text-[10px] text-gray-400 italic">"{order.returnDescription}"</p>}
+                                                    </div>
+                                                    
+                                                    {order.activeReturnId && (
+                                                        <div className="flex flex-wrap gap-2 pt-2 border-t border-white/5">
+                                                            {order.returnStatus === 'PENDING' && (
+                                                                <>
+                                                                    <button 
+                                                                        onClick={(e) => { e.stopPropagation(); handleUpdateReturn(order.activeReturnId!, 'approve'); }}
+                                                                        className="px-3 py-1.5 bg-green-500/10 text-green-500 border border-green-500/20 rounded-lg text-[8px] font-black uppercase tracking-widest hover:bg-green-500 hover:text-white transition-all"
+                                                                    >
+                                                                        Approve
+                                                                    </button>
+                                                                    <button 
+                                                                        onClick={(e) => { e.stopPropagation(); handleUpdateReturn(order.activeReturnId!, 'reject'); }}
+                                                                        className="px-3 py-1.5 bg-red-500/10 text-red-500 border border-red-500/20 rounded-lg text-[8px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all"
+                                                                    >
+                                                                        Reject
+                                                                    </button>
+                                                                </>
+                                                            )}
+                                                            {order.returnStatus === 'APPROVED' && (
+                                                                <button 
+                                                                    onClick={(e) => { e.stopPropagation(); handleUpdateReturn(order.activeReturnId!, 'picked-up'); }}
+                                                                    className="px-3 py-1.5 bg-blue-500/10 text-blue-500 border border-blue-500/20 rounded-lg text-[8px] font-black uppercase tracking-widest hover:bg-blue-500 hover:text-white transition-all"
+                                                                >
+                                                                    Mark Picked Up
+                                                                </button>
+                                                            )}
+                                                            {order.returnStatus === 'PICKED_UP' && order.returnRequestType === 'REFUND' && (
+                                                                <button 
+                                                                    onClick={(e) => { e.stopPropagation(); handleUpdateReturn(order.activeReturnId!, 'finalize'); }}
+                                                                    className="px-3 py-1.5 bg-purple-500/10 text-purple-500 border border-purple-500/20 rounded-lg text-[8px] font-black uppercase tracking-widest hover:bg-purple-500 hover:text-white transition-all"
+                                                                >
+                                                                    Finalize Refund
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
 

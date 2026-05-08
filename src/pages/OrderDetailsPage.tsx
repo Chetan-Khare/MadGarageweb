@@ -5,7 +5,7 @@ import {
   Truck, CheckCircle, Clock, 
   Share2, HelpCircle,
   Star, MessageSquare, Send,
-  ShieldCheck, Info
+  ShieldCheck, Info, XCircle
 } from 'lucide-react';
 import apiClient from '../services/apiClient';
 import { useAuth } from '../context/AuthContext';
@@ -145,6 +145,26 @@ const OrderDetailsPage: React.FC = () => {
             alert('Failed to transmit return protocol.');
         } finally {
             setSubmittingReturn(false);
+        }
+    };
+
+    const handleReturnAction = async (action: 'approve' | 'reject', adminNote?: string) => {
+        if (!activeReturn) return;
+        setLoading(true);
+        try {
+            if (action === 'approve') {
+                await apiClient.put(`/returns/admin/${activeReturn.id}/approve`);
+                alert('Return Protocol Approved successfully.');
+            } else {
+                await apiClient.put(`/returns/admin/${activeReturn.id}/reject?adminNote=${adminNote || 'Policy mismatch'}`);
+                alert('Return Request Rejected.');
+            }
+            fetchOrder();
+        } catch (err: any) {
+            console.error('Action failed:', err);
+            alert('Failed to process return action.');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -378,6 +398,17 @@ const OrderDetailsPage: React.FC = () => {
                         {/* Active Return Status Display */}
                         {activeReturn && (
                             <div className="bg-primary/5 rounded-[2.5rem] p-10 border border-primary/20 animate-in zoom-in-95">
+                                <div className="mb-8 p-6 bg-primary/10 border-l-4 border-primary rounded-r-2xl">
+                                    <h5 className="text-[10px] font-black uppercase text-primary tracking-widest mb-2 flex items-center gap-2">
+                                        <Info size={14} /> Customer Notice
+                                    </h5>
+                                    <p className="text-sm font-bold text-app-bg-dark leading-relaxed">
+                                        {activeReturn.requestType === 'REFUND' 
+                                            ? "Refund will be processed automatically after the product is picked up and returned to the seller for verification."
+                                            : "Replacement parts will be dispatched once the original items are collected by our fulfillment agent."}
+                                    </p>
+                                </div>
+
                                 <div className="flex items-center justify-between mb-8">
                                     <div className="flex items-center gap-4">
                                         <div className="h-12 w-12 bg-primary text-white rounded-2xl flex items-center justify-center shadow-lg shadow-red-500/20">
@@ -436,7 +467,7 @@ const OrderDetailsPage: React.FC = () => {
                         )}
 
                         {/* Customer Post-Delivery Actions */}
-                        {order.status === 'DELIVERED' && order.isOwner && !activeReturn && (
+                        {(order.status === 'DELIVERED' || (order.status === 'RETURN_REQUESTED' && !activeReturn)) && order.isOwner && !activeReturn && (
                             <div className="flex justify-center pt-8">
                                 <button 
                                     onClick={() => setIsReturnModalOpen(true)}
@@ -454,13 +485,32 @@ const OrderDetailsPage: React.FC = () => {
 
                         {/* Actions */}
                         <div className="flex flex-wrap gap-4 pt-12 border-t border-gray-100">
-                             {/* Merchant / Garage Action Terminal */}
-                             {(role === 'ROLE_SELLER' || role === 'ROLE_ADMIN' || role === 'ROLE_GARAGE') && (
-                                <div className="w-full flex flex-wrap gap-4 mb-8 bg-gray-50 p-8 rounded-[2.5rem] border border-gray-100">
-                                    <div className="w-full mb-4">
-                                        <h3 className="text-xs font-black uppercase tracking-[0.3em] text-app-bg-dark">Fulfillment Control Terminal</h3>
-                                    </div>
-                                    
+                              {/* Merchant / Garage / Admin / Worker Action Terminal */}
+                              {(role === 'ROLE_SELLER' || role === 'ROLE_ADMIN' || role === 'ROLE_GARAGE' || role === 'ROLE_WORKER') && (
+                                 <div className="w-full flex flex-wrap gap-4 mb-8 bg-gray-50 p-8 rounded-[2.5rem] border border-gray-100">
+                                     <div className="w-full mb-4">
+                                         <h3 className="text-xs font-black uppercase tracking-[0.3em] text-app-bg-dark">Fulfillment Control Terminal</h3>
+                                     </div>
+                                     
+                                     {(role === 'ROLE_ADMIN' || role === 'ROLE_WORKER') && order.status === 'RETURN_REQUESTED' && activeReturn && activeReturn.status === 'PENDING' && (
+                                         <div className="w-full flex flex-wrap gap-4 border-b border-gray-100 pb-8 mb-4">
+                                             <ActionBtn 
+                                                 icon={<CheckCircle size={16}/>} 
+                                                 label="APPROVE RETURN PROTOCOL" 
+                                                 primary 
+                                                 onClick={() => handleReturnAction('approve')} 
+                                             />
+                                             <ActionBtn 
+                                                 icon={<XCircle size={16}/>} 
+                                                 label="REJECT RETURN REQUEST" 
+                                                 onClick={() => {
+                                                     const note = prompt("Please provide a reason for rejection:", "Request does not meet return policy criteria.");
+                                                     if (note) handleReturnAction('reject', note);
+                                                 }} 
+                                             />
+                                         </div>
+                                     )}
+
                                     {role === 'ROLE_SELLER' && order.status === 'PAID' && (
                                         <ActionBtn 
                                             icon={<MapPin size={16}/>} 
