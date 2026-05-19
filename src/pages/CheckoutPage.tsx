@@ -137,7 +137,62 @@ const CheckoutPage: React.FC = () => {
     if (checkoutItems.length === 0) return null;
 
     const subtotal = buyNowProduct ? (buyNowProduct.garagePrice || buyNowProduct.price || 0) * buyNowQuantity : cartSubtotal;
-    const shippingFee = (checkoutItems.length > 0 && subtotal < config.freeThreshold) ? config.shippingFee : 0;
+    
+    const calculateDynamicShippingLocal = () => {
+        let totalShipping = 0;
+        let hasFragileOrFreight = false;
+
+        const baseStandardFee = config.shippingFee;
+        const fragileSurcharge = 1200;
+        const freightBaseFee = 2000;
+        const freightPerKgRate = 15;
+
+        for (const item of checkoutItems) {
+            const qty = item.quantity || 1;
+            const sClass = item.shippingClass || 'STANDARD';
+
+            switch (sClass) {
+                case 'CUSTOM_RATE': {
+                    const customFee = item.customShippingCost || 0;
+                    totalShipping += (customFee * qty);
+                    hasFragileOrFreight = true;
+                    break;
+                }
+                case 'HEAVY_FREIGHT': {
+                    const weight = item.weightKg || 1.0;
+                    const freightFee = freightBaseFee + (weight * freightPerKgRate);
+                    
+                    // Location multiplier (same state = 1.0, interstate = 1.5)
+                    let distanceMultiplier = 1.0;
+                    if (state && item.sellerState && state.trim().toLowerCase() !== item.sellerState.trim().toLowerCase()) {
+                        distanceMultiplier = 1.5;
+                    }
+                    totalShipping += (freightFee * distanceMultiplier * qty);
+                    hasFragileOrFreight = true;
+                    break;
+                }
+                case 'FRAGILE': {
+                    totalShipping += (baseStandardFee + fragileSurcharge) * qty;
+                    hasFragileOrFreight = true;
+                    break;
+                }
+                case 'STANDARD':
+                default: {
+                    totalShipping += baseStandardFee * qty;
+                    break;
+                }
+            }
+        }
+
+        // Apply free threshold only if no fragile/freight/custom parts
+        if (!hasFragileOrFreight && subtotal >= config.freeThreshold) {
+            totalShipping = 0;
+        }
+
+        return totalShipping;
+    };
+
+    const shippingFee = calculateDynamicShippingLocal();
     const platformFee = subtotal > 0 ? config.platformFee : 0;
     const discountAmount = appliedCoupon ? appliedCoupon.discountAmount : 0;
     const total = subtotal + shippingFee + platformFee - discountAmount;

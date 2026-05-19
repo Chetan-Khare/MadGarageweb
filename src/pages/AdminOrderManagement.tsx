@@ -17,6 +17,9 @@ const AdminOrderManagement: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'ORDERS' | 'RETURNS'>('ORDERS');
     const [returns, setReturns] = useState<any[]>([]);
     const [returnsLoading, setReturnsLoading] = useState(false);
+    const [returnStatusFilter, setReturnStatusFilter] = useState<'ALL' | 'PENDING' | 'APPROVED' | 'PICKED_UP' | 'REFUNDED' | 'REJECTED'>('ALL');
+    const [rejectReturnId, setRejectReturnId] = useState<number | null>(null);
+    const [rejectNote, setRejectNote] = useState('');
 
     const location = useLocation();
     useEffect(() => { 
@@ -67,7 +70,8 @@ const AdminOrderManagement: React.FC = () => {
     const handleUpdateReturn = async (id: number, action: string, note?: string) => {
         try {
             const endpoint = `/returns/admin/${id}/${action}`;
-            const query = note ? `?note=${note}` : '';
+            // HIGH-06 FIX: Fix query parameter name from adminNote to note
+            const query = note ? `?note=${encodeURIComponent(note)}` : '';
             await apiClient.put(endpoint + query);
             fetchReturns();
             if (action === 'approve') fetchOrders(); // Because order status changes
@@ -89,6 +93,14 @@ const AdminOrderManagement: React.FC = () => {
         const matchesSearch = o.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) || 
                              o.id.toString().includes(searchTerm);
         const matchesStatus = statusFilter === 'ALL' || o.status === statusFilter;
+        return matchesSearch && matchesStatus;
+    });
+
+    const filteredReturns = returns.filter(ret => {
+        const matchesSearch = ret.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                             ret.orderId.toString().includes(searchTerm) ||
+                             ret.id.toString().includes(searchTerm);
+        const matchesStatus = returnStatusFilter === 'ALL' || ret.status === returnStatusFilter;
         return matchesSearch && matchesStatus;
     });
 
@@ -133,26 +145,40 @@ const AdminOrderManagement: React.FC = () => {
                             <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                             <input 
                                 type="text" 
-                                placeholder="Search order ID or customer..." 
+                                placeholder="Search ID or customer..." 
                                 className="w-full bg-white/5 border border-white/10 p-3 pl-12 rounded-2xl text-sm font-bold outline-none focus:border-primary transition-all"
                                 value={searchTerm}
                                 onChange={e => setSearchTerm(e.target.value)}
                             />
                         </div>
-                        <select 
-                            className="bg-app-bg-dark border border-white/10 p-3 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white outline-none focus:border-primary transition-all appearance-none md:w-40 text-center"
-                            value={statusFilter}
-                            onChange={e => setStatusFilter(e.target.value)}
-                        >
-                            <option value="ALL">All Status</option>
-                            <optgroup label="── Fulfillment ──">
-                                {['PAID', 'PROCESSING', 'SHIPPED', 'ARRIVED_AT_GARAGE', 'DELIVERED', 'CANCELLED'].map(s => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
-                            </optgroup>
-                            <optgroup label="── Returns ──">
-                                {['RETURN_REQUESTED', 'REFUND_IN_PROGRESS', 'REFUNDED', 'REPLACEMENT_SHIPPING', 'RETURNED'].map(s => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
-                            </optgroup>
-
-                        </select>
+                        {activeTab === 'ORDERS' ? (
+                            <select 
+                                className="bg-[#08080C] border border-white/10 p-3 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white outline-none focus:border-primary transition-all appearance-none md:w-40 text-center"
+                                value={statusFilter}
+                                onChange={e => setStatusFilter(e.target.value)}
+                            >
+                                <option value="ALL">All Status</option>
+                                <optgroup label="── Fulfillment ──" className="bg-[#08080C]">
+                                    {['PAID', 'PROCESSING', 'SHIPPED', 'ARRIVED_AT_GARAGE', 'DELIVERED', 'CANCELLED'].map(s => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
+                                </optgroup>
+                                <optgroup label="── Returns ──" className="bg-[#08080C]">
+                                    {['RETURN_REQUESTED', 'REFUND_IN_PROGRESS', 'REFUNDED', 'REPLACEMENT_SHIPPING', 'RETURNED'].map(s => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
+                                </optgroup>
+                            </select>
+                        ) : (
+                            <select 
+                                className="bg-[#08080C] border border-white/10 p-3 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white outline-none focus:border-primary transition-all appearance-none md:w-40 text-center"
+                                value={returnStatusFilter}
+                                onChange={e => setReturnStatusFilter(e.target.value as any)}
+                            >
+                                <option value="ALL">All Returns</option>
+                                <option value="PENDING">Pending</option>
+                                <option value="APPROVED">Approved</option>
+                                <option value="PICKED_UP">Picked Up</option>
+                                <option value="REFUNDED">Refunded</option>
+                                <option value="REJECTED">Rejected</option>
+                            </select>
+                        )}
                     </div>
                 </div>
             </div>
@@ -285,7 +311,7 @@ const AdminOrderManagement: React.FC = () => {
                     <div className="space-y-4 animate-in slide-in-from-bottom-4 duration-500">
                         {returnsLoading ? (
                             Array(3).fill(0).map((_, i) => <div key={i} className="h-32 bg-[#121216] rounded-3xl animate-pulse border border-white/5" />)
-                        ) : returns.length > 0 ? returns.map(ret => (
+                        ) : filteredReturns.length > 0 ? filteredReturns.map(ret => (
                             <div key={ret.id} className="bg-[#121216] border border-white/5 p-8 rounded-[2.5rem] hover:border-primary/20 transition-all">
                                 <div className="flex flex-col lg:flex-row items-start justify-between gap-10">
                                     <div className="flex gap-6 flex-1">
@@ -299,18 +325,27 @@ const AdminOrderManagement: React.FC = () => {
                                                     <span className="text-[9px] font-black uppercase text-primary tracking-widest">{ret.status}</span>
                                                 </div>
                                             </div>
+
+                                            {/* MED-11 FIX: Highly visible badges for Return Reason and Request Type */}
+                                            <div className="flex flex-wrap gap-2">
+                                                <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${
+                                                    ret.requestType === 'REFUND' ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' : 'bg-orange-500/10 text-orange-400 border border-orange-500/20'
+                                                }`}>
+                                                    {ret.requestType}
+                                                </span>
+                                                <span className="px-3 py-1 bg-white/5 rounded-full border border-white/10 text-[8px] font-black uppercase text-gray-400 tracking-widest">
+                                                    Reason: {ret.reason?.replace(/_/g, ' ')}
+                                                </span>
+                                            </div>
+
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                <div className="space-y-2">
-                                                    <p className="text-[9px] font-black uppercase text-gray-500 tracking-widest">Protocol Type</p>
-                                                    <p className="text-xs font-bold text-white uppercase">{ret.requestType} • {ret.reason?.replace('_', ' ')}</p>
-                                                </div>
                                                 <div className="space-y-2">
                                                     <p className="text-[9px] font-black uppercase text-gray-500 tracking-widest">Reference ID</p>
                                                     <p className="text-xs font-bold text-white uppercase">Order #{ret.orderId}</p>
                                                 </div>
                                             </div>
                                             <div className="p-5 bg-white/5 rounded-2xl border border-white/5">
-                                                <p className="text-[10px] font-bold text-gray-400 italic">"{ret.description}"</p>
+                                                <p className="text-[10px] font-bold text-gray-400 italic font-inter">"{ret.description}"</p>
                                             </div>
                                         </div>
                                     </div>
@@ -326,8 +361,8 @@ const AdminOrderManagement: React.FC = () => {
                                                 </button>
                                                 <button 
                                                     onClick={() => {
-                                                        const note = prompt('Enter rejection reason:');
-                                                        if (note) handleUpdateReturn(ret.id, 'reject', note);
+                                                        setRejectReturnId(ret.id);
+                                                        setRejectNote("Request does not meet return policy criteria.");
                                                     }}
                                                     className="px-6 py-3 bg-white/5 text-gray-400 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all"
                                                 >
@@ -363,12 +398,62 @@ const AdminOrderManagement: React.FC = () => {
                         )) : (
                             <div className="py-24 text-center bg-[#121216] rounded-[3rem] border border-dashed border-white/5">
                                 <ShoppingBag size={40} className="mx-auto text-gray-800 mb-6" />
-                                <p className="text-xl font-black italic uppercase text-gray-600">No Pending Recall Protocols</p>
+                                <p className="text-xl font-black italic uppercase text-gray-600">No recall protocols match filters</p>
                             </div>
                         )}
                     </div>
                 )}
             </div>
+
+            {/* Custom Reject Return Modal */}
+            {rejectReturnId !== null && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-6 animate-in fade-in duration-300">
+                    <div className="absolute inset-0 bg-black/85 backdrop-blur-md" onClick={() => setRejectReturnId(null)} />
+                    <div className="relative w-full max-w-lg bg-[#0F0F13] border border-white/10 rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-350">
+                        <div className="bg-[#08080C] p-8 md:p-10 text-white border-b border-white/5 relative">
+                            <div className="relative z-10">
+                                <h2 className="text-2xl font-black italic uppercase tracking-tighter">Reject <span className="text-primary">Return</span></h2>
+                                <p className="text-[10px] font-black uppercase text-gray-500 tracking-[0.3em] mt-1">Order Return Protocol Cancellation</p>
+                            </div>
+                        </div>
+
+                        <div className="p-8 md:p-10 space-y-6">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase text-gray-400 ml-2 font-inter">Rejection Reason</label>
+                                <textarea
+                                    className="w-full px-6 py-4 bg-black/40 border border-white/5 rounded-2xl text-sm font-bold text-white placeholder-gray-500 focus:outline-none focus:border-primary transition-all resize-none font-inter"
+                                    placeholder="Provide details why the return is being rejected..."
+                                    rows={4}
+                                    value={rejectNote}
+                                    onChange={(e) => setRejectNote(e.target.value)}
+                                />
+                            </div>
+
+                            <div className="flex gap-4">
+                                <button 
+                                    onClick={() => setRejectReturnId(null)}
+                                    className="flex-1 py-4 bg-white/5 text-gray-400 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-white/10 transition-all font-inter border border-white/5"
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    onClick={() => {
+                                        if (rejectNote.trim()) {
+                                            handleUpdateReturn(rejectReturnId, 'reject', rejectNote);
+                                            setRejectReturnId(null);
+                                        } else {
+                                            alert('Please specify a rejection reason.');
+                                        }
+                                    }}
+                                    className="flex-1 py-4 bg-primary text-white rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-red-600 transition-all shadow-xl shadow-red-500/20 font-inter"
+                                >
+                                    Confirm Rejection
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

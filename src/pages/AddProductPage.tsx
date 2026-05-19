@@ -33,7 +33,10 @@ const AddProductPage: React.FC = () => {
         condition: 'NEW',
         color: 'Black',
         isUniversal: false,
-        isReturnable: true
+        isReturnable: true,
+        shippingClass: 'STANDARD',
+        weightKg: '1.0',
+        customShippingCost: ''
     });
 
     const [imageFiles, setImageFiles] = useState<File[]>([]);
@@ -71,7 +74,10 @@ const AddProductPage: React.FC = () => {
                 condition: editProduct.condition || 'NEW',
                 color: editProduct.color || 'Black',
                 isUniversal: editProduct.fitmentCategory === 'UNIVERSAL',
-                isReturnable: editProduct.isReturnable !== undefined ? editProduct.isReturnable : true
+                isReturnable: editProduct.isReturnable !== undefined ? editProduct.isReturnable : true,
+                shippingClass: editProduct.shippingClass || 'STANDARD',
+                weightKg: editProduct.weightKg ? String(editProduct.weightKg) : '1.0',
+                customShippingCost: editProduct.customShippingCost ? String(editProduct.customShippingCost) : ''
             });
 
             if (editProduct.imageUrl) {
@@ -240,6 +246,9 @@ const AddProductPage: React.FC = () => {
                 stockQuantity: parseInt(formData.stockQuantity),
                 fitmentCategory: formData.isUniversal ? 'UNIVERSAL' : formData.fitmentCategory,
                 isReturnable: formData.isReturnable,
+                shippingClass: formData.shippingClass,
+                weightKg: formData.shippingClass === 'HEAVY_FREIGHT' ? parseFloat(formData.weightKg || '1.0') : 1.0,
+                customShippingCost: formData.shippingClass === 'CUSTOM_RATE' ? parseFloat(formData.customShippingCost || '0.0') : null,
                 vehicleIds,
                 base64Images
             };
@@ -440,6 +449,61 @@ const AddProductPage: React.FC = () => {
                                 value={formData.description}
                                 onChange={e => setFormData({...formData, description: e.target.value})}
                             />
+                        </div>
+                    </div>
+
+                    {/* Shipping Logistics Profile */}
+                    <div className="bg-[#121216] border border-white/5 p-8 rounded-[2.5rem] shadow-2xl space-y-8">
+                        <h2 className="text-[10px] font-black uppercase text-gray-500 tracking-[0.3em] flex items-center gap-2">
+                             Shipping Logistics & Weight Profile <div className="h-px w-8 bg-primary/30" />
+                        </h2>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div className="space-y-4">
+                                <label className="text-[10px] font-black uppercase text-gray-500 tracking-widest ml-2">Shipping Profile Tier</label>
+                                <select 
+                                    className="w-full bg-black/40 border border-white/5 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary appearance-none transition-all"
+                                    value={formData.shippingClass}
+                                    onChange={e => setFormData({...formData, shippingClass: e.target.value})}
+                                >
+                                    <option value="STANDARD">Standard Parcel (₹150 standard flat fee)</option>
+                                    <option value="FRAGILE">Fragile / Delicate (₹150 standard + ₹1,200 crating surcharge)</option>
+                                    <option value="HEAVY_FREIGHT">Heavy Freight (₹2,000 pallet base + ₹15/kg freight rate)</option>
+                                    <option value="CUSTOM_RATE">Custom Merchant Flat Rate (Fixed specific shipping rate)</option>
+                                </select>
+                            </div>
+
+                            {formData.shippingClass === 'HEAVY_FREIGHT' && (
+                                <div className="space-y-4 animate-in slide-in-from-top-4 duration-300">
+                                    <label className="text-[10px] font-black uppercase text-gray-500 tracking-widest ml-2">Item Weight (kg)</label>
+                                    <input 
+                                        required
+                                        type="number"
+                                        step="0.1"
+                                        placeholder="Weight in kg (e.g., 120)"
+                                        className="w-full bg-black/40 border border-white/5 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
+                                        value={formData.weightKg}
+                                        onChange={e => setFormData({...formData, weightKg: e.target.value})}
+                                    />
+                                </div>
+                            )}
+
+                            {formData.shippingClass === 'CUSTOM_RATE' && (
+                                <div className="space-y-4 animate-in slide-in-from-top-4 duration-300">
+                                    <label className="text-[10px] font-black uppercase text-gray-500 tracking-widest ml-2">Custom Flat Shipping Fee (₹)</label>
+                                    <div className="relative">
+                                        <span className="absolute left-5 top-1/2 -translate-y-1/2 text-primary font-bold">₹</span>
+                                        <input 
+                                            required
+                                            type="number"
+                                            placeholder="Shipping fee (e.g., 500)"
+                                            className="w-full bg-black/40 border border-white/5 p-5 pl-10 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
+                                            value={formData.customShippingCost}
+                                            onChange={e => setFormData({...formData, customShippingCost: e.target.value})}
+                                        />
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
 

@@ -14,6 +14,7 @@ interface Coupon {
     discountType: 'PERCENTAGE' | 'FIXED';
     discountAmount: number;
     minOrderAmount: number;
+    maxDiscountAmount?: number;
     usageLimit: number;
     usedCount: number;
     startDate: any;
@@ -26,6 +27,7 @@ const AdminCouponManagement: React.FC = () => {
     const [coupons, setCoupons] = useState<Coupon[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const [statusFilter, setStatusFilter] = useState<'ACTIVE' | 'EXPIRED' | 'INACTIVE' | 'ALL'>('ACTIVE');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
 
@@ -36,6 +38,7 @@ const AdminCouponManagement: React.FC = () => {
         discountType: 'PERCENTAGE',
         discountAmount: 0,
         minOrderAmount: 0,
+        maxDiscountAmount: 0,
         usageLimit: 1,
         startDate: '',
         endDate: '',
@@ -59,8 +62,19 @@ const AdminCouponManagement: React.FC = () => {
 
     const handleToggleStatus = async (coupon: Coupon) => {
         try {
-            // Align with backend field name
-            const payload = { ...coupon, isActive: !coupon.active };
+            // MED-06 FIX: Send minimal DTO-aligned payload in the PUT update rather than database raw variables
+            const payload = {
+                code: coupon.code,
+                description: coupon.description,
+                discountType: coupon.discountType,
+                discountAmount: coupon.discountAmount,
+                minOrderAmount: coupon.minOrderAmount || 0,
+                maxDiscountAmount: coupon.maxDiscountAmount || 0,
+                usageLimit: coupon.usageLimit || 1,
+                startDate: parseDate(coupon.startDate) ? `${parseDate(coupon.startDate)}T00:00:00` : null,
+                endDate: parseDate(coupon.endDate) ? `${parseDate(coupon.endDate)}T23:59:59` : null,
+                isActive: !coupon.active
+            };
             await apiClient.put(`/coupons/admin/${coupon.id}`, payload);
             fetchCoupons();
         } catch (err) {
@@ -99,6 +113,7 @@ const AdminCouponManagement: React.FC = () => {
             discountType: 'PERCENTAGE',
             discountAmount: 0,
             minOrderAmount: 0,
+            maxDiscountAmount: 0,
             usageLimit: 1,
             startDate: '',
             endDate: '',
@@ -126,6 +141,7 @@ const AdminCouponManagement: React.FC = () => {
             discountType: coupon.discountType,
             discountAmount: coupon.discountAmount,
             minOrderAmount: coupon.minOrderAmount || 0,
+            maxDiscountAmount: coupon.maxDiscountAmount || 0,
             usageLimit: coupon.usageLimit || 1,
             startDate: parseDate(coupon.startDate),
             endDate: parseDate(coupon.endDate),
@@ -134,10 +150,21 @@ const AdminCouponManagement: React.FC = () => {
         setIsModalOpen(true);
     };
 
-    const filteredCoupons = coupons.filter(c => 
-        c.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.description.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredCoupons = coupons.filter(c => {
+        const matchesSearch = c.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            c.description.toLowerCase().includes(searchQuery.toLowerCase());
+        
+        if (!matchesSearch) return false;
+
+        const now = new Date();
+        const expiry = c.endDate ? new Date(parseDate(c.endDate)) : null;
+        const isExpired = expiry ? expiry < now : false;
+
+        if (statusFilter === 'ACTIVE') return c.active && !isExpired;
+        if (statusFilter === 'EXPIRED') return isExpired;
+        if (statusFilter === 'INACTIVE') return !c.active;
+        return true;
+    });
 
     return (
         <div className="min-h-screen bg-[#08080C] text-white p-8 md:p-12">
@@ -182,10 +209,15 @@ const AdminCouponManagement: React.FC = () => {
                             <Filter size={18} className="text-primary" />
                             <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Status Filter</span>
                         </div>
-                        <select className="bg-transparent text-[10px] font-black uppercase text-white outline-none">
-                            <option>All Active</option>
-                            <option>Expired</option>
-                            <option>Inactive</option>
+                        <select 
+                            className="bg-[#121216] text-[10px] font-black uppercase text-white outline-none"
+                            value={statusFilter}
+                            onChange={e => setStatusFilter(e.target.value as any)}
+                        >
+                            <option value="ACTIVE" className="bg-[#121216]">All Active</option>
+                            <option value="EXPIRED" className="bg-[#121216]">Expired</option>
+                            <option value="INACTIVE" className="bg-[#121216]">Inactive</option>
+                            <option value="ALL" className="bg-[#121216]">All Coupons</option>
                         </select>
                     </div>
                 </div>
@@ -219,10 +251,14 @@ const AdminCouponManagement: React.FC = () => {
 
                                 <p className="text-[11px] font-medium text-gray-400 leading-relaxed italic h-8 line-clamp-2">"{coupon.description}"</p>
 
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-3 gap-3">
                                     <div className="bg-white/5 p-3 rounded-2xl">
                                         <p className="text-[8px] font-black uppercase text-gray-500 mb-1">Usage</p>
                                         <p className="text-[11px] font-black text-white">{coupon.usedCount} / {coupon.usageLimit}</p>
+                                    </div>
+                                    <div className="bg-white/5 p-3 rounded-2xl">
+                                        <p className="text-[8px] font-black uppercase text-gray-500 mb-1">Max Disc</p>
+                                        <p className="text-[11px] font-black text-white">{coupon.maxDiscountAmount ? `₹${coupon.maxDiscountAmount}` : 'No Limit'}</p>
                                     </div>
                                     <div className="bg-white/5 p-3 rounded-2xl">
                                         <p className="text-[8px] font-black uppercase text-gray-500 mb-1">Expiry</p>
@@ -309,7 +345,7 @@ const AdminCouponManagement: React.FC = () => {
                                     />
                                 </div>
 
-                                <div className="grid grid-cols-3 gap-4">
+                                <div className="grid grid-cols-4 gap-4">
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black uppercase text-gray-500 ml-2">Value</label>
                                         <input 
@@ -326,6 +362,15 @@ const AdminCouponManagement: React.FC = () => {
                                             className="w-full bg-black/40 border border-white/5 p-4 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
                                             value={formData.minOrderAmount}
                                             onChange={e => setFormData({...formData, minOrderAmount: Number(e.target.value)})}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase text-gray-500 ml-2">Max. Disc</label>
+                                        <input 
+                                            type="number"
+                                            className="w-full bg-black/40 border border-white/5 p-4 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
+                                            value={formData.maxDiscountAmount}
+                                            onChange={e => setFormData({...formData, maxDiscountAmount: Number(e.target.value)})}
                                         />
                                     </div>
                                     <div className="space-y-2">

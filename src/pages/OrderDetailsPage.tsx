@@ -30,6 +30,10 @@ const OrderDetailsPage: React.FC = () => {
     const [submittingReturn, setSubmittingReturn] = useState(false);
     const [activeReturn, setActiveReturn] = useState<any>(null);
 
+    // Reject Modal State
+    const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+    const [rejectionNote, setRejectionNote] = useState('');
+
     useEffect(() => {
         fetchOrder();
     }, [id]);
@@ -44,6 +48,21 @@ const OrderDetailsPage: React.FC = () => {
                 setTempPartRating(response.data.partRating);
                 setTempDeliveryRating(response.data.deliveryRating);
                 setRatingComment(response.data.ratingComment || '');
+            }
+            // MED-07 FIX: Map active return directly from the order details response to avoid redundant API request
+            if (response.data.activeReturnId) {
+                setActiveReturn({
+                    id: response.data.activeReturnId,
+                    status: response.data.returnStatus,
+                    reason: response.data.returnReason,
+                    description: response.data.returnDescription,
+                    requestType: response.data.returnRequestType,
+                    orderId: response.data.id,
+                    requestedAt: response.data.orderDate, // Fallback placeholder
+                    adminNote: response.data.adminNote
+                });
+            } else {
+                setActiveReturn(null);
             }
         } catch (err: any) {
             console.error('Failed to fetch order:', err);
@@ -85,8 +104,11 @@ const OrderDetailsPage: React.FC = () => {
                 comment: ratingComment
             });
             await fetchOrder();
-        } catch (error) {
+            alert('Feedback submitted successfully.');
+        } catch (error: any) {
             console.error('Rating submission failed:', error);
+            // HIGH-05 FIX: User-facing toast/alert
+            alert(error.response?.data?.message || 'Failed to submit rating.');
         } finally {
             setSubmittingRating(false);
         }
@@ -96,8 +118,11 @@ const OrderDetailsPage: React.FC = () => {
         try {
             await apiClient.put(`/orders/${id}/status?status=${status}`);
             await fetchOrder();
-        } catch (err) {
-            console.error('Status update failed');
+            alert(`Order status updated to ${status.replace(/_/g, ' ')} successfully.`);
+        } catch (err: any) {
+            console.error('Status update failed:', err);
+            // HIGH-05 FIX: User-facing toast/alert
+            alert(err.response?.data?.message || 'Status update failed.');
         }
     };
 
@@ -105,8 +130,11 @@ const OrderDetailsPage: React.FC = () => {
         try {
             await apiClient.patch(`/orders/${id}/fitting-status?status=${status}`);
             await fetchOrder();
-        } catch (err) {
-            console.error('Fitting status update failed');
+            alert(`Fitting status updated to ${status.replace(/_/g, ' ')} successfully.`);
+        } catch (err: any) {
+            console.error('Fitting status update failed:', err);
+            // HIGH-05 FIX: User-facing toast/alert
+            alert(err.response?.data?.message || 'Fitting status update failed.');
         }
     };
 
@@ -156,13 +184,15 @@ const OrderDetailsPage: React.FC = () => {
                 await apiClient.put(`/returns/admin/${activeReturn.id}/approve`);
                 alert('Return Protocol Approved successfully.');
             } else {
-                await apiClient.put(`/returns/admin/${activeReturn.id}/reject?adminNote=${adminNote || 'Policy mismatch'}`);
+                // HIGH-06 FIX: Fix query parameter name from adminNote to note
+                await apiClient.put(`/returns/admin/${activeReturn.id}/reject?note=${encodeURIComponent(adminNote || 'Policy mismatch')}`);
                 alert('Return Request Rejected.');
             }
-            fetchOrder();
+            await fetchOrder();
         } catch (err: any) {
             console.error('Action failed:', err);
-            alert('Failed to process return action.');
+            // HIGH-05 FIX: Visual toast/alert
+            alert(err.response?.data?.message || 'Failed to process return action.');
         } finally {
             setLoading(false);
         }
@@ -455,7 +485,7 @@ const OrderDetailsPage: React.FC = () => {
                         )}
 
                         {/* Customer Delivery Confirmation */}
-                        {(order.status === 'SHIPPED' || order.status === 'ARRIVED_AT_GARAGE' || order.status === 'PAID') && order.isOwner && (
+                        {(order.status === 'SHIPPED' || order.status === 'ARRIVED_AT_GARAGE') && order.isOwner && (
                             <div className="flex justify-center pt-8">
                                 <button 
                                     onClick={() => handleUpdateStatus('DELIVERED')}
@@ -475,7 +505,7 @@ const OrderDetailsPage: React.FC = () => {
                                     className={`px-10 py-5 rounded-[2rem] font-black uppercase italic tracking-widest text-[10px] transition-all shadow-xl active:scale-95 ${
                                         order.items?.some((i: any) => i.isReturnable)
                                             ? 'bg-white border-2 border-primary text-primary hover:bg-primary hover:text-white shadow-red-500/5'
-                                            : 'bg-gray-100 border-2 border-gray-200 text-gray-400 cursor-not-allowed grayscale'
+                                             : 'bg-gray-100 border-2 border-gray-200 text-gray-400 cursor-not-allowed grayscale'
                                     }`}
                                 >
                                     {order.items?.some((i: any) => i.isReturnable) ? 'Initiate Return / Replacement' : 'Returns Unavailable (Final Sale)'}
@@ -504,8 +534,8 @@ const OrderDetailsPage: React.FC = () => {
                                                  icon={<XCircle size={16}/>} 
                                                  label="REJECT RETURN REQUEST" 
                                                  onClick={() => {
-                                                     const note = prompt("Please provide a reason for rejection:", "Request does not meet return policy criteria.");
-                                                     if (note) handleReturnAction('reject', note);
+                                                     setRejectionNote("Request does not meet return policy criteria.");
+                                                     setIsRejectModalOpen(true);
                                                  }} 
                                              />
                                          </div>
@@ -650,6 +680,57 @@ const OrderDetailsPage: React.FC = () => {
                                     className="flex-[2] py-5 bg-app-bg-dark text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-primary transition-all shadow-xl shadow-black/10 disabled:opacity-30"
                                 >
                                     {submittingReturn ? 'Transmitting...' : 'Transmit Request'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Custom Reject Return Modal */}
+            {isRejectModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-in fade-in duration-350">
+                    <div className="absolute inset-0 bg-app-bg-dark/80 backdrop-blur-md" onClick={() => setIsRejectModalOpen(false)} />
+                    <div className="relative w-full max-w-lg bg-white rounded-[3.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+                        <div className="bg-app-bg-dark p-10 md:p-14 text-white relative">
+                            <div className="absolute top-0 right-0 w-48 h-48 bg-primary/20 rounded-full blur-[80px] -mr-24 -mt-24" />
+                            <div className="relative z-10">
+                                <h2 className="text-3xl font-black italic uppercase tracking-tighter leading-none mb-2">Reject <span className="text-primary">Return</span></h2>
+                                <p className="text-[10px] font-black uppercase text-gray-500 tracking-[0.3em]">Protocol Cancellation • Order #{order.id}</p>
+                            </div>
+                        </div>
+
+                        <div className="p-10 md:p-14 space-y-8">
+                            <div className="space-y-4">
+                                <label className="text-[10px] font-black uppercase text-gray-400 ml-4 font-inter">Reason for Rejection</label>
+                                <textarea
+                                    className="w-full px-8 py-6 bg-gray-50 border border-gray-100 rounded-[2rem] text-sm font-bold text-app-bg-dark placeholder-gray-400 focus:outline-none focus:border-primary transition-all resize-none font-inter"
+                                    placeholder="Provide details why the return is being rejected..."
+                                    rows={4}
+                                    value={rejectionNote}
+                                    onChange={(e) => setRejectionNote(e.target.value)}
+                                />
+                            </div>
+
+                            <div className="flex gap-4">
+                                <button 
+                                    onClick={() => setIsRejectModalOpen(false)}
+                                    className="flex-1 py-5 bg-gray-50 text-gray-400 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-gray-100 transition-all font-inter border border-gray-100"
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    onClick={() => {
+                                        if (rejectionNote.trim()) {
+                                            handleReturnAction('reject', rejectionNote);
+                                            setIsRejectModalOpen(false);
+                                        } else {
+                                            alert('Please specify a rejection reason.');
+                                        }
+                                    }}
+                                    className="flex-[2] py-5 bg-app-bg-dark text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-primary transition-all shadow-xl shadow-black/10 font-inter"
+                                >
+                                    Confirm Rejection
                                 </button>
                             </div>
                         </div>
