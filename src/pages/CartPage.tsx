@@ -13,16 +13,16 @@ const CartPage: React.FC = () => {
     const { role } = useAuth();
     const baseTotal = subtotal + savings;
     const navigate = useNavigate();
-    const [config, setConfig] = React.useState({ shippingFee: 250, freeThreshold: 400, platformFee: 7 });
+    const [config, setConfig] = React.useState({ shippingFee: 150, freeThreshold: 400, platformFee: 7 });
 
     React.useEffect(() => {
         const fetchConfig = async () => {
             try {
                 const response = await apiClient.get('/config/public');
                 setConfig({
-                    shippingFee: parseInt(response.data.SHIPPING_FEE || '250', 10),
-                    freeThreshold: parseInt(response.data.FREE_SHIPPING_THRESHOLD || '400', 10),
-                    platformFee: parseInt(response.data.PLATFORM_FEE || '7', 10)
+                    shippingFee: parseFloat(response.data.SHIPPING_FEE_STANDARD || response.data.SHIPPING_FEE || '150'),
+                    freeThreshold: parseFloat(response.data.FREE_SHIPPING_THRESHOLD || '400'),
+                    platformFee: parseFloat(response.data.PLATFORM_FEE || '7')
                 });
             } catch (error) {
                 console.error('Failed to fetch public config:', error);
@@ -192,10 +192,13 @@ const CartPage: React.FC = () => {
                                     <span className="text-sm font-bold uppercase tracking-widest">Platform Fee</span>
                                     <span className="text-sm font-black italic">₹{config.platformFee.toLocaleString()}</span>
                                 </div>
-                                <div className="flex justify-between items-center">
-                                    <span className="text-sm font-bold text-gray-400 uppercase tracking-widest">Shipping</span>
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <span className="text-sm font-bold text-gray-400 uppercase tracking-widest">Shipping</span>
+                                        <p className="text-[9px] text-gray-600 mt-0.5">Final rate based on product tier at checkout</p>
+                                    </div>
                                     <span className={`text-xs font-black uppercase italic tracking-[0.1em] ${subtotal >= config.freeThreshold ? 'text-green-500' : 'text-primary'}`}>
-                                        {subtotal >= config.freeThreshold ? 'Free Expedited' : `₹${config.shippingFee.toLocaleString()}`}
+                                        {subtotal >= config.freeThreshold ? 'Free Expedited' : `From ₹${config.shippingFee.toLocaleString()}`}
                                     </span>
                                 </div>
 

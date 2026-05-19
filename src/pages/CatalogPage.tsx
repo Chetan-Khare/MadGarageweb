@@ -88,6 +88,11 @@ const CatalogPage: React.FC = () => {
         setCurrentPage(1);
     }, [deferredSearchTerm, selectedCategory]);
 
+    useEffect(() => {
+        setSearchTerm(q || '');
+        setSelectedCategory(categoryQuery || 'All');
+    }, [q, categoryQuery]);
+
     const pagedProducts = useMemo(() => {
         const start = (currentPage - 1) * PAGE_SIZE;
         return filteredProducts.slice(start, start + PAGE_SIZE);
@@ -263,7 +268,12 @@ const CatalogPage: React.FC = () => {
                         <div>
                             <h2 className="text-3xl font-black italic text-white uppercase tracking-tighter">Query Returned 0 Results</h2>
                         </div>
-                        <button onClick={() => {setSearchTerm(''); setSelectedCategory('All');}} className="px-8 py-3 bg-white text-black rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all">Reset Console Filters</button>
+                        <button 
+                            onClick={() => navigate('/admin/parts-db')} 
+                            className="px-8 py-3 bg-white text-black rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all"
+                        >
+                            Reset Console Filters
+                        </button>
                     </div>
                 )}
 

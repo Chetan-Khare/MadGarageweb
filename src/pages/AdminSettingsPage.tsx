@@ -54,14 +54,16 @@ const AdminSettingsPage: React.FC = () => {
     };
 
     const getIcon = (key: string) => {
-        if (key.includes('SHIPPING')) return <Truck size={20} />;
-        if (key.includes('THRESHOLD')) return <Package size={20} />;
+        if (key.includes('FREIGHT')) return <Truck size={20} />;
+        if (key.includes('SHIPPING')) return <Package size={20} />;
+        if (key.includes('THRESHOLD')) return <ShieldCheck size={20} />;
         if (key.includes('PLATFORM')) return <ShieldCheck size={20} />;
         if (key.includes('DISCOUNT') || key.includes('PERCENT')) return <Tag size={20} />;
         return <Settings size={20} />;
     };
 
     const getSymbol = (key: string) => {
+        if (key === 'SHIPPING_FEE_FREIGHT_PER_KG') return '₹/kg';
         if (key.includes('PERCENT')) return '%';
         return '₹';
     };
@@ -116,6 +118,7 @@ const AdminSettingsPage: React.FC = () => {
                                         defaultValue={setting.configValue}
                                         id={`input-${setting.configKey}`}
                                         className="w-full bg-black/40 border border-white/5 pl-8 pr-4 py-4 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
+                                        style={{ paddingLeft: getSymbol(setting.configKey).length > 1 ? '4rem' : undefined }}
                                     />
                                 </div>
                                 <button 

@@ -48,7 +48,7 @@ const ProductDetailsPage: React.FC = () => {
             try {
                 const response = await apiClient.get('/config/public');
                 setConfig({
-                    freeThreshold: parseInt(response.data.FREE_SHIPPING_THRESHOLD || '400', 10)
+                    freeThreshold: parseFloat(response.data.FREE_SHIPPING_THRESHOLD || '400')
                 });
             } catch (error) {
                 console.error('Failed to fetch public config:', error);

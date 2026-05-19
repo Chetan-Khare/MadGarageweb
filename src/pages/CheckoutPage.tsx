@@ -43,7 +43,16 @@ const CheckoutPage: React.FC = () => {
     const [deliveryType, setDeliveryType] = useState<'HOME_DELIVERY' | 'GARAGE_FITTING'>('HOME_DELIVERY');
     const [selectedGarageId, setSelectedGarageId] = useState<number | null>(null);
     const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
-    const [config, setConfig] = useState({ shippingFee: 250, freeThreshold: 400, platformFee: 7 });
+    const [config, setConfig] = useState({ 
+        shippingFee: 150, 
+        freeThreshold: 400, 
+        platformFee: 7, 
+        fragileSurcharge: 1200, 
+        freightBaseFee: 2000, 
+        freightPerKgRate: 15,
+        zoneMultipliers: [1.0, 1.25, 1.5, 1.75, 2.0] as number[],
+        zoneMultiplierNE: 2.25
+    });
 
     // Coupon State
     const [isCouponDrawerOpen, setIsCouponDrawerOpen] = useState(false);
@@ -60,9 +69,20 @@ const CheckoutPage: React.FC = () => {
             try {
                 const response = await apiClient.get('/config/public');
                 setConfig({
-                    shippingFee: parseInt(response.data.SHIPPING_FEE || '250', 10),
-                    freeThreshold: parseInt(response.data.FREE_SHIPPING_THRESHOLD || '400', 10),
-                    platformFee: parseInt(response.data.PLATFORM_FEE || '7', 10)
+                    shippingFee: parseFloat(response.data.SHIPPING_FEE_STANDARD || response.data.SHIPPING_FEE || '150'),
+                    freeThreshold: parseFloat(response.data.FREE_SHIPPING_THRESHOLD || '400'),
+                    platformFee: parseFloat(response.data.PLATFORM_FEE || '7'),
+                    fragileSurcharge: parseFloat(response.data.SHIPPING_FEE_FRAGILE || '1200'),
+                    freightBaseFee: parseFloat(response.data.SHIPPING_FEE_FREIGHT_BASE || '2000'),
+                    freightPerKgRate: parseFloat(response.data.SHIPPING_FEE_FREIGHT_PER_KG || '15'),
+                    zoneMultipliers: [
+                        parseFloat(response.data.FREIGHT_ZONE_MULTIPLIER_0 || '1.0'),
+                        parseFloat(response.data.FREIGHT_ZONE_MULTIPLIER_1 || '1.25'),
+                        parseFloat(response.data.FREIGHT_ZONE_MULTIPLIER_2 || '1.5'),
+                        parseFloat(response.data.FREIGHT_ZONE_MULTIPLIER_3 || '1.75'),
+                        parseFloat(response.data.FREIGHT_ZONE_MULTIPLIER_4 || '2.0'),
+                    ],
+                    zoneMultiplierNE: parseFloat(response.data.FREIGHT_ZONE_MULTIPLIER_NE || '2.25')
                 });
             } catch (error) {
                 console.error('Failed to fetch public config:', error);
@@ -138,14 +158,34 @@ const CheckoutPage: React.FC = () => {
 
     const subtotal = buyNowProduct ? (buyNowProduct.garagePrice || buyNowProduct.price || 0) * buyNowQuantity : cartSubtotal;
     
+    const STATE_ZONES: Record<string, number> = {
+        'delhi': 1, 'haryana': 1, 'punjab': 1, 'rajasthan': 1,
+        'uttar pradesh': 1, 'uttarakhand': 1, 'himachal pradesh': 1,
+        'jammu and kashmir': 1, 'jammu & kashmir': 1, 'ladakh': 1,
+        'maharashtra': 2, 'gujarat': 2, 'goa': 2,
+        'dadra and nagar haveli': 2, 'daman and diu': 2,
+        'karnataka': 3, 'tamil nadu': 3, 'kerala': 3, 'andhra pradesh': 3, 'telangana': 3, 'puducherry': 3, 'lakshadweep': 3,
+        'west bengal': 4, 'bihar': 4, 'jharkhand': 4, 'odisha': 4, 'andaman and nicobar islands': 4, 'andaman & nicobar': 4,
+        'madhya pradesh': 5, 'chhattisgarh': 5,
+        'assam': 6, 'meghalaya': 6, 'manipur': 6, 'nagaland': 6, 'mizoram': 6, 'tripura': 6, 'arunachal pradesh': 6, 'sikkim': 6
+    };
+
+    const getFreightMultiplierLocal = (sellerState: string | null, buyerState: string): number => {
+        const sellerZone = sellerState ? (STATE_ZONES[sellerState.trim().toLowerCase()] ?? 1) : 1;
+        const buyerZone  = STATE_ZONES[buyerState.trim().toLowerCase()] ?? 1;
+        if (buyerZone === 6) return config.zoneMultiplierNE;
+        const dist = Math.min(Math.abs(sellerZone - buyerZone), 4);
+        return config.zoneMultipliers[dist];
+    };
+
     const calculateDynamicShippingLocal = () => {
         let totalShipping = 0;
         let hasFragileOrFreight = false;
 
         const baseStandardFee = config.shippingFee;
-        const fragileSurcharge = 1200;
-        const freightBaseFee = 2000;
-        const freightPerKgRate = 15;
+        const fragileSurcharge = config.fragileSurcharge;
+        const freightBaseFee = config.freightBaseFee;
+        const freightPerKgRate = config.freightPerKgRate;
 
         for (const item of checkoutItems) {
             const qty = item.quantity || 1;
@@ -161,12 +201,7 @@ const CheckoutPage: React.FC = () => {
                 case 'HEAVY_FREIGHT': {
                     const weight = item.weightKg || 1.0;
                     const freightFee = freightBaseFee + (weight * freightPerKgRate);
-                    
-                    // Location multiplier (same state = 1.0, interstate = 1.5)
-                    let distanceMultiplier = 1.0;
-                    if (state && item.sellerState && state.trim().toLowerCase() !== item.sellerState.trim().toLowerCase()) {
-                        distanceMultiplier = 1.5;
-                    }
+                    const distanceMultiplier = getFreightMultiplierLocal(item.sellerState || null, state || '');
                     totalShipping += (freightFee * distanceMultiplier * qty);
                     hasFragileOrFreight = true;
                     break;
@@ -654,6 +689,28 @@ const CheckoutPage: React.FC = () => {
                                             {shippingFee === 0 ? 'FREE' : `₹${shippingFee.toLocaleString()}`}
                                         </span>
                                     </div>
+                                    {(() => {
+                                        const heavyItems = checkoutItems.filter(item => item.shippingClass === 'HEAVY_FREIGHT');
+                                        if (heavyItems.length > 0 && state) {
+                                            const buyerZone = STATE_ZONES[state.trim().toLowerCase()] ?? 1;
+                                            const firstHeavy = heavyItems.find(item => item.sellerState);
+                                            const sellerState = firstHeavy ? firstHeavy.sellerState : null;
+                                            const sellerZone = sellerState ? (STATE_ZONES[sellerState.trim().toLowerCase()] ?? 1) : 1;
+                                            const mult = buyerZone === 6 ? config.zoneMultiplierNE : config.zoneMultipliers[Math.min(Math.abs(sellerZone - buyerZone), 4)];
+                                            return (
+                                                <div className="p-3 bg-primary/5 border border-primary/20 rounded-xl text-[9px] font-black uppercase tracking-widest text-primary flex items-center gap-2 italic">
+                                                    <Truck size={12} />
+                                                    <span>
+                                                        {buyerZone === 6 
+                                                            ? `Northeast Freight (${mult}x Surcharge)` 
+                                                            : `Zone Multiplier (Zone ${sellerZone} → Zone ${buyerZone}): ${mult}x Applied`
+                                                        }
+                                                    </span>
+                                                </div>
+                                            );
+                                        }
+                                        return null;
+                                    })()}
                                     {deliveryType === 'GARAGE_FITTING' && (
                                         <div className="p-6 bg-primary/5 rounded-2xl border border-primary/20 space-y-3">
                                             <div className="flex items-center gap-3">
