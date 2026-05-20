@@ -65,6 +65,7 @@ const AdminSettingsPage: React.FC = () => {
     const getSymbol = (key: string) => {
         if (key === 'SHIPPING_FEE_FREIGHT_PER_KG') return '₹/kg';
         if (key.includes('PERCENT')) return '%';
+        if (key.includes('MULTIPLIER')) return 'x';
         return '₹';
     };
 

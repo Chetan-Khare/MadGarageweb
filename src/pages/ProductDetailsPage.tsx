@@ -9,6 +9,46 @@ import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 
+const cleanDescriptionForPolicy = (desc: string, isReturnable: boolean) => {
+    if (!desc) return desc;
+    if (isReturnable !== false) return desc;
+    
+    // Split text into sentences using simple regex (keeping the delimiters/whitespaces)
+    const sentences = desc.split(/([.!?]\s+)/);
+    let cleanedParts: string[] = [];
+    
+    for (let i = 0; i < sentences.length; i++) {
+        const chunk = sentences[i];
+        if (!chunk) continue;
+        
+        // If it's punctuation with whitespace, append it if the last sentence was kept
+        const isSeparator = /^[.!?]\s+$/.test(chunk);
+        if (isSeparator) {
+            if (cleanedParts.length > 0 && !cleanedParts[cleanedParts.length - 1].endsWith('.') && !cleanedParts[cleanedParts.length - 1].endsWith('!') && !cleanedParts[cleanedParts.length - 1].endsWith('?')) {
+                cleanedParts.push(chunk);
+            }
+            continue;
+        }
+        
+        const lower = chunk.toLowerCase();
+        const hasReturnMentions = lower.includes('return') || 
+                                  lower.includes('replace') || 
+                                  lower.includes('refund') || 
+                                  lower.includes('exchange');
+                                  
+        if (!hasReturnMentions) {
+            cleanedParts.push(chunk);
+        }
+    }
+    
+    // Rejoin and trim
+    let result = cleanedParts.join('').trim();
+    if (!result) {
+        result = "No description provided. Please contact Mad Garage support for technical specifications.";
+    }
+    return result;
+};
+
 const ProductDetailsPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const { isAuthenticated, role } = useAuth();
@@ -220,7 +260,7 @@ const ProductDetailsPage: React.FC = () => {
                                         <Info size={20} className="text-primary" /> Technical Description
                                     </h3>
                                     <div className="prose prose-sm text-gray-500 font-medium leading-loose space-y-4 max-w-none break-words overflow-hidden text-wrap">
-                                        {product.description || 'No description provided. Please contact Mad Garage support for technical specifications and fitment advice.'}
+                                        {cleanDescriptionForPolicy(product.description, product.isReturnable) || 'No description provided. Please contact Mad Garage support for technical specifications and fitment advice.'}
                                         {product.isReturnable ? (
                                             <p className="mt-4 text-xs font-bold text-green-600 uppercase tracking-widest flex items-center gap-2">
                                                 <ShieldCheck size={14} /> 10-Day Easy Return Policy Included

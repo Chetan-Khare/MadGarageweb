@@ -43,6 +43,7 @@ const AddressPage = lazy(() => import('./pages/AddressPage'));
 const AdminSettingsPage = lazy(() => import('./pages/AdminSettingsPage'));
 const PartnerPage = lazy(() => import('./pages/PartnerPage'));
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
+const ReturnPolicyPage = lazy(() => import('./pages/ReturnPolicyPage'));
 const AdminChatAuditPage = lazy(() => import('./pages/AdminChatAuditPage'));
 const AdminCouponManagement = lazy(() => import('./pages/AdminCouponManagement'));
 import AdminPartnerRequests from './pages/AdminPartnerRequests';
@@ -89,6 +90,7 @@ function App() {
                 <Route path="product/:id" element={<ProductDetailsPage />} />
                 <Route path="cart" element={<CartPage />} />
                 <Route path="privacy" element={<PrivacyPolicyPage />} />
+                <Route path="return-policy" element={<ReturnPolicyPage />} />
               </Route>
 
 

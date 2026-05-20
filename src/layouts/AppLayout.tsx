@@ -303,6 +303,7 @@ const AppLayout: React.FC = () => {
               <Link to="/user-dashboard" className="text-sm hover:text-white transition-all">My Dashboard</Link>
               <Link to="/request-part" className="text-sm hover:text-white transition-all">Request Part</Link>
               <Link to="/privacy" className="text-sm hover:text-white transition-all">Privacy Policy</Link>
+              <Link to="/return-policy" className="text-sm hover:text-white transition-all">Return Policy</Link>
             </div>
 
           {/* Contact */}
