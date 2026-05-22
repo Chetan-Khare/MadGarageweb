@@ -280,6 +280,7 @@ const AppLayout: React.FC = () => {
         </div>
 
         <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 border-b border-white/5 pb-12">
+          {/* Column 1: Brand */}
           <div className="flex flex-col gap-6">
             <div className="flex items-center gap-3">
               <img src="/logo.png" alt="MAD GARAGE" className="h-8 aspect-square object-contain rounded-full overflow-hidden grayscale opacity-50 hover:grayscale-0 hover:opacity-100 transition-all" />
@@ -295,28 +296,31 @@ const AppLayout: React.FC = () => {
             </div>
           </div>
 
-            <div className="flex flex-col gap-3">
-              <h3 className="text-white font-bold uppercase tracking-widest text-xs mb-3">Quick Links</h3>
-              <Link to="/" className="text-sm hover:text-white transition-colors">Home</Link>
-              <Link to="/catalog" className="text-sm hover:text-white transition-colors">Catalog</Link>
-              <Link to="/join" className="text-sm text-primary font-black uppercase italic hover:text-white transition-all">Partner with Us</Link>
-              <Link to="/user-dashboard" className="text-sm hover:text-white transition-all">My Dashboard</Link>
-              <Link to="/request-part" className="text-sm hover:text-white transition-all">Request Part</Link>
-              <Link to="/privacy" className="text-sm hover:text-white transition-all">Privacy Policy</Link>
-              <Link to="/return-policy" className="text-sm hover:text-white transition-all">Return Policy</Link>
-            </div>
-
-          {/* Contact */}
+          {/* Column 2: Quick Links */}
           <div className="flex flex-col gap-3">
-            <h3 className="text-white font-bold uppercase tracking-widest text-xs mb-3">Contact Us</h3>
-            <p className="text-sm flex items-center gap-2">
-              <Phone size={14} className="text-primary" /> +91 98765 43210
-            </p>
-            <p className="text-sm">Sector 45, Gurgaon, Haryana, India</p>
-            <p className="text-sm">support@madgarage.com</p>
+            <h3 className="text-white font-bold uppercase tracking-widest text-base mb-3">Quick Links</h3>
+            <Link to="/" className="text-xs text-primary font-black uppercase italic hover:text-white transition-all">Home</Link>
+            <Link to="/join" className="text-xs text-primary font-black uppercase italic hover:text-white transition-all">Partner with Us</Link>
+            <Link to="/user-dashboard" className="text-xs text-primary font-black uppercase italic hover:text-white transition-all">My Dashboard</Link>
+            <Link to="/request-part" className="text-xs text-primary font-black uppercase italic hover:text-white transition-all">Request Part</Link>
           </div>
 
-          {/* Apps */}
+          {/* Column 3: Policies */}
+          <div className="flex flex-col gap-3">
+            <h3 className="text-white font-bold uppercase tracking-widest text-base mb-3">Policies</h3>
+            <Link to="/privacy" className="text-xs text-primary font-black uppercase italic hover:text-white transition-all">Privacy Policy</Link>
+            <Link to="/return-policy" className="text-xs text-primary font-black uppercase italic hover:text-white transition-all">Return Policy</Link>
+            <div className="mt-4 border-t border-white/5 pt-4">
+              <h3 className="text-primary font-bold uppercase tracking-widest text-base mb-3">Contact Us</h3>
+              <p className="text-sm flex items-center gap-2">
+                <Phone size={14} className="text-primary" /> +91 98765 43210
+              </p>
+              <p className="text-sm mt-2">Sector 45, Gurgaon, Haryana, India</p>
+              <p className="text-sm mt-1">support@madgarage.com</p>
+            </div>
+          </div>
+
+          {/* Column 4: Download App */}
           <div>
             <h3 className="text-white font-bold uppercase tracking-widest text-xs mb-3">Download Our App</h3>
             <p className="text-xs mb-4">Get the best experience on mobile.</p>
