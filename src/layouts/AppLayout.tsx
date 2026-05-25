@@ -52,10 +52,10 @@ const AppLayout: React.FC = () => {
               <span className="text-lg sm:text-2xl font-black italic tracking-tighter text-primary block">MAD GARAGE</span>
             </Link>
 
-            {/* Location Selector (Blinkit Style) - Simplified for mobile */}
+            {/* Location Selector (Blinkit Style) - Desktop only to prevent header overlap */}
             <div 
               onClick={detectLocation}
-              className="hidden sm:flex items-center gap-2 cursor-pointer group hover:bg-white/5 p-1.5 rounded-xl transition-all border border-transparent hover:border-white/10 shrink-0"
+              className="hidden lg:flex items-center gap-2 cursor-pointer group hover:bg-white/5 p-1.5 rounded-xl transition-all border border-transparent hover:border-white/10 shrink-0"
             >
               <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
                 <MapPin size={14} />
@@ -77,10 +77,12 @@ const AppLayout: React.FC = () => {
           {/* Search Bar - Desktop-friendly */}
           <form 
             onSubmit={handleSearch}
-            className="hidden md:flex flex-1 max-w-2xl bg-white/10 rounded-full items-center pl-4 pr-1 py-1 border border-white/10 focus-within:border-primary/50 transition-all group"
+            className="hidden lg:flex flex-1 max-w-2xl bg-white/10 rounded-full items-center pl-4 pr-1 py-1 border border-white/10 focus-within:border-primary/50 transition-all group"
           >
             <Search size={18} className="text-gray-400 group-focus-within:text-primary transition-colors" />
             <input 
+              id="header-desktop-search"
+              name="query"
               type="text" 
               placeholder="Search for car parts (e.g. Brake Pads, Turbos)..." 
               className="bg-transparent border-none outline-none flex-1 px-3 text-sm font-medium placeholder:text-gray-500"
@@ -110,7 +112,7 @@ const AppLayout: React.FC = () => {
             {/* Mobile Search Trigger */}
             <button 
                 onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}
-                className="md:hidden h-10 w-10 flex items-center justify-center bg-white/5 rounded-full text-gray-400 hover:text-primary transition-all"
+                className="lg:hidden h-10 w-10 flex items-center justify-center bg-white/5 rounded-full text-gray-400 hover:text-primary transition-all"
             >
                 <Search size={18} />
             </button>
@@ -190,10 +192,12 @@ const AppLayout: React.FC = () => {
 
         {/* Mobile Search Overlay */}
         {isMobileSearchOpen && (
-            <div className="md:hidden bg-app-bg-dark border-t border-white/5 p-4 animate-in slide-in-from-top duration-300">
+            <div className="lg:hidden bg-app-bg-dark border-t border-white/5 p-4 animate-in slide-in-from-top duration-300">
                 <form onSubmit={handleSearch} className="flex bg-white/5 rounded-xl items-center pl-4 pr-1 py-1 border border-primary/30">
                     <input 
                         autoFocus
+                        id="header-mobile-search"
+                        name="query"
                         type="text" 
                         placeholder="Search parts..." 
                         className="bg-transparent border-none outline-none flex-1 py-2 text-sm font-medium"
@@ -210,6 +214,25 @@ const AppLayout: React.FC = () => {
         {/* Mobile Slide-down Menu */}
         {isMobileMenuOpen && (
             <div className="lg:hidden bg-app-bg-dark border-t border-white/5 p-6 space-y-6 animate-in slide-in-from-top duration-300">
+                {/* Mobile Location Selector */}
+                <div 
+                  onClick={detectLocation}
+                  className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10 cursor-pointer hover:bg-white/10 transition-all"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                      <MapPin size={16} />
+                    </div>
+                    <div className="flex flex-col text-left">
+                      <span className="text-[8px] font-black uppercase tracking-widest text-primary italic leading-none mb-1">Delivering to</span>
+                      <span className="text-xs font-black italic uppercase tracking-tighter text-white">
+                        {city || 'Select Location'}
+                      </span>
+                    </div>
+                  </div>
+                  <Navigation size={12} className={`${locationLoading ? 'animate-spin' : ''} text-primary`} />
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                     <Link onClick={() => setIsMobileMenuOpen(false)} to="/catalog" className="flex flex-col items-center gap-3 p-4 bg-white/5 rounded-2xl border border-white/5">
                         <PackagePlus size={20} className="text-primary" />

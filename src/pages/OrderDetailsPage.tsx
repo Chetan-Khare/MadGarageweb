@@ -176,17 +176,23 @@ const OrderDetailsPage: React.FC = () => {
         }
     };
 
-    const handleReturnAction = async (action: 'approve' | 'reject', adminNote?: string) => {
+    const handleReturnAction = async (action: 'approve' | 'reject' | 'picked-up' | 'finalize', adminNote?: string) => {
         if (!activeReturn) return;
         setLoading(true);
         try {
             if (action === 'approve') {
                 await apiClient.put(`/returns/admin/${activeReturn.id}/approve`);
                 alert('Return Protocol Approved successfully.');
-            } else {
+            } else if (action === 'reject') {
                 // HIGH-06 FIX: Fix query parameter name from adminNote to note
                 await apiClient.put(`/returns/admin/${activeReturn.id}/reject?note=${encodeURIComponent(adminNote || 'Policy mismatch')}`);
                 alert('Return Request Rejected.');
+            } else if (action === 'picked-up') {
+                await apiClient.put(`/returns/admin/${activeReturn.id}/picked-up`);
+                alert('Return status marked as Picked Up.');
+            } else if (action === 'finalize') {
+                await apiClient.put(`/returns/admin/${activeReturn.id}/finalize`);
+                alert('Refund Finalized successfully.');
             }
             await fetchOrder();
         } catch (err: any) {
@@ -537,6 +543,28 @@ const OrderDetailsPage: React.FC = () => {
                                                      setRejectionNote("Request does not meet return policy criteria.");
                                                      setIsRejectModalOpen(true);
                                                  }} 
+                                             />
+                                         </div>
+                                     )}
+
+                                     {(role === 'ROLE_ADMIN' || role === 'ROLE_WORKER') && activeReturn && activeReturn.status === 'APPROVED' && (
+                                         <div className="w-full flex flex-wrap gap-4 border-b border-gray-100 pb-8 mb-4">
+                                             <ActionBtn 
+                                                 icon={<Package size={16}/>} 
+                                                 label="MARK AS PICKED UP" 
+                                                 primary 
+                                                 onClick={() => handleReturnAction('picked-up')} 
+                                             />
+                                         </div>
+                                     )}
+
+                                     {(role === 'ROLE_ADMIN' || role === 'ROLE_WORKER') && activeReturn && activeReturn.status === 'PICKED_UP' && activeReturn.requestType === 'REFUND' && (
+                                         <div className="w-full flex flex-wrap gap-4 border-b border-gray-100 pb-8 mb-4">
+                                             <ActionBtn 
+                                                 icon={<ShieldCheck size={16}/>} 
+                                                 label="FINALIZE REFUND" 
+                                                 primary 
+                                                 onClick={() => handleReturnAction('finalize')} 
                                              />
                                          </div>
                                      )}

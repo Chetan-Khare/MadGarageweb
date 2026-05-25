@@ -91,9 +91,11 @@ const CouponDrawer: React.FC<CouponDrawerProps> = ({ isOpen, onClose, onApply, o
                 <div className="p-8 space-y-8 flex-1 overflow-y-auto scrollbar-hide">
                     {/* Manual Input */}
                     <div className="space-y-4">
-                        <label className="text-[10px] font-black uppercase text-gray-500 ml-2">Enter Coupon Code</label>
+                        <label htmlFor="coupon-manual-code" className="text-[10px] font-black uppercase text-gray-500 ml-2">Enter Coupon Code</label>
                         <div className="flex gap-3">
                             <input
+                                id="coupon-manual-code"
+                                name="manualCode"
                                 type="text"
                                 placeholder="SAVE500"
                                 className="flex-1 bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all uppercase"

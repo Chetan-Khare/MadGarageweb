@@ -139,7 +139,8 @@ function App() {
                     role === 'ROLE_WORKER' ? <Navigate to="/worker" replace /> :
                     role === 'ROLE_SELLER' ? <Navigate to="/seller" replace /> :
                     role === 'ROLE_CUSTOMER' ? <Navigate to="/customer-dashboard" replace /> :
-                    <Navigate to="/dashboard" replace />
+                    role === 'ROLE_GARAGE' ? <Navigate to="/dashboard" replace /> :
+                    <Navigate to="/" replace />
                 } />
               </Route>
             </Routes>

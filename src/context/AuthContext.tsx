@@ -56,7 +56,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (error: any) {
       console.error('Failed to sync user profile:', error);
-      if (error.response?.status === 401) {
+      if (error.response?.status === 401 || error.response?.status === 403) {
           logout();
       }
     } finally {

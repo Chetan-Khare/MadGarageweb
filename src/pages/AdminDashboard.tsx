@@ -295,6 +295,15 @@ const AdminDashboard: React.FC = () => {
                         />
                         <OperationHubCard
                             icon={<Users size={32} />}
+                            title="User Governance"
+                            subtitle={`${stats?.totalUsers || 0} Active Accounts`}
+                            color="text-cyan-500"
+                            bg="from-cyan-950/20 to-black"
+                            border="border-cyan-900/40"
+                            onClick={() => navigate('/admin/users')}
+                        />
+                        <OperationHubCard
+                            icon={<Users size={32} />}
                             title="Partner Audits"
                             subtitle="Review Onboarding"
                             color="text-purple-500"

@@ -3,7 +3,8 @@ import { useLocation as useDomLocation, useNavigate } from 'react-router-dom';
 import {
     ChevronLeft, CreditCard, MapPin,
     ShieldCheck, Package, ShoppingBag,
-    CheckCircle, AlertCircle, Store, Truck, Navigation,
+    CheckCircle, AlertCircle, Truck,
+    // GARAGE FITTING DISABLED (only used in commented garage picker): Store, Navigation,
     Home, Briefcase, Tag, ChevronRight
 } from 'lucide-react';
 import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
@@ -16,7 +17,7 @@ const CheckoutPage: React.FC = () => {
     const domLocation = useDomLocation();
     const navigate = useNavigate();
     const { cart, subtotal: cartSubtotal, clearCart, savings } = useCart();
-    const { city: detectedCity, address: detectedAddress, nearbyGarages, fetchGarages } = useLocation();
+    const { city: detectedCity, address: detectedAddress, /* nearbyGarages, GARAGE FITTING DISABLED */ fetchGarages } = useLocation();
     const { role: userRole, user } = useAuth();
 
     // Support both single product "Buy Now" and "Cart Checkout"
@@ -41,14 +42,15 @@ const CheckoutPage: React.FC = () => {
 
     // Fitting State
     const [deliveryType, setDeliveryType] = useState<'HOME_DELIVERY' | 'GARAGE_FITTING'>('HOME_DELIVERY');
-    const [selectedGarageId, setSelectedGarageId] = useState<number | null>(null);
+    // GARAGE FITTING DISABLED: setSelectedGarageId unused since garage picker is hidden
+    const [selectedGarageId] = useState<number | null>(null);
     const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
-    const [config, setConfig] = useState({ 
-        shippingFee: 150, 
-        freeThreshold: 400, 
-        platformFee: 7, 
-        fragileSurcharge: 1200, 
-        freightBaseFee: 2000, 
+    const [config, setConfig] = useState({
+        shippingFee: 150,
+        freeThreshold: 400,
+        platformFee: 7,
+        fragileSurcharge: 1200,
+        freightBaseFee: 2000,
         freightPerKgRate: 15,
         zoneMultipliers: [1.0, 1.25, 1.5, 1.75, 2.0] as number[],
         zoneMultiplierNE: 2.25
@@ -157,7 +159,7 @@ const CheckoutPage: React.FC = () => {
     if (checkoutItems.length === 0) return null;
 
     const subtotal = buyNowProduct ? (buyNowProduct.garagePrice || buyNowProduct.price || 0) * buyNowQuantity : cartSubtotal;
-    
+
     const STATE_ZONES: Record<string, number> = {
         'delhi': 1, 'haryana': 1, 'punjab': 1, 'rajasthan': 1,
         'uttar pradesh': 1, 'uttarakhand': 1, 'himachal pradesh': 1,
@@ -172,7 +174,7 @@ const CheckoutPage: React.FC = () => {
 
     const getFreightMultiplierLocal = (sellerState: string | null, buyerState: string): number => {
         const sellerZone = sellerState ? (STATE_ZONES[sellerState.trim().toLowerCase()] ?? 1) : 1;
-        const buyerZone  = STATE_ZONES[buyerState.trim().toLowerCase()] ?? 1;
+        const buyerZone = STATE_ZONES[buyerState.trim().toLowerCase()] ?? 1;
         if (buyerZone === 6) return config.zoneMultiplierNE;
         const dist = Math.min(Math.abs(sellerZone - buyerZone), 4);
         return config.zoneMultipliers[dist];
@@ -407,6 +409,7 @@ const CheckoutPage: React.FC = () => {
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* HOME DELIVERY - only option shown */}
                                 <button
                                     type="button"
                                     onClick={() => setDeliveryType('HOME_DELIVERY')}
@@ -421,6 +424,7 @@ const CheckoutPage: React.FC = () => {
                                     </div>
                                 </button>
 
+                                {/* GARAGE FITTING DISABLED: No tie-up garages available yet. Uncomment to re-enable.
                                 <button
                                     type="button"
                                     onClick={() => setDeliveryType('GARAGE_FITTING')}
@@ -434,8 +438,10 @@ const CheckoutPage: React.FC = () => {
                                         <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-1">Visit a partner workshop</p>
                                     </div>
                                 </button>
+                                */}
                             </div>
 
+                            {/* GARAGE FITTING DISABLED: Garage picker hidden until tie-up garages are active. Uncomment to re-enable.
                             {deliveryType === 'GARAGE_FITTING' && (
                                 <div className="space-y-6">
                                     <div className="flex items-center justify-between">
@@ -476,6 +482,8 @@ const CheckoutPage: React.FC = () => {
                                     </div>
                                 </div>
                             )}
+                            */}
+
 
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-4">
@@ -518,8 +526,10 @@ const CheckoutPage: React.FC = () => {
                             <form onSubmit={handlePlaceOrder} id="checkout-form" className="space-y-8 p-10 bg-[#121216] rounded-[3rem] border border-white/5">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="flex flex-col">
-                                        <label className="text-[10px] font-black uppercase text-gray-500 mb-3 ml-2">Flat / Shop No.</label>
+                                        <label htmlFor="checkout-flat-no" className="text-[10px] font-black uppercase text-gray-500 mb-3 ml-2">Flat / Shop No.</label>
                                         <input
+                                            id="checkout-flat-no"
+                                            name="flatNo"
                                             type="text"
                                             placeholder="G-402 / Shop 12"
                                             className="bg-white/5 border border-white/10 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
@@ -528,8 +538,10 @@ const CheckoutPage: React.FC = () => {
                                         />
                                     </div>
                                     <div className="flex flex-col">
-                                        <label className="text-[10px] font-black uppercase text-gray-500 mb-3 ml-2">Floor No.</label>
+                                        <label htmlFor="checkout-floor-no" className="text-[10px] font-black uppercase text-gray-500 mb-3 ml-2">Floor No.</label>
                                         <input
+                                            id="checkout-floor-no"
+                                            name="floorNo"
                                             type="text"
                                             placeholder="4th Floor"
                                             className="bg-white/5 border border-white/10 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
@@ -540,9 +552,11 @@ const CheckoutPage: React.FC = () => {
                                 </div>
 
                                 <div className="flex flex-col">
-                                    <label className="text-[10px] font-black uppercase text-gray-500 mb-3 ml-2">Building / Complex Name</label>
+                                    <label htmlFor="checkout-building-name" className="text-[10px] font-black uppercase text-gray-500 mb-3 ml-2">Building / Complex Name</label>
                                     <input
                                         required
+                                        id="checkout-building-name"
+                                        name="buildingName"
                                         type="text"
                                         placeholder="SpeedWay Apartments"
                                         className="bg-white/5 border border-white/10 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
@@ -552,9 +566,11 @@ const CheckoutPage: React.FC = () => {
                                 </div>
 
                                 <div className="flex flex-col">
-                                    <label className="text-[10px] font-black uppercase text-gray-500 mb-3 ml-2">Street / Area</label>
+                                    <label htmlFor="checkout-street-area" className="text-[10px] font-black uppercase text-gray-500 mb-3 ml-2">Street / Area</label>
                                     <input
                                         required
+                                        id="checkout-street-area"
+                                        name="streetArea"
                                         type="text"
                                         placeholder="Main Road, Sector 5"
                                         className="bg-white/5 border border-white/10 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
@@ -564,8 +580,10 @@ const CheckoutPage: React.FC = () => {
                                 </div>
 
                                 <div className="flex flex-col">
-                                    <label className="text-[10px] font-black uppercase text-gray-500 mb-3 ml-2">Landmark</label>
+                                    <label htmlFor="checkout-landmark" className="text-[10px] font-black uppercase text-gray-500 mb-3 ml-2">Landmark</label>
                                     <input
+                                        id="checkout-landmark"
+                                        name="landmark"
                                         type="text"
                                         placeholder="Near Phoenix Mall"
                                         className="bg-white/5 border border-white/10 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
@@ -576,9 +594,11 @@ const CheckoutPage: React.FC = () => {
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     <div className="flex flex-col">
-                                        <label className="text-[10px] font-black uppercase text-gray-500 mb-3 ml-2">City</label>
+                                        <label htmlFor="checkout-city" className="text-[10px] font-black uppercase text-gray-500 mb-3 ml-2">City</label>
                                         <input
                                             required
+                                            id="checkout-city"
+                                            name="city"
                                             type="text"
                                             placeholder="Mumbai"
                                             className="bg-white/5 border border-white/10 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
@@ -587,9 +607,11 @@ const CheckoutPage: React.FC = () => {
                                         />
                                     </div>
                                     <div className="flex flex-col">
-                                        <label className="text-[10px] font-black uppercase text-gray-500 mb-3 ml-2">State</label>
+                                        <label htmlFor="checkout-state" className="text-[10px] font-black uppercase text-gray-500 mb-3 ml-2">State</label>
                                         <input
                                             required
+                                            id="checkout-state"
+                                            name="state"
                                             type="text"
                                             placeholder="Maharashtra"
                                             className="bg-white/5 border border-white/10 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
@@ -600,9 +622,11 @@ const CheckoutPage: React.FC = () => {
                                 </div>
 
                                 <div className="flex flex-col">
-                                    <label className="text-[10px] font-black uppercase text-gray-500 mb-3 ml-2">Pincode</label>
+                                    <label htmlFor="checkout-pincode" className="text-[10px] font-black uppercase text-gray-500 mb-3 ml-2">Pincode</label>
                                     <input
                                         required
+                                        id="checkout-pincode"
+                                        name="pincode"
                                         type="tel"
                                         pattern="[0-9]{6}"
                                         maxLength={6}
@@ -701,8 +725,8 @@ const CheckoutPage: React.FC = () => {
                                                 <div className="p-3 bg-primary/5 border border-primary/20 rounded-xl text-[9px] font-black uppercase tracking-widest text-primary flex items-center gap-2 italic">
                                                     <Truck size={12} />
                                                     <span>
-                                                        {buyerZone === 6 
-                                                            ? `Northeast Freight (${mult}x Surcharge)` 
+                                                        {buyerZone === 6
+                                                            ? `Northeast Freight (${mult}x Surcharge)`
                                                             : `Zone Multiplier (Zone ${sellerZone} → Zone ${buyerZone}): ${mult}x Applied`
                                                         }
                                                     </span>
@@ -711,21 +735,11 @@ const CheckoutPage: React.FC = () => {
                                         }
                                         return null;
                                     })()}
-                                    {deliveryType === 'GARAGE_FITTING' && (
-                                        <div className="p-6 bg-primary/5 rounded-2xl border border-primary/20 space-y-3">
-                                            <div className="flex items-center gap-3">
-                                                <Store size={14} className="text-primary" />
-                                                <span className="text-[9px] font-black uppercase tracking-widest text-primary italic">Precision Fitting Service</span>
-                                            </div>
-                                            <p className="text-[10px] font-medium text-gray-400 leading-relaxed">
-                                                Labor settlement based on garage inspection. <span className="text-white">Pay part price only online.</span>
-                                            </p>
-                                        </div>
-                                    )}
+                                    {/* GARAGE FITTING DISABLED: Fitting notice hidden. */}
 
                                     {/* Coupon Section */}
                                     {!appliedCoupon ? (
-                                        <button 
+                                        <button
                                             type="button"
                                             onClick={() => setIsCouponDrawerOpen(true)}
                                             className="w-full p-6 bg-white/5 border border-white/10 rounded-[1.5rem] flex items-center justify-between group hover:border-primary/30 transition-all"
@@ -747,7 +761,7 @@ const CheckoutPage: React.FC = () => {
                                                     <p className="text-[9px] font-bold text-gray-400 uppercase mt-0.5">₹{appliedCoupon.discountAmount} SAVED!</p>
                                                 </div>
                                             </div>
-                                            <button 
+                                            <button
                                                 type="button"
                                                 onClick={() => setAppliedCoupon(null)}
                                                 className="text-[9px] font-black uppercase text-gray-400 hover:text-primary tracking-widest"
@@ -776,18 +790,18 @@ const CheckoutPage: React.FC = () => {
                                     disabled={loading || (deliveryType === 'GARAGE_FITTING' && !selectedGarageId)}
                                     className="w-full bg-primary text-white py-6 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 hover:bg-red-700 transition-all shadow-2xl shadow-red-500/20 active:scale-95 disabled:opacity-50"
                                 >
-                                    {(deliveryType === 'GARAGE_FITTING' && !selectedGarageId) ? 'Select a Garage Partner' : loading ? 'Processing Transaction...' : 'Place Order'} <ShoppingBag size={18} />
+                                    {loading ? 'Processing Transaction...' : 'Place Order'} <ShoppingBag size={18} />
                                 </button>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <CouponDrawer 
-                isOpen={isCouponDrawerOpen} 
-                onClose={() => setIsCouponDrawerOpen(false)} 
-                onApply={(coupon) => setAppliedCoupon(coupon)} 
-                orderAmount={subtotal} 
+            <CouponDrawer
+                isOpen={isCouponDrawerOpen}
+                onClose={() => setIsCouponDrawerOpen(false)}
+                onApply={(coupon) => setAppliedCoupon(coupon)}
+                orderAmount={subtotal}
             />
         </div>
     );

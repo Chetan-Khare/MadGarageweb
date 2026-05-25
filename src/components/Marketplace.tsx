@@ -2,13 +2,14 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   ChevronRight, Zap, ChevronDown, ChevronUp, ShoppingBag,
-  Plus, Heart, X, Navigation, MapPin, ShieldCheck, ChevronLeft
+  Plus, Heart, X, ChevronLeft,
+  // GARAGE FITTING DISABLED (only used in commented Fitting Hub): Navigation, MapPin, ShieldCheck
 } from 'lucide-react';
 import { BASE_SERVER_URL } from '../services/apiClient';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useAuth } from '../context/AuthContext';
-import { useLocation } from '../context/LocationContext';
+// GARAGE FITTING DISABLED (unused until re-enabled): import { useLocation } from '../context/LocationContext';
 import { useVehicles } from '../hooks/useVehicles';
 import { useProducts } from '../hooks/useProducts';
 import ModernSelect from './ModernSelect';
@@ -25,7 +26,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({ isGarage = false }) => {
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
   const { user } = useAuth();
-  const { city, detectLocation, nearbyGarages, setManualCity } = useLocation();
+  // GARAGE FITTING DISABLED (all unused until re-enabled): const { city, detectLocation, nearbyGarages, setManualCity } = useLocation();
   const { t } = useTranslation();
 
   // --- Filtering State ---
@@ -39,9 +40,10 @@ const Marketplace: React.FC<MarketplaceProps> = ({ isGarage = false }) => {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedCondition, setSelectedCondition] = useState('ALL');
   const [showVehicleFilters, setShowVehicleFilters] = useState(false);
-  const [isEditingCity, setIsEditingCity] = useState(false);
-  const [manualCity, setManualCityInput] = useState('');
-  const [showGaragesDropdown, setShowGaragesDropdown] = useState(false);
+  // GARAGE FITTING DISABLED (unused until re-enabled):
+  // const [isEditingCity, setIsEditingCity] = useState(false);
+  // const [manualCity, setManualCityInput] = useState('');
+  // const [showGaragesDropdown, setShowGaragesDropdown] = useState(false);
   
   // --- Pagination State ---
   const PAGE_SIZE = 20;
@@ -198,7 +200,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({ isGarage = false }) => {
         </div>
       </section>
 
-      {/* Nearby Garages / Fitting Hub Section */}
+      {/* GARAGE FITTING DISABLED: Fitting Hub section hidden until tie-up garages are active. Uncomment to re-enable.
       <section className="bg-white py-6 border-b border-gray-100 relative">
         <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-4 flex-1">
@@ -215,14 +217,14 @@ const Marketplace: React.FC<MarketplaceProps> = ({ isGarage = false }) => {
                     {nearbyGarages.length > 0 ? `${nearbyGarages.length} Partner Garages Available` : 'Detecting local tuning partners...'}
                   </p>
                 </div>
-                
+
                 <div className="relative">
-                  <button 
+                  <button
                     onClick={() => setShowGaragesDropdown(!showGaragesDropdown)}
                     disabled={nearbyGarages.length === 0}
                     className={`flex items-center gap-3 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl ${showGaragesDropdown ? 'bg-app-bg-dark text-white' : 'bg-primary text-white hover:bg-black disabled:opacity-50'}`}
                   >
-                    {showGaragesDropdown ? 'Minimize Hub' : 'View Verified Garages'} 
+                    {showGaragesDropdown ? 'Minimize Hub' : 'View Verified Garages'}
                     {showGaragesDropdown ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                   </button>
 
@@ -270,14 +272,14 @@ const Marketplace: React.FC<MarketplaceProps> = ({ isGarage = false }) => {
             <div className="flex flex-col items-end">
               <div className="flex items-center gap-3">
                 {city && (
-                  <button 
+                  <button
                     onClick={() => setIsEditingCity(!isEditingCity)}
                     className="text-[9px] font-black uppercase text-gray-400 tracking-widest hover:text-primary flex items-center gap-1"
                   >
                     {isEditingCity ? 'Cancel' : 'Change City'}
                   </button>
                 )}
-                <button 
+                <button
                   onClick={detectLocation}
                   className="text-[9px] font-black uppercase text-primary tracking-widest hover:underline flex items-center gap-1"
                 >
@@ -286,8 +288,8 @@ const Marketplace: React.FC<MarketplaceProps> = ({ isGarage = false }) => {
               </div>
               {isEditingCity && (
                 <div className="mt-2 flex items-center gap-2 bg-gray-50 p-1 rounded-xl border border-gray-100 animate-in slide-in-from-right-2">
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     placeholder="Enter City"
                     className="bg-transparent border-none p-2 text-[10px] font-bold outline-none w-40 text-app-bg-dark"
                     value={manualCity}
@@ -299,7 +301,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({ isGarage = false }) => {
                       }
                     }}
                   />
-                  <button 
+                  <button
                     onClick={() => {
                       if (manualCity) {
                         setManualCity(manualCity);
@@ -316,7 +318,6 @@ const Marketplace: React.FC<MarketplaceProps> = ({ isGarage = false }) => {
           </div>
         </div>
 
-        {/* Coming Soon Message if no garages found in city */}
         {city && nearbyGarages.length === 0 && (
           <div className="container mx-auto px-4 mt-4 animate-in fade-in duration-700">
             <div className="bg-app-bg-dark rounded-[2rem] p-6 flex items-center gap-6 border border-primary/20 overflow-hidden group">
@@ -335,6 +336,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({ isGarage = false }) => {
           </div>
         )}
       </section>
+      */}
 
       {/* Marketplace Grid Section */}
       <section id="marketplace-section" className={`py-12 ${isGarage ? 'bg-app-bg-light' : 'bg-white'}`}>

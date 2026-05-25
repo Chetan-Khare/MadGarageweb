@@ -148,7 +148,7 @@ const LoginPage: React.FC = () => {
         } else if (role === 'ROLE_SELLER') {
             navigate('/seller');
         } else if (role === 'ROLE_GARAGE') {
-            navigate('/'); // Redirect Garage to Marketplace
+            navigate('/dashboard');
         } else {
             navigate('/'); // Standard customers go to Home
         }
@@ -219,11 +219,13 @@ const LoginPage: React.FC = () => {
             !showOtpInput ? (
                 <form className="space-y-6" onSubmit={handleSendOtp}>
                     <div className="flex flex-col">
-                        <label className="text-[10px] font-black uppercase text-gray-400 mb-3 ml-2">Phone Number</label>
+                        <label htmlFor="login-phone" className="text-[10px] font-black uppercase text-gray-400 mb-3 ml-2">Phone Number</label>
                         <div className="relative group">
                             <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors" size={20} />
                             <input 
                                 required
+                                id="login-phone"
+                                name="phone"
                                 type="tel" 
                                 className="w-full bg-gray-50 border border-gray-100 p-4 pl-12 rounded-2xl text-sm font-bold text-app-bg-dark outline-none focus:border-primary transition-all"
                                 placeholder="+91 98765 43210"
@@ -244,7 +246,7 @@ const LoginPage: React.FC = () => {
                 <form className="space-y-6" onSubmit={handleVerifyOtp}>
                     <div className="flex flex-col">
                         <div className="flex justify-between items-center mb-3 px-2">
-                            <label className="text-[10px] font-black uppercase text-gray-400">6-Digit Code</label>
+                            <label htmlFor="login-otp" className="text-[10px] font-black uppercase text-gray-400">6-Digit Code</label>
                             <button 
                                 type="button" 
                                 onClick={() => setShowOtpInput(false)}
@@ -258,6 +260,8 @@ const LoginPage: React.FC = () => {
                             <input 
                                 required
                                 autoFocus
+                                id="login-otp"
+                                name="otp"
                                 type="text" 
                                 maxLength={6}
                                 className="w-full bg-gray-50 border border-gray-100 p-4 pl-12 rounded-2xl text-sm font-bold text-app-bg-dark outline-none tracking-[1em] focus:border-primary transition-all"
@@ -289,11 +293,13 @@ const LoginPage: React.FC = () => {
           ) : (
             <form className="space-y-6" onSubmit={handleStaffLogin}>
                 <div className="flex flex-col">
-                    <label className="text-[10px] font-black uppercase text-gray-400 mb-3 ml-2">{t('login.email_label')}</label>
+                    <label htmlFor="login-email" className="text-[10px] font-black uppercase text-gray-400 mb-3 ml-2">{t('login.email_label')}</label>
                     <div className="relative group">
                         <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors" size={20} />
                         <input 
                             required
+                            id="login-email"
+                            name="email"
                             type="email" 
                             className="w-full bg-gray-50 border border-gray-100 p-4 pl-12 rounded-2xl text-sm font-bold text-app-bg-dark outline-none focus:border-primary transition-all"
                             placeholder="staff@madgarage.com"
@@ -304,11 +310,13 @@ const LoginPage: React.FC = () => {
                 </div>
 
                 <div className="flex flex-col">
-                    <label className="text-[10px] font-black uppercase text-gray-400 mb-3 ml-2">{t('login.password_label')}</label>
+                    <label htmlFor="login-password" className="text-[10px] font-black uppercase text-gray-400 mb-3 ml-2">{t('login.password_label')}</label>
                     <div className="relative group">
                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors" size={20} />
                         <input 
                             required
+                            id="login-password"
+                            name="password"
                             type={showPassword ? "text" : "password"} 
                             className="w-full bg-gray-50 border border-gray-100 p-4 pl-12 pr-12 rounded-2xl text-sm font-bold text-app-bg-dark outline-none focus:border-primary transition-all"
                             placeholder="••••••••"
