@@ -108,8 +108,9 @@ const ProductDetailsPage: React.FC = () => {
 
     const isGarage = role === 'ROLE_GARAGE';
     const activePrice = isGarage && product.wholesale && product.garagePrice ? product.garagePrice : (product.price || 0);
-    const mrpPrice = product.mrp || product.originalPrice;
-    const hasDiscount = !!mrpPrice && mrpPrice > activePrice;
+    const rawMrpPrice = product.mrp || product.originalPrice;
+    const mrpPrice = (rawMrpPrice && rawMrpPrice > activePrice) ? rawMrpPrice : (activePrice / 0.9);
+    const hasDiscount = mrpPrice > activePrice;
 
     return (
         <div className="min-h-screen bg-white font-inter">
@@ -161,11 +162,11 @@ const ProductDetailsPage: React.FC = () => {
                                         {isGarage ? 'Wholesale Member Price' : 'Member Price'}
                                     </p>
                                     <div className="flex flex-col gap-1">
+                                        {hasDiscount && (
+                                            <span className="text-gray-500 line-through font-bold text-sm italic mb-[-8px]">₹{Math.round(mrpPrice).toLocaleString()}</span>
+                                        )}
                                         <div className="flex items-baseline gap-4">
-                                            <h2 className="text-5xl font-black italic text-white tracking-tighter">₹{activePrice.toLocaleString()}</h2>
-                                            {hasDiscount && (
-                                                <span className="text-gray-600 line-through font-bold text-lg italic">₹{mrpPrice.toLocaleString()}</span>
-                                            )}
+                                            <h2 className="text-5xl font-black italic text-white tracking-tighter">₹{Math.round(activePrice).toLocaleString(undefined, { maximumFractionDigits: 0 })}</h2>
                                         </div>
                                     </div>
                                 </div>
@@ -198,15 +199,15 @@ const ProductDetailsPage: React.FC = () => {
                                              <span className="text-lg font-black text-white italic min-w-8 text-center">{quantity}</span>
                                              <button onClick={() => setQuantity(quantity + 1)} className="h-10 w-10 flex items-center justify-center text-gray-400 hover:text-white transition-all"><Plus size={16}/></button>
                                          </div>
-                                         <div className="flex flex-1 gap-3 w-full">
+                                         <div className="flex flex-1 flex-col xl:flex-row gap-3 w-full">
                                              <button 
                                                  onClick={() => {
                                                      addToCart(product, quantity);
                                                      navigate('/cart');
                                                  }}
-                                                 className="flex-1 bg-white/5 text-white border border-white/10 h-16 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 hover:bg-white/10 transition-all"
+                                                 className="flex-1 bg-white/5 text-white border border-white/10 h-14 md:h-16 rounded-2xl font-black uppercase tracking-widest text-[9px] sm:text-[10px] flex items-center justify-center gap-2 hover:bg-white/10 transition-all px-2 whitespace-nowrap"
                                              >
-                                                 Add to Cart <ShoppingBag size={18} />
+                                                 Add to Cart <ShoppingBag size={16} />
                                              </button>
                                              <button 
                                                  onClick={() => {
@@ -217,9 +218,9 @@ const ProductDetailsPage: React.FC = () => {
                                                      addToCart(product, quantity);
                                                      navigate('/checkout');
                                                  }}
-                                                 className="flex-1 bg-primary text-white h-16 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 hover:scale-[1.05] active:scale-[0.95] transition-all shadow-xl shadow-red-500/30"
+                                                 className="flex-1 bg-primary text-white h-14 md:h-16 rounded-2xl font-black uppercase tracking-widest text-[9px] sm:text-[10px] flex items-center justify-center gap-2 hover:scale-[1.05] active:scale-[0.95] transition-all shadow-xl shadow-red-500/30 px-2 whitespace-nowrap"
                                              >
-                                                 Buy Now <Zap size={18} />
+                                                 Buy Now <Zap size={16} />
                                              </button>
                                          </div>
                                      </>

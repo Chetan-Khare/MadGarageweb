@@ -27,6 +27,7 @@ const OrderDetailsPage: React.FC = () => {
     const [returnReason, setReturnReason] = useState('WRONG_FITMENT');
     const [returnType, setReturnType] = useState('REPLACEMENT');
     const [returnDescription, setReturnDescription] = useState('');
+    const [returnItems, setReturnItems] = useState<{orderItemId: number, quantity: number, maxQuantity: number, partName: string, price: number}[]>([]);
     const [submittingReturn, setSubmittingReturn] = useState(false);
     const [activeReturn, setActiveReturn] = useState<any>(null);
 
@@ -155,8 +156,35 @@ const OrderDetailsPage: React.FC = () => {
             alert('Failed to retrieve professional invoice from terminal.');
         }
     };
+    const openReturnModal = () => {
+        if (order?.items) {
+            const initialItems = order.items
+                .filter((item: any) => item.isReturnable)
+                .map((item: any) => ({
+                    orderItemId: item.id,
+                    quantity: 0, // Default to 0, require user to increment
+                    maxQuantity: item.quantity,
+                    partName: item.productName || (item.product?.partName) || 'Unknown Product',
+                    price: item.priceAtPurchase || item.price || 0
+                }));
+            setReturnItems(initialItems);
+        }
+        setIsReturnModalOpen(true);
+    };
+
     const handleSubmitReturn = async () => {
         if (!returnDescription.trim()) return;
+        
+        const selectedItems = returnItems.filter(item => item.quantity > 0).map(item => ({
+            orderItemId: item.orderItemId,
+            quantity: item.quantity
+        }));
+
+        if (selectedItems.length === 0) {
+            alert('Please select at least one item and specify the quantity to return.');
+            return;
+        }
+
         setSubmittingReturn(true);
         try {
             await apiClient.post('/returns', {
@@ -164,7 +192,8 @@ const OrderDetailsPage: React.FC = () => {
                 reason: returnReason,
                 requestType: returnType,
                 description: returnDescription,
-                imageUrls: [] // Mock images for now
+                imageUrls: [], // Mock images for now
+                items: selectedItems
             });
             setIsReturnModalOpen(false);
             await fetchOrder();
@@ -176,7 +205,22 @@ const OrderDetailsPage: React.FC = () => {
         }
     };
 
-    const handleReturnAction = async (action: 'approve' | 'reject' | 'picked-up' | 'finalize', adminNote?: string) => {
+    const handleCancelOrder = async () => {
+        if (!window.confirm("Are you sure you want to cancel this order? This action cannot be undone.")) return;
+        setLoading(true);
+        try {
+            await apiClient.post(`/orders/${id}/cancel`);
+            alert('Order cancelled and refund processed successfully.');
+            await fetchOrder();
+        } catch (err: any) {
+            console.error('Cancellation failed:', err);
+            alert(err.response?.data?.message || 'Failed to cancel the order.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleReturnAction = async (action: 'approve' | 'reject' | 'picked-up' | 'finalize' | 'retry-refund', adminNote?: string) => {
         if (!activeReturn) return;
         setLoading(true);
         try {
@@ -191,8 +235,19 @@ const OrderDetailsPage: React.FC = () => {
                 await apiClient.put(`/returns/admin/${activeReturn.id}/picked-up`);
                 alert('Return status marked as Picked Up.');
             } else if (action === 'finalize') {
-                await apiClient.put(`/returns/admin/${activeReturn.id}/finalize`);
-                alert('Refund Finalized successfully.');
+                const res = await apiClient.put(`/returns/admin/${activeReturn.id}/finalize`);
+                if (res.data && res.data.status === 'REFUND_FAILED') {
+                    alert('Razorpay Refund Failed. Check admin notes and try again using Retry Refund.');
+                } else {
+                    alert('Refund Finalized successfully.');
+                }
+            } else if (action === 'retry-refund') {
+                const res = await apiClient.put(`/returns/admin/${activeReturn.id}/retry-refund`);
+                if (res.data && res.data.status === 'REFUND_FAILED') {
+                    alert('Razorpay Refund Failed again. Please check gateway configuration.');
+                } else {
+                    alert('Refund Retry successful.');
+                }
             }
             await fetchOrder();
         } catch (err: any) {
@@ -455,8 +510,15 @@ const OrderDetailsPage: React.FC = () => {
                                             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Resolution: {activeReturn.requestType} • Status: {activeReturn.status}</p>
                                         </div>
                                     </div>
-                                    <div className="bg-app-bg-dark px-6 py-2 rounded-full border border-white/5">
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-white">#{activeReturn.id}</span>
+                                    <div className="flex gap-2">
+                                        {activeReturn.refundId && (
+                                            <div className="bg-green-500/10 px-6 py-2 rounded-full border border-green-500/20">
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-green-500">Refund: {activeReturn.refundId}</span>
+                                            </div>
+                                        )}
+                                        <div className="bg-app-bg-dark px-6 py-2 rounded-full border border-white/5">
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-white">#{activeReturn.id}</span>
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -487,6 +549,32 @@ const OrderDetailsPage: React.FC = () => {
                                         )}
                                     </div>
                                 </div>
+                                
+                                {activeReturn.items && activeReturn.items.length > 0 && (
+                                    <div className="mt-8 bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
+                                        <div className="flex justify-between items-end mb-6">
+                                            <h4 className="text-[9px] font-black uppercase text-primary tracking-widest">Itemized Receipt</h4>
+                                            {activeReturn.refundAmount != null && (
+                                                <div className="text-right">
+                                                    <span className="text-[9px] font-black uppercase text-gray-400 block mb-1">Total Refund Value</span>
+                                                    <span className="text-xl font-black italic text-app-bg-dark">₹{activeReturn.refundAmount.toLocaleString()}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="space-y-3">
+                                            {activeReturn.items.map((item: any, idx: number) => (
+                                                <div key={idx} className="flex justify-between items-center p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                                                    <div>
+                                                        <p className="text-xs font-black text-app-bg-dark uppercase tracking-tight">{item.partName}</p>
+                                                    </div>
+                                                    <div className="bg-white px-4 py-2 rounded-xl border border-gray-100 shadow-sm">
+                                                        <span className="text-[10px] font-black text-primary uppercase tracking-widest">Qty: {item.quantity}</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
 
@@ -506,7 +594,7 @@ const OrderDetailsPage: React.FC = () => {
                         {(order.status === 'DELIVERED' || (order.status === 'RETURN_REQUESTED' && !activeReturn)) && order.isOwner && !activeReturn && (
                             <div className="flex justify-center pt-8">
                                 <button 
-                                    onClick={() => setIsReturnModalOpen(true)}
+                                    onClick={openReturnModal}
                                     disabled={!order.items?.some((i: any) => i.isReturnable)}
                                     className={`px-10 py-5 rounded-[2rem] font-black uppercase italic tracking-widest text-[10px] transition-all shadow-xl active:scale-95 ${
                                         order.items?.some((i: any) => i.isReturnable)
@@ -569,6 +657,17 @@ const OrderDetailsPage: React.FC = () => {
                                          </div>
                                      )}
 
+                                     {(role === 'ROLE_ADMIN' || role === 'ROLE_WORKER') && activeReturn && activeReturn.status === 'REFUND_FAILED' && (
+                                         <div className="w-full flex flex-wrap gap-4 border-b border-gray-100 pb-8 mb-4">
+                                             <ActionBtn 
+                                                 icon={<ShieldCheck size={16}/>} 
+                                                 label="RETRY REFUND" 
+                                                 primary 
+                                                 onClick={() => handleReturnAction('retry-refund')} 
+                                             />
+                                         </div>
+                                     )}
+
                                     {role === 'ROLE_SELLER' && order.status === 'PAID' && (
                                         <ActionBtn 
                                             icon={<MapPin size={16}/>} 
@@ -609,6 +708,9 @@ const OrderDetailsPage: React.FC = () => {
                                 </div>
                              )}
 
+                            {order.isOwner && ['PENDING_PAYMENT', 'PAID', 'PROCESSING'].includes(order.status) && (
+                                <ActionBtn icon={<XCircle size={16}/>} label="Cancel Order" onClick={handleCancelOrder} />
+                            )}
                             <ActionBtn icon={<ShieldCheck size={16}/>} label="Download Invoice" primary onClick={handleDownloadInvoice} />
                             <ActionBtn icon={<Share2 size={16}/>} label="Share Receipt" onClick={() => {
                                 if (navigator.share) {
@@ -682,6 +784,44 @@ const OrderDetailsPage: React.FC = () => {
                                             </button>
                                         ))}
                                     </div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                <label className="text-[10px] font-black uppercase text-gray-400 ml-4">Select Items to Return</label>
+                                <div className="flex flex-col gap-3">
+                                    {returnItems.map((item, idx) => (
+                                        <div key={item.orderItemId} className={`p-5 rounded-2xl border-2 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all ${item.quantity > 0 ? 'border-primary bg-primary/5' : 'border-gray-50 bg-gray-50 hover:border-gray-100'}`}>
+                                            <div>
+                                                <p className={`text-xs font-black uppercase tracking-tight ${item.quantity > 0 ? 'text-primary' : 'text-gray-500'}`}>{item.partName}</p>
+                                                <p className="text-[10px] font-bold text-gray-400 mt-1">Purchased: {item.maxQuantity} Unit(s) • ₹{(item.price || 0).toLocaleString()}/ea</p>
+                                            </div>
+                                            <div className="flex items-center gap-3 bg-white px-3 py-2 rounded-xl border border-gray-100 shadow-sm shrink-0">
+                                                <button 
+                                                    onClick={() => {
+                                                        const newItems = [...returnItems];
+                                                        if (newItems[idx].quantity > 0) newItems[idx].quantity -= 1;
+                                                        setReturnItems(newItems);
+                                                    }}
+                                                    className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-50 text-gray-600 hover:bg-gray-200 hover:text-app-bg-dark transition-all font-black text-lg"
+                                                >-</button>
+                                                <span className="text-sm font-black w-6 text-center text-app-bg-dark">{item.quantity}</span>
+                                                <button 
+                                                    onClick={() => {
+                                                        const newItems = [...returnItems];
+                                                        if (newItems[idx].quantity < newItems[idx].maxQuantity) newItems[idx].quantity += 1;
+                                                        setReturnItems(newItems);
+                                                    }}
+                                                    className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-50 text-gray-600 hover:bg-primary hover:text-white transition-all font-black text-lg"
+                                                >+</button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {returnItems.length === 0 && (
+                                        <div className="p-6 bg-gray-50 rounded-2xl border border-gray-100 text-center">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">No returnable items found in this order.</p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 

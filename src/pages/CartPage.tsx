@@ -9,11 +9,15 @@ import {
 import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
 
 const CartPage: React.FC = () => {
-    const { cart, updateQuantity, removeFromCart, subtotal, totalItems, savings } = useCart();
+    const { cart, updateQuantity, removeFromCart, subtotal, totalItems, savings, validateCart } = useCart();
     const { role } = useAuth();
     const baseTotal = subtotal + savings;
     const navigate = useNavigate();
     const [config, setConfig] = React.useState({ shippingFee: 150, freeThreshold: 400, platformFee: 7 });
+
+    React.useEffect(() => {
+        validateCart();
+    }, []);
 
     React.useEffect(() => {
         const fetchConfig = async () => {
@@ -180,10 +184,10 @@ const CartPage: React.FC = () => {
                                     <span className="text-sm font-bold text-gray-400 uppercase tracking-widest">Subtotal</span>
                                     <span className="text-lg font-black italic">₹{Math.round(baseTotal).toLocaleString()}</span>
                                 </div>
-                                {savings > 0 && role === 'ROLE_GARAGE' && (
+                                {savings > 0 && (
                                     <div className="flex justify-between items-center text-green-500">
                                         <span className="text-sm font-bold uppercase tracking-widest">
-                                            Wholesale Discount
+                                            {role === 'ROLE_GARAGE' ? 'Wholesale Discount' : 'Discount'}
                                         </span>
                                         <span className="text-sm font-black italic">-₹{Math.round(savings).toLocaleString()}</span>
                                     </div>

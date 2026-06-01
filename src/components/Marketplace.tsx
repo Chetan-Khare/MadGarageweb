@@ -407,8 +407,9 @@ const Marketplace: React.FC<MarketplaceProps> = ({ isGarage = false }) => {
                         <span className="bg-app-bg-dark/80 backdrop-blur-md text-white text-[6px] md:text-[8px] font-black uppercase px-2 md:px-3 py-1 md:py-1.5 rounded-full shadow-lg">{product.category}</span>
                         {(() => {
                           const sellingPrice = isGarage && product.wholesale && product.garagePrice ? product.garagePrice : (product.price || 0);
-                          const strikePrice = product.mrp || product.originalPrice;
-                          if (strikePrice && strikePrice > sellingPrice) {
+                          const rawStrike = product.mrp || product.originalPrice;
+                          const strikePrice = (rawStrike && rawStrike > sellingPrice) ? rawStrike : (sellingPrice / 0.9);
+                          if (strikePrice > sellingPrice) {
                             const pct = Math.round((1 - sellingPrice / strikePrice) * 100);
                             if (pct > 0) {
                               return (
@@ -430,15 +431,23 @@ const Marketplace: React.FC<MarketplaceProps> = ({ isGarage = false }) => {
                         {product.partName}
                       </h3>
                       <div className="mt-auto pt-2 md:pt-6 border-t border-gray-50 flex items-center justify-between">
-                        <div>
-                          <p className="text-xs md:text-2xl font-black italic text-app-bg-dark tracking-tighter">
-                            ₹{(isGarage && product.wholesale && product.garagePrice ? product.garagePrice : (product.price || 0)).toLocaleString()}
+                        <div className="flex flex-col justify-end">
+                          {(() => {
+                            const sellingPrice = isGarage && product.wholesale && product.garagePrice ? product.garagePrice : (product.price || 0);
+                            const rawStrike = product.mrp || product.originalPrice;
+                            const strikePrice = (rawStrike && rawStrike > sellingPrice) ? rawStrike : (sellingPrice / 0.9);
+                            if (strikePrice > sellingPrice) {
+                              return (
+                                <p className="text-[9px] md:text-sm text-gray-400 line-through font-bold mb-0.5">
+                                  ₹{Math.round(strikePrice).toLocaleString()}
+                                </p>
+                              );
+                            }
+                            return null;
+                          })()}
+                          <p className="text-sm md:text-2xl font-black italic text-app-bg-dark tracking-tighter leading-none">
+                            ₹{(isGarage && product.wholesale && product.garagePrice ? product.garagePrice : (product.price || 0)).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                           </p>
-                          {(product.mrp || product.originalPrice) && (product.mrp || product.originalPrice) > (isGarage && product.wholesale && product.garagePrice ? product.garagePrice : (product.price || 0)) && (
-                            <p className="text-[8px] md:text-xs text-gray-400 line-through font-bold">
-                              ₹{(product.mrp || product.originalPrice).toLocaleString()}
-                            </p>
-                          )}
                         </div>
                         <div className="flex gap-1 md:gap-2">
                           {user?.role !== 'ROLE_SELLER' && user?.role !== 'ROLE_WORKER' && (

@@ -72,11 +72,19 @@ const AdminOrderManagement: React.FC = () => {
             const endpoint = `/returns/admin/${id}/${action}`;
             // HIGH-06 FIX: Fix query parameter name from adminNote to note
             const query = note ? `?note=${encodeURIComponent(note)}` : '';
-            await apiClient.put(endpoint + query);
+            const res = await apiClient.put(endpoint + query);
+            
+            if (res.data && res.data.status === 'REFUND_FAILED') {
+                alert('Razorpay Refund Failed. Check admin notes and try again using Retry Refund.');
+            } else {
+                alert(`Return ${action.replace('-', ' ')} successful.`);
+            }
+            
             fetchReturns();
             if (action === 'approve') fetchOrders(); // Because order status changes
         } catch (err) {
             console.error('Return update failed');
+            alert('Failed to update return.');
         }
     };
 
@@ -343,10 +351,30 @@ const AdminOrderManagement: React.FC = () => {
                                                     <p className="text-[9px] font-black uppercase text-gray-500 tracking-widest">Reference ID</p>
                                                     <p className="text-xs font-bold text-white uppercase">Order #{ret.orderId}</p>
                                                 </div>
+                                                {ret.refundAmount != null && (
+                                                    <div className="space-y-2">
+                                                        <p className="text-[9px] font-black uppercase text-gray-500 tracking-widest">Total Refund</p>
+                                                        <p className="text-sm font-black text-primary italic">₹{ret.refundAmount.toLocaleString()}</p>
+                                                    </div>
+                                                )}
                                             </div>
                                             <div className="p-5 bg-white/5 rounded-2xl border border-white/5">
                                                 <p className="text-[10px] font-bold text-gray-400 italic font-inter">"{ret.description}"</p>
                                             </div>
+                                            
+                                            {ret.items && ret.items.length > 0 && (
+                                                <div className="space-y-2 mt-4">
+                                                    <p className="text-[9px] font-black uppercase text-gray-500 tracking-widest">Itemized Breakdown</p>
+                                                    <div className="bg-[#08080C] p-4 rounded-2xl border border-white/5 space-y-2">
+                                                        {ret.items.map((item: any, idx: number) => (
+                                                            <div key={idx} className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
+                                                                <span className="text-gray-300">{item.partName}</span>
+                                                                <span className="text-primary bg-primary/10 px-2 py-1 rounded-md border border-primary/20">Qty: {item.quantity}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
 
@@ -384,6 +412,14 @@ const AdminOrderManagement: React.FC = () => {
                                                 className="px-6 py-3 bg-primary text-white rounded-xl text-[9px] font-black uppercase tracking-widest"
                                             >
                                                 Finalize Refund
+                                            </button>
+                                        )}
+                                        {ret.status === 'REFUND_FAILED' && (
+                                            <button 
+                                                onClick={() => handleUpdateReturn(ret.id, 'retry-refund')}
+                                                className="px-6 py-3 bg-primary text-white rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg shadow-red-500/20"
+                                            >
+                                                Retry Refund
                                             </button>
                                         )}
                                         <button 

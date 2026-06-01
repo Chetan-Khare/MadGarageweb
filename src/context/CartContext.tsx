@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
+import { productService } from '../services/productService';
 
 export interface CartItem {
   id: number;
@@ -23,6 +24,7 @@ interface CartContextType {
   totalItems: number;
   subtotal: number;
   savings: number;
+  validateCart: () => Promise<void>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -94,6 +96,32 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const clearCart = () => setCart([]);
 
+  const validateCart = async () => {
+    if (cart.length === 0) return;
+    try {
+      const ids = cart.map(item => item.id);
+      const latest = await productService.getBulkStock(ids);
+      
+      let removedParts: string[] = [];
+      const updatedCart = cart.filter(item => {
+        const fresh = latest.find((p: any) => p.id === item.id);
+        const isProductActive = fresh.active === true || fresh.isActive === true;
+        if (!fresh || fresh.stockQuantity === 0 || !isProductActive) {
+          removedParts.push(item.partName);
+          return false;
+        }
+        return true;
+      });
+
+      if (removedParts.length > 0) {
+        setCart(updatedCart);
+        alert(`The following item(s) are now out of stock and have been removed from your cart:\n${removedParts.map(name => `"${name}"`).join('\n')}`);
+      }
+    } catch (e) {
+      console.error('Failed to validate cart stock:', e);
+    }
+  };
+
   const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
   const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
   const savings = cart.reduce((acc, item) => {
@@ -113,7 +141,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         clearCart, 
         totalItems, 
         subtotal, 
-        savings 
+        savings,
+        validateCart
     }}>
       {children}
     </CartContext.Provider>

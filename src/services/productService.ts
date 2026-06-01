@@ -41,5 +41,11 @@ export const productService = {
     toggleFlag: async (id: number, reason: string) => {
         const res = await apiClient.patch(`/products/${id}/flag`, { reason });
         return res.data;
+    },
+
+    getBulkStock: async (ids: string | number[]) => {
+        const idsString = Array.isArray(ids) ? ids.join(',') : ids;
+        const res = await apiClient.get<any[]>(`/products/bulk?ids=${idsString}`);
+        return res.data;
     }
 };

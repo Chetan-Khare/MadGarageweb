@@ -266,9 +266,20 @@ const AppLayout: React.FC = () => {
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-grow">
+      <main className="flex-grow relative">
         <Outlet />
       </main>
+
+      {/* Global AI Chat FAB */}
+      <Link 
+        to="/chat" 
+        className="fixed bottom-6 right-6 z-50 bg-primary text-white p-4 rounded-full shadow-[0_10px_30px_rgba(223,35,36,0.4)] hover:bg-app-bg-dark hover:scale-110 transition-all duration-300 group flex items-center justify-center gap-0"
+      >
+        <Sparkles size={24} className="group-hover:animate-pulse" />
+        <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-500 ease-in-out whitespace-nowrap text-xs font-black uppercase tracking-widest pl-0 group-hover:pl-2">
+          Garage AI
+        </span>
+      </Link>
 
       {/* Footer */}
       <footer className="bg-app-bg-dark text-gray-400 pt-16 pb-8 border-t border-white/5">
