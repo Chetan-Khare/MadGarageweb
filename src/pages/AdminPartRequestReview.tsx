@@ -62,8 +62,8 @@ const AdminPartRequestReview: React.FC = () => {
 
     const stats = {
         pending: requests.filter(r => r.status === 'PENDING').length,
-        inProgress: requests.filter(r => r.status === 'IN_PROGRESS' || r.status === 'ORDERED').length,
-        completed: requests.filter(r => r.status === 'COMPLETED').length
+        inProgress: requests.filter(r => r.status === 'QUOTED').length,
+        completed: requests.filter(r => r.status === 'FULFILLED').length
     };
 
     return (
@@ -99,8 +99,9 @@ const AdminPartRequestReview: React.FC = () => {
                         >
                             <option value="ALL">All Status</option>
                             <option value="PENDING">Pending</option>
-                            <option value="IN_PROGRESS">In Progress</option>
-                            <option value="COMPLETED">Completed</option>
+                            <option value="QUOTED">In Sourcing / Quoted</option>
+                            <option value="FULFILLED">Fulfilled</option>
+                            <option value="UNAVAILABLE">Unavailable</option>
                         </select>
                     </div>
                 </div>
@@ -179,25 +180,27 @@ const AdminPartRequestReview: React.FC = () => {
                                         </td>
                                         <td className="p-6">
                                             <div className="flex items-center justify-between gap-4">
-                                                <span className={`text-[8px] font-black uppercase px-3 py-1 rounded-full border ${req.status === 'PENDING' ? 'text-orange-500 border-orange-500/20 bg-orange-500/5' :
-                                                        req.status === 'COMPLETED' ? 'text-green-500 border-green-500/20 bg-green-500/5' :
-                                                            'text-blue-500 border-blue-500/20 bg-blue-500/5'
-                                                    }`}>
+                                                <span className={`text-[8px] font-black uppercase px-3 py-1 rounded-full border ${
+                                                    req.status === 'PENDING' ? 'text-orange-500 border-orange-500/20 bg-orange-500/5' :
+                                                    req.status === 'FULFILLED' ? 'text-green-500 border-green-500/20 bg-green-500/5' :
+                                                    req.status === 'UNAVAILABLE' ? 'text-red-500 border-red-500/20 bg-red-500/5' :
+                                                    'text-blue-500 border-blue-500/20 bg-blue-500/5'
+                                                }`}>
                                                     {req.status}
                                                 </span>
 
                                                 <div className="flex gap-2">
                                                     <button
                                                         disabled={updatingId === req.id}
-                                                        onClick={() => handleStatusUpdate(req.id, 'IN_PROGRESS')}
+                                                        onClick={() => handleStatusUpdate(req.id, 'QUOTED')}
                                                         className="h-8 w-8 bg-white/5 border border-white/5 rounded-lg flex items-center justify-center text-blue-400 hover:bg-blue-500 hover:text-white transition-all"
-                                                        title="Sourcing"
+                                                        title="Mark Quoted / In Sourcing"
                                                     ><RefreshCw size={14} className={updatingId === req.id ? 'animate-spin' : ''} /></button>
                                                     <button
                                                         disabled={updatingId === req.id}
-                                                        onClick={() => handleStatusUpdate(req.id, 'COMPLETED')}
+                                                        onClick={() => handleStatusUpdate(req.id, 'FULFILLED')}
                                                         className="h-8 w-8 bg-white/5 border border-white/5 rounded-lg flex items-center justify-center text-green-500 hover:bg-green-500 hover:text-white transition-all"
-                                                        title="Resolve"
+                                                        title="Resolve / Fulfill"
                                                     ><CheckCircle2 size={14} /></button>
                                                 </div>
                                             </div>

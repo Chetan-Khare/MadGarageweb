@@ -431,6 +431,12 @@ const OrderDetailsPage: React.FC = () => {
                                             <span>₹{order.platformFee?.toLocaleString()}</span>
                                         </div>
                                     )}
+                                    {(order.totalSavings > (order.discountAmount || 0)) && (
+                                        <div className="flex justify-between text-xs font-bold text-green-400 uppercase tracking-widest">
+                                            <span>Retail Discount</span>
+                                            <span>- ₹{(order.totalSavings - (order.discountAmount || 0))?.toLocaleString()}</span>
+                                        </div>
+                                    )}
                                     {(order.discountAmount > 0 || order.appliedCouponCode) && (
                                         <div className="flex justify-between text-xs font-bold text-green-400 uppercase tracking-widest animate-pulse">
                                             <span>Protocol Discount {order.appliedCouponCode && `[${order.appliedCouponCode}]`}</span>

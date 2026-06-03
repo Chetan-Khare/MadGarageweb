@@ -74,7 +74,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         id: product.id,
         partName: product.partName,
         price: price,
-        originalPrice: product.originalPrice || (price / 0.9), // Estimate 10% markup if not provided
+        originalPrice: product.mrp || product.originalPrice,
         imageUrl: product.imageUrl,
         category: product.category,
         brand: product.brand,

@@ -159,6 +159,8 @@ const CheckoutPage: React.FC = () => {
     if (checkoutItems.length === 0) return null;
 
     const subtotal = buyNowProduct ? (buyNowProduct.garagePrice || buyNowProduct.price || 0) * buyNowQuantity : cartSubtotal;
+    const itemSavings = buyNowProduct ? (((buyNowProduct.mrp || buyNowProduct.originalPrice) > (buyNowProduct.garagePrice || buyNowProduct.price || 0)) ? ((buyNowProduct.mrp || buyNowProduct.originalPrice) - (buyNowProduct.garagePrice || buyNowProduct.price || 0)) * buyNowQuantity : 0) : savings;
+    const baseTotal = subtotal + itemSavings;
 
     const STATE_ZONES: Record<string, number> = {
         'delhi': 1, 'haryana': 1, 'punjab': 1, 'rajasthan': 1,
@@ -189,6 +191,8 @@ const CheckoutPage: React.FC = () => {
         const freightBaseFee = config.freightBaseFee;
         const freightPerKgRate = config.freightPerKgRate;
 
+        let maxStandardFee = 0;
+
         for (const item of checkoutItems) {
             const qty = item.quantity || 1;
             const sClass = item.shippingClass || 'STANDARD';
@@ -209,17 +213,20 @@ const CheckoutPage: React.FC = () => {
                     break;
                 }
                 case 'FRAGILE': {
-                    totalShipping += (baseStandardFee + fragileSurcharge) * qty;
+                    maxStandardFee = baseStandardFee;
+                    totalShipping += (fragileSurcharge * qty);
                     hasFragileOrFreight = true;
                     break;
                 }
                 case 'STANDARD':
                 default: {
-                    totalShipping += baseStandardFee * qty;
+                    maxStandardFee = baseStandardFee;
                     break;
                 }
             }
         }
+        
+        totalShipping += maxStandardFee;
 
         // Apply free threshold only if no fragile/freight/custom parts
         if (!hasFragileOrFreight && subtotal >= config.freeThreshold) {
@@ -695,16 +702,16 @@ const CheckoutPage: React.FC = () => {
                                 <div className="space-y-4 relative z-10">
                                     <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-gray-500">
                                         <span>Subtotal</span>
-                                        <span className="text-white">₹{subtotal.toLocaleString()}</span>
+                                        <span className="text-white">₹{baseTotal.toLocaleString()}</span>
                                     </div>
                                     <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-gray-500">
                                         <span>Secure Infrastructure Fee</span>
                                         <span className="text-white">₹{platformFee.toLocaleString()}</span>
                                     </div>
-                                    {savings > 0 && userRole === 'ROLE_GARAGE' && (
+                                    {itemSavings > 0 && (
                                         <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-green-500">
-                                            <span>Wholesale Discount</span>
-                                            <span>-₹{Math.round(savings).toLocaleString()}</span>
+                                            <span>{userRole === 'ROLE_GARAGE' ? 'Wholesale Discount' : 'Retail Discount'}</span>
+                                            <span>-₹{Math.round(itemSavings).toLocaleString()}</span>
                                         </div>
                                     )}
                                     <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-gray-500">

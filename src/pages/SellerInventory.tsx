@@ -79,11 +79,12 @@ const SellerInventory: React.FC = () => {
             isManualRating: editingProduct.isManualRating,
             rating: editingProduct.rating,
             sellerResponse: editingProduct.sellerResponse,
-            flagged: editingProduct.flagged,
             flagReason: editingProduct.flagReason,
             wholesale: editingProduct.wholesale !== false,
             mrp: editingProduct.mrp || editingProduct.price,
-            discountPercentage: editingProduct.discountPercentage || null
+            discountPercentage: editingProduct.discountPercentage || null,
+            shippingClass: editingProduct.shippingClass || 'STANDARD',
+            weightKg: editingProduct.weightKg || 1.0
         };
 
         try {
@@ -381,6 +382,24 @@ const SellerInventory: React.FC = () => {
                                     options={['Brakes', 'Engine', 'Suspension', 'Exhaust', 'Electrical', 'Exterior', 'Interior']}
                                     onChange={v => setEditingProduct({ ...editingProduct, category: v })}
                                 />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-8">
+                                <ModernSelect 
+                                    label="Shipping Tier"
+                                    value={editingProduct.shippingClass || 'STANDARD'}
+                                    options={[
+                                        { label: 'Standard', value: 'STANDARD' },
+                                        { label: 'Fragile (Surcharge)', value: 'FRAGILE' },
+                                        { label: 'Heavy Freight', value: 'HEAVY_FREIGHT' },
+                                        { label: 'Custom Rate', value: 'CUSTOM_RATE' }
+                                    ]}
+                                    onChange={v => setEditingProduct({ ...editingProduct, shippingClass: v })}
+                                />
+                                <div className="flex flex-col">
+                                    <label className="text-[10px] font-black uppercase text-gray-400 mb-3 ml-2">Weight (kg)</label>
+                                    <input type="number" step="0.1" className="bg-gray-50 border border-gray-100 p-4 rounded-2xl text-sm font-bold text-app-bg-dark outline-none focus:border-primary transition-all" value={editingProduct.weightKg || ''} onChange={e => setEditingProduct({ ...editingProduct, weightKg: Number(e.target.value) })} placeholder="e.g. 1.5" />
+                                </div>
                             </div>
 
                             {editingProduct.id && editingProduct.fitmentCategory !== 'UNIVERSAL' && (

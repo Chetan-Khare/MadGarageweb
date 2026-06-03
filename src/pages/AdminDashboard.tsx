@@ -21,7 +21,7 @@ interface AdminStats {
 }
 
 const AdminDashboard: React.FC = () => {
-    const { user, logout } = useAuth();
+    const { user, role, logout } = useAuth();
     const navigate = useNavigate();
     const [stats, setStats] = useState<AdminStats | null>(null);
     const [loading, setLoading] = useState(true);
@@ -40,6 +40,16 @@ const AdminDashboard: React.FC = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [formError, setFormError] = useState('');
     const [formSuccess, setFormSuccess] = useState('');
+
+    useEffect(() => {
+        if (role) {
+            if (role === 'ROLE_WORKER') {
+                navigate('/worker', { replace: true });
+            } else if (role !== 'ROLE_ADMIN') {
+                navigate('/', { replace: true });
+            }
+        }
+    }, [role, navigate]);
 
 
 

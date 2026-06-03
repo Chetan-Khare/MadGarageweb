@@ -108,9 +108,8 @@ const ProductDetailsPage: React.FC = () => {
 
     const isGarage = role === 'ROLE_GARAGE';
     const activePrice = isGarage && product.wholesale && product.garagePrice ? product.garagePrice : (product.price || 0);
-    const rawMrpPrice = product.mrp || product.originalPrice;
-    const mrpPrice = (rawMrpPrice && rawMrpPrice > activePrice) ? rawMrpPrice : (activePrice / 0.9);
-    const hasDiscount = mrpPrice > activePrice;
+    const mrpPrice = product.mrp || product.originalPrice;
+    const hasDiscount = mrpPrice && mrpPrice > activePrice;
 
     return (
         <div className="min-h-screen bg-white font-inter">

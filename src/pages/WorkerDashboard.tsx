@@ -53,7 +53,7 @@ const WorkerDashboard: React.FC = () => {
                     <Activity size={48} className="text-red-500 mx-auto" />
                     <h2 className="text-xl font-black italic uppercase text-red-500">Sync Failure</h2>
                     <p className="text-sm text-red-400/80">{syncError}</p>
-                    <button 
+                    <button
                         onClick={fetchAnalytics}
                         className="mt-4 px-6 py-3 bg-red-500/20 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all text-xs font-black uppercase tracking-widest"
                     >
@@ -89,18 +89,18 @@ const WorkerDashboard: React.FC = () => {
                 <div className="flex items-center gap-4 w-full md:w-auto">
                     <div className="relative flex-1 md:w-80 hidden md:block">
                         <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                        <input 
-                            type="text" 
-                            placeholder="Global Entity Search..." 
+                        <input
+                            type="text"
+                            placeholder="Global Entity Search..."
                             className="w-full bg-white/5 border border-white/10 p-3 pl-12 rounded-2xl text-sm font-bold outline-none focus:border-primary transition-all"
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
                         />
                     </div>
-                    
+
                     <div className="flex items-center gap-4">
-                        <button 
-                            onClick={() => navigate('/profile')} 
+                        <button
+                            onClick={() => navigate('/profile')}
                             className="h-10 w-10 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-primary hover:border-primary/50 transition-all group overflow-hidden"
                         >
                             {(user?.profileImageUrl && user.profileImageUrl.startsWith('/uploads/')) ? (
@@ -121,16 +121,17 @@ const WorkerDashboard: React.FC = () => {
                 <div className="space-y-2">
                     <p className="text-[10px] font-black uppercase text-primary tracking-[0.4em]">Active Duty Station</p>
                     <h1 className="text-4xl md:text-5xl font-black italic tracking-tighter uppercase leading-none">
-                        Welcome, <span className="text-gray-400">{user?.name?.split(' ')[0] || 'Worker'}</span>
+                        Welcome, <br />
+                        <span className="text-gray-400 inline-block ml-28 md:ml-28 mt-6">Operator</span>
                     </h1>
                 </div>
 
                 {/* Metrics Grid */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-                    <StatCard onClick={() => navigate('/admin/users')} icon={<Users size={20}/>} value={stats?.totalUsers || 0} label="Network Users" />
-                    <StatCard onClick={() => navigate('/admin/parts-db')} icon={<Package size={20}/>} value={stats?.totalProducts || 0} label="Active Inventory" />
-                    <StatCard onClick={() => navigate('/admin/vehicles')} icon={<Car size={20}/>} value={stats?.totalVehicles || 0} label="Vehicle Specs" />
-                    <StatCard onClick={() => navigate('/admin/requests')} icon={<FileText size={20}/>} value="GO" label="Open Requests" />
+                    <StatCard onClick={() => navigate('/admin/users')} icon={<Users size={20} />} value={stats?.totalUsers || 0} label="Network Users" />
+                    <StatCard onClick={() => navigate('/admin/parts-db')} icon={<Package size={20} />} value={stats?.totalProducts || 0} label="Active Inventory" />
+                    <StatCard onClick={() => navigate('/admin/vehicles')} icon={<Car size={20} />} value={stats?.totalVehicles || 0} label="Vehicle Specs" />
+                    <StatCard onClick={() => navigate('/admin/requests')} icon={<FileText size={20} />} value="GO" label="Open Requests" />
                 </div>
 
                 {/* Operations Grid */}
@@ -141,28 +142,28 @@ const WorkerDashboard: React.FC = () => {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                        <OperationCard 
+                        <OperationCard
                             title="Partner Audits"
                             desc="Review & Contact Applicants"
                             icon={<Users size={32} />}
                             color="text-blue-500"
                             onClick={() => navigate('/admin/partners')}
                         />
-                        <OperationCard 
+                        <OperationCard
                             title="Order Pipeline"
                             desc="Monitor Shipping & Payouts"
                             icon={<ShoppingCart size={32} />}
                             color="text-red-500"
                             onClick={() => navigate('/admin/orders')}
                         />
-                        <OperationCard 
+                        <OperationCard
                             title="Inventory Control"
                             desc="Audit Parts & Flag Issues"
                             icon={<Package size={32} />}
                             color="text-amber-500"
                             onClick={() => navigate('/admin/inventory')}
                         />
-                        <OperationCard 
+                        <OperationCard
                             title="Part Requests"
                             desc="Source & Fulfill Demands"
                             icon={<FileText size={32} />}
@@ -222,7 +223,7 @@ const StatCard: React.FC<{ icon: React.ReactNode, value: number | string, label:
 );
 
 const OperationCard: React.FC<{ title: string, desc: string, icon: React.ReactNode, color: string, onClick: () => void }> = ({ title, desc, icon, color, onClick }) => (
-    <button 
+    <button
         onClick={onClick}
         className="text-left bg-[#121216] border border-white/5 p-10 rounded-[2.5rem] group hover:bg-white/[0.02] hover:border-white/10 transition-all relative overflow-hidden"
     >

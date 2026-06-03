@@ -26,6 +26,7 @@ const AddProductPage: React.FC = () => {
         brand: 'MAD GARAGE',
         sku: `MG-${Math.floor(Math.random() * 10000)}`,
         category: 'Engine',
+        mrp: '',
         price: '',
         stockQuantity: '10',
         description: '',
@@ -67,6 +68,7 @@ const AddProductPage: React.FC = () => {
                 brand: editProduct.brand || 'MAD GARAGE',
                 sku: editProduct.sku || '',
                 category: editProduct.category || 'Engine',
+                mrp: editProduct.mrp ? String(editProduct.mrp) : (editProduct.originalPrice ? String(editProduct.originalPrice) : ''),
                 price: editProduct.price ? String(editProduct.price) : '',
                 stockQuantity: String(editProduct.stockQuantity || editProduct.stock || '0'),
                 description: editProduct.description || '',
@@ -242,6 +244,7 @@ const AddProductPage: React.FC = () => {
 
             const payload = {
                 ...formData,
+                mrp: formData.mrp ? parseFloat(formData.mrp) : parseFloat(formData.price),
                 price: parseFloat(formData.price),
                 stockQuantity: parseInt(formData.stockQuantity),
                 fitmentCategory: formData.isUniversal ? 'UNIVERSAL' : formData.fitmentCategory,
@@ -344,11 +347,11 @@ const AddProductPage: React.FC = () => {
                                         onChange={v => setFormData({...formData, brand: v})}
                                         placeholder="Select Brand"
                                     />
-                                    <div className="space-y-4">
-                                        <label className="text-[10px] font-black uppercase text-gray-500 tracking-widest ml-2">SKU Code</label>
+                                    <div className="flex flex-col justify-end">
+                                        <label className="text-[10px] font-black uppercase text-gray-500 tracking-widest mb-2 ml-2">SKU Code</label>
                                         <input 
                                             placeholder="SKU Code"
-                                            className="w-full bg-black/40 border border-white/5 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
+                                            className="w-full bg-black/40 border border-white/5 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all flex-1 max-h-[58px]"
                                             value={formData.sku}
                                             onChange={e => setFormData({...formData, sku: e.target.value})}
                                         />
@@ -360,16 +363,29 @@ const AddProductPage: React.FC = () => {
                                 <label className="text-[10px] font-black uppercase text-gray-500 tracking-widest ml-2">Market Data</label>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="relative">
+                                        <span className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 font-bold">₹</span>
+                                        <input 
+                                            required
+                                            type="number"
+                                            placeholder="MRP (Max Retail Price)"
+                                            className="w-full bg-black/40 border border-white/5 p-5 pl-10 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
+                                            value={formData.mrp}
+                                            onChange={e => setFormData({...formData, mrp: e.target.value})}
+                                        />
+                                    </div>
+                                    <div className="relative">
                                         <span className="absolute left-5 top-1/2 -translate-y-1/2 text-primary font-bold">₹</span>
                                         <input 
                                             required
                                             type="number"
-                                            placeholder="Price"
+                                            placeholder="MG Selling Price"
                                             className="w-full bg-black/40 border border-white/5 p-5 pl-10 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
                                             value={formData.price}
                                             onChange={e => setFormData({...formData, price: e.target.value})}
                                         />
                                     </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <input 
                                             required
@@ -382,8 +398,6 @@ const AddProductPage: React.FC = () => {
                                         />
                                         {['USED', 'REFURBISHED'].includes(formData.condition) && <p className="text-[8px] font-black uppercase text-orange-500 mt-2 ml-2 tracking-widest leading-tight">Locked to 1 unit</p>}
                                     </div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
                                     <select 
                                         className="w-full bg-black/40 border border-white/5 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary appearance-none transition-all"
                                         value={formData.condition}
@@ -400,6 +414,8 @@ const AddProductPage: React.FC = () => {
                                         <option value="REFURBISHED">Refurbished</option>
                                         <option value="USED">Used</option>
                                     </select>
+                                </div>
+                                <div>
                                     <select 
                                         className="w-full bg-black/40 border border-white/5 p-5 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary appearance-none transition-all"
                                         value={formData.category}
