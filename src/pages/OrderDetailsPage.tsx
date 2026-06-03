@@ -173,6 +173,7 @@ const OrderDetailsPage: React.FC = () => {
     };
 
     const handleSubmitReturn = async () => {
+        if (submittingReturn) return;
         if (!returnDescription.trim()) return;
         
         const selectedItems = returnItems.filter(item => item.quantity > 0).map(item => ({
@@ -342,7 +343,7 @@ const OrderDetailsPage: React.FC = () => {
                                         <h3 className="text-sm font-black italic uppercase tracking-tighter text-white">Fitting Coordination Terminal</h3>
                                     </div>
                                     <div className="bg-white/20 backdrop-blur-md px-6 py-2 rounded-full border border-white/20">
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-white">Status: {order.fittingStatus?.replace('_', ' ')}</span>
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-white">Status: {order.fittingStatus?.replace(/_/g, ' ')}</span>
                                     </div>
                                 </div>
                                 <div className="p-10 grid grid-cols-1 md:grid-cols-2 gap-10">
@@ -530,7 +531,7 @@ const OrderDetailsPage: React.FC = () => {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
                                         <h4 className="text-[9px] font-black uppercase text-primary tracking-widest mb-4">Reason for Return</h4>
-                                        <p className="text-[11px] font-bold text-app-bg-dark uppercase">{activeReturn.reason?.replace('_', ' ')}</p>
+                                        <p className="text-[11px] font-bold text-app-bg-dark uppercase">{activeReturn.reason?.replace(/_/g, ' ')}</p>
                                         <p className="text-[10px] text-gray-500 mt-4 leading-relaxed font-medium italic">"{activeReturn.description}"</p>
                                     </div>
                                     <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">

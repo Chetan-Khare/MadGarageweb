@@ -191,8 +191,6 @@ const CheckoutPage: React.FC = () => {
         const freightBaseFee = config.freightBaseFee;
         const freightPerKgRate = config.freightPerKgRate;
 
-        let maxStandardFee = 0;
-
         for (const item of checkoutItems) {
             const qty = item.quantity || 1;
             const sClass = item.shippingClass || 'STANDARD';
@@ -213,20 +211,17 @@ const CheckoutPage: React.FC = () => {
                     break;
                 }
                 case 'FRAGILE': {
-                    maxStandardFee = baseStandardFee;
-                    totalShipping += (fragileSurcharge * qty);
+                    totalShipping += (baseStandardFee * qty) + (fragileSurcharge * qty);
                     hasFragileOrFreight = true;
                     break;
                 }
                 case 'STANDARD':
                 default: {
-                    maxStandardFee = baseStandardFee;
+                    totalShipping += baseStandardFee * qty;
                     break;
                 }
             }
         }
-        
-        totalShipping += maxStandardFee;
 
         // Apply free threshold only if no fragile/freight/custom parts
         if (!hasFragileOrFreight && subtotal >= config.freeThreshold) {
@@ -330,7 +325,10 @@ const CheckoutPage: React.FC = () => {
                     // 4. Verify Payment on Backend
                     try {
                         setLoading(true);
-                        await apiClient.post(`/orders/${orderId}/verify-payment?paymentId=${response.razorpay_payment_id}&signature=${response.razorpay_signature}`);
+                        await apiClient.post(`/orders/${orderId}/verify-payment`, {
+                            paymentId: response.razorpay_payment_id,
+                            signature: response.razorpay_signature
+                        });
 
                         if (!buyNowProduct) clearCart();
                         setSuccess(true);

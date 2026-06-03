@@ -263,7 +263,7 @@ const ProductDetailsPage: React.FC = () => {
                                         {cleanDescriptionForPolicy(product.description, product.isReturnable) || 'No description provided. Please contact Mad Garage support for technical specifications and fitment advice.'}
                                         {product.isReturnable ? (
                                             <p className="mt-4 text-xs font-bold text-green-600 uppercase tracking-widest flex items-center gap-2">
-                                                <ShieldCheck size={14} /> 10-Day Easy Return Policy Included
+                                                <ShieldCheck size={14} /> 7-Day Easy Return Policy Included
                                             </p>
                                         ) : (
                                             <p className="mt-4 text-xs font-bold text-red-600 uppercase tracking-widest flex items-center gap-2">

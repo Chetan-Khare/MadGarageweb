@@ -103,18 +103,25 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const latest = await productService.getBulkStock(ids);
       
       let removedParts: string[] = [];
-      const updatedCart = cart.filter(item => {
+      const updatedCart = cart.reduce((acc, item) => {
         const fresh = latest.find((p: any) => p.id === item.id);
-        const isProductActive = fresh.active === true || fresh.isActive === true;
-        if (!fresh || fresh.stockQuantity === 0 || !isProductActive) {
+        if (!fresh || fresh.stockQuantity === 0 || !(fresh.active === true || fresh.isActive === true)) {
           removedParts.push(item.partName);
-          return false;
+          return acc;
         }
-        return true;
-      });
+        const isGarage = role === 'ROLE_GARAGE';
+        const price = (isGarage && fresh.garagePrice) ? fresh.garagePrice : (fresh.price || item.price);
+        acc.push({
+          ...item,
+          price: price,
+          originalPrice: fresh.mrp || fresh.originalPrice || item.originalPrice
+        });
+        return acc;
+      }, [] as CartItem[]);
 
+      // Always sync prices from server, even if no items were removed
+      setCart(updatedCart);
       if (removedParts.length > 0) {
-        setCart(updatedCart);
         alert(`The following item(s) are now out of stock and have been removed from your cart:\n${removedParts.map(name => `"${name}"`).join('\n')}`);
       }
     } catch (e) {
