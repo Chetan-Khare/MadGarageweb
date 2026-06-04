@@ -361,9 +361,9 @@ const AdminUserManagement: React.FC = () => {
 
             {/* Edit Modal - Restricted to Email/Phone only */}
             {editingUser && (
-                <div className="fixed inset-0 z-[60] overflow-y-auto bg-black/80 backdrop-blur-md py-12">
-                    <div className="flex min-h-full items-center justify-center p-6">
-                        <div className="bg-[#121216] border border-white/10 w-full max-w-lg rounded-[2.5rem] p-8 md:p-10 space-y-8 shadow-2xl relative">
+                <div className="fixed inset-0 z-[60] overflow-y-auto bg-black/80 backdrop-blur-md py-8">
+                    <div className="flex min-h-full items-start justify-center p-6">
+                        <div className="bg-[#121216] border border-white/10 w-full max-w-lg rounded-[2.5rem] p-8 md:p-10 space-y-8 shadow-2xl relative my-auto">
                 <button 
                     onClick={() => setEditingUser(null)}
                     className="absolute top-10 right-10 text-gray-500 hover:text-primary transition-all p-2 rounded-xl bg-white/5"
@@ -481,33 +481,25 @@ const AdminUserManagement: React.FC = () => {
                                             onChange={e => setEditForm({...editForm, address: e.target.value})}
                                         />
                                     </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <label className="text-[9px] font-black uppercase text-gray-500 ml-2">Building / Floor</label>
-                                            <div className="flex gap-2">
-                                                <input 
-                                                    className="flex-1 bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold outline-none focus:border-primary transition-all"
-                                                    placeholder="Building Name"
-                                                    value={editForm.buildingName}
-                                                    onChange={e => setEditForm({...editForm, buildingName: e.target.value})}
-                                                />
-                                                <input 
-                                                    className="w-24 bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold outline-none focus:border-primary transition-all"
-                                                    placeholder="Floor"
-                                                    value={editForm.floor}
-                                                    onChange={e => setEditForm({...editForm, floor: e.target.value})}
-                                                />
-                                            </div>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[9px] font-black uppercase text-gray-500 ml-2">Pincode</label>
-                                            <input 
-                                                className="bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold w-full outline-none focus:border-primary transition-all"
-                                                placeholder="400018"
-                                                value={editForm.pincode}
-                                                onChange={e => setEditForm({...editForm, pincode: e.target.value})}
-                                            />
-                                        </div>
+                                    <div className="grid grid-cols-3 gap-3">
+                                        <input 
+                                            className="col-span-1 bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold outline-none focus:border-primary transition-all"
+                                            placeholder="Building"
+                                            value={editForm.buildingName}
+                                            onChange={e => setEditForm({...editForm, buildingName: e.target.value})}
+                                        />
+                                        <input 
+                                            className="col-span-1 bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold outline-none focus:border-primary transition-all"
+                                            placeholder="Floor"
+                                            value={editForm.floor}
+                                            onChange={e => setEditForm({...editForm, floor: e.target.value})}
+                                        />
+                                        <input 
+                                            className="col-span-1 bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold outline-none focus:border-primary transition-all"
+                                            placeholder="Pincode"
+                                            value={editForm.pincode}
+                                            onChange={e => setEditForm({...editForm, pincode: e.target.value})}
+                                        />
                                     </div>
                                     <div className="flex items-center justify-between ml-2">
                                         <label className="text-[9px] font-black uppercase text-gray-500">Geographic Coordinates</label>
@@ -568,9 +560,9 @@ const AdminUserManagement: React.FC = () => {
             )}
             {/* Provision Modal */}
             {showProvisionModal && (
-                <div className="fixed inset-0 z-[60] overflow-y-auto bg-black/80 backdrop-blur-md py-12">
-                    <div className="flex min-h-full items-center justify-center p-6">
-                        <form onSubmit={handleProvision} className="bg-[#121216] border border-white/10 w-full max-w-lg rounded-[2.5rem] p-8 md:p-10 space-y-8 shadow-2xl relative">
+                <div className="fixed inset-0 z-[60] overflow-y-auto bg-black/80 backdrop-blur-md py-8">
+                    <div className="flex min-h-full items-start justify-center p-6">
+                        <form onSubmit={handleProvision} className="bg-[#121216] border border-white/10 w-full max-w-lg rounded-[2.5rem] p-8 md:p-10 space-y-8 shadow-2xl relative my-auto">
                         <button 
                             type="button"
                             onClick={() => setShowProvisionModal(false)}
@@ -681,23 +673,21 @@ const AdminUserManagement: React.FC = () => {
                                         value={provisionForm.address}
                                         onChange={e => setProvisionForm({...provisionForm, address: e.target.value})}
                                     />
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="flex gap-2">
-                                            <input 
-                                                className="flex-1 bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold outline-none focus:border-primary transition-all"
-                                                placeholder="Building Name"
-                                                value={provisionForm.buildingName}
-                                                onChange={e => setProvisionForm({...provisionForm, buildingName: e.target.value})}
-                                            />
-                                            <input 
-                                                className="w-24 bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold outline-none focus:border-primary transition-all"
-                                                placeholder="Floor"
-                                                value={provisionForm.floor}
-                                                onChange={e => setProvisionForm({...provisionForm, floor: e.target.value})}
-                                            />
-                                        </div>
+                                    <div className="grid grid-cols-3 gap-3">
                                         <input 
-                                            className="bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold w-full outline-none focus:border-primary transition-all"
+                                            className="col-span-1 bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold outline-none focus:border-primary transition-all"
+                                            placeholder="Building"
+                                            value={provisionForm.buildingName}
+                                            onChange={e => setProvisionForm({...provisionForm, buildingName: e.target.value})}
+                                        />
+                                        <input 
+                                            className="col-span-1 bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold outline-none focus:border-primary transition-all"
+                                            placeholder="Floor"
+                                            value={provisionForm.floor}
+                                            onChange={e => setProvisionForm({...provisionForm, floor: e.target.value})}
+                                        />
+                                        <input 
+                                            className="col-span-1 bg-white/5 border border-white/10 p-4 rounded-2xl text-sm font-bold outline-none focus:border-primary transition-all"
                                             placeholder="Pincode"
                                             value={provisionForm.pincode}
                                             onChange={e => setProvisionForm({...provisionForm, pincode: e.target.value})}

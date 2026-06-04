@@ -34,7 +34,16 @@ const AdminDashboard: React.FC = () => {
         password: '',
         confirmPassword: '',
         phone: '',
-        role: 'ROLE_SELLER' as 'ROLE_SELLER' | 'ROLE_GARAGE' | 'ROLE_ADMIN'
+        role: 'ROLE_SELLER' as 'ROLE_SELLER' | 'ROLE_GARAGE' | 'ROLE_WORKER' | 'ROLE_ADMIN',
+        isTieUp: false,
+        city: '',
+        state: '',
+        address: '',
+        buildingName: '',
+        floor: '',
+        pincode: '',
+        latitude: '',
+        longitude: ''
     });
     const [creatingUser, setCreatingUser] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
@@ -155,6 +164,13 @@ const AdminDashboard: React.FC = () => {
             return;
         }
 
+        if (newUser.role === 'ROLE_GARAGE' || newUser.role === 'ROLE_SELLER') {
+            if (!newUser.address || !newUser.city || !newUser.state || !newUser.pincode) {
+                setFormError(`BUSINESS INTEGRITY ERROR: Full address (Street, City, State, Pincode) is mandatory for all ${newUser.role === 'ROLE_GARAGE' ? 'Garages' : 'Sellers'}.`);
+                return;
+            }
+        }
+
         setCreatingUser(true);
         try {
             const payload = {
@@ -163,11 +179,20 @@ const AdminDashboard: React.FC = () => {
                 email: newUser.email,
                 password: newUser.password,
                 phone: newUser.phone,
-                role: newUser.role
+                role: newUser.role,
+                isTieUp: newUser.isTieUp,
+                city: newUser.city,
+                state: newUser.state,
+                address: newUser.address,
+                buildingName: newUser.buildingName,
+                floor: newUser.floor,
+                pincode: newUser.pincode,
+                latitude: newUser.latitude,
+                longitude: newUser.longitude
             };
             await apiClient.post('/admin/users', payload);
             setFormSuccess(`${newUser.role} account provisioned!`);
-            setNewUser({ ...newUser, firstName: '', lastName: '', email: '', password: '', confirmPassword: '', phone: '' });
+            setNewUser({ ...newUser, firstName: '', lastName: '', email: '', password: '', confirmPassword: '', phone: '', isTieUp: false, city: '', state: '', address: '', buildingName: '', floor: '', pincode: '', latitude: '', longitude: '' });
             fetchAnalytics();
         } catch (err: any) {
             setFormError(err.response?.data || 'Provisioning failed.');
@@ -476,6 +501,98 @@ const AdminDashboard: React.FC = () => {
                                         onChange={e => setNewUser({ ...newUser, confirmPassword: e.target.value })}
                                     />
                                 </div>
+
+                                {/* Garage / Seller Network Provisioning */}
+                                {(newUser.role === 'ROLE_GARAGE' || newUser.role === 'ROLE_SELLER') && (
+                                    <div className="p-6 bg-primary/5 border border-white/5 rounded-2xl space-y-4">
+                                        {newUser.role === 'ROLE_GARAGE' && (
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-[9px] font-black uppercase text-primary italic">Garage Network Provisioning</span>
+                                                <label className="flex items-center gap-2 cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={newUser.isTieUp}
+                                                        onChange={e => setNewUser({ ...newUser, isTieUp: e.target.checked })}
+                                                        className="accent-primary"
+                                                    />
+                                                    <span className="text-[9px] font-black uppercase text-gray-500">Auto-Verify Tie-up</span>
+                                                </label>
+                                            </div>
+                                        )}
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <input
+                                                type="text"
+                                                placeholder="Operating City"
+                                                className="w-full bg-black/40 border border-white/5 p-4 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
+                                                value={newUser.city}
+                                                onChange={e => setNewUser({ ...newUser, city: e.target.value })}
+                                            />
+                                            <input
+                                                type="text"
+                                                placeholder="State"
+                                                className="w-full bg-black/40 border border-white/5 p-4 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
+                                                value={newUser.state}
+                                                onChange={e => setNewUser({ ...newUser, state: e.target.value })}
+                                            />
+                                        </div>
+                                        <input
+                                            type="text"
+                                            placeholder="Street Address"
+                                            className="w-full bg-black/40 border border-white/5 p-4 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
+                                            value={newUser.address}
+                                            onChange={e => setNewUser({ ...newUser, address: e.target.value })}
+                                        />
+                                        <div className="grid grid-cols-3 gap-3">
+                                            <input
+                                                type="text"
+                                                placeholder="Building"
+                                                className="bg-black/40 border border-white/5 p-4 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
+                                                value={newUser.buildingName}
+                                                onChange={e => setNewUser({ ...newUser, buildingName: e.target.value })}
+                                            />
+                                            <input
+                                                type="text"
+                                                placeholder="Floor"
+                                                className="bg-black/40 border border-white/5 p-4 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
+                                                value={newUser.floor}
+                                                onChange={e => setNewUser({ ...newUser, floor: e.target.value })}
+                                            />
+                                            <input
+                                                type="text"
+                                                placeholder="Pincode"
+                                                className="bg-black/40 border border-white/5 p-4 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
+                                                value={newUser.pincode}
+                                                onChange={e => setNewUser({ ...newUser, pincode: e.target.value })}
+                                            />
+                                        </div>
+                                        <div className="flex items-center justify-between ml-1">
+                                            <label className="text-[9px] font-black uppercase text-gray-500">Geographic Coordinates</label>
+                                            <button
+                                                type="button"
+                                                onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(newUser.address + ' ' + newUser.city)}`, '_blank')}
+                                                className="text-[8px] font-black text-primary uppercase hover:underline"
+                                            >
+                                                Find on Maps
+                                            </button>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <input
+                                                type="text"
+                                                placeholder="Latitude"
+                                                className="w-full bg-black/40 border border-white/5 p-4 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
+                                                value={newUser.latitude}
+                                                onChange={e => setNewUser({ ...newUser, latitude: e.target.value })}
+                                            />
+                                            <input
+                                                type="text"
+                                                placeholder="Longitude"
+                                                className="w-full bg-black/40 border border-white/5 p-4 rounded-2xl text-sm font-bold text-white outline-none focus:border-primary transition-all"
+                                                value={newUser.longitude}
+                                                onChange={e => setNewUser({ ...newUser, longitude: e.target.value })}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             <button
