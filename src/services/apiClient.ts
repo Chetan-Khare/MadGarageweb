@@ -32,9 +32,6 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401) {
         if (import.meta.env.DEV) console.warn('API returned 401 Unauthorized. Session expired or account revoked.');
         localStorage.removeItem('token');
-        if (window.location.pathname !== '/login') {
-            window.location.href = '/login?expired=true';
-        }
     }
     
     if (import.meta.env.DEV) {

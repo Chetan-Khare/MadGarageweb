@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Send, Camera, User, 
-  Bot, Trash2, ShoppingCart, Loader2,
+  Bot, Trash2, ShoppingCart,
   ChevronLeft
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import apiClient, { BASE_SERVER_URL } from '../services/apiClient';
 import { useAuth } from '../context/AuthContext';
+import { useAIChatStream } from '../hooks/useAIChatStream';
 
 import { useCart } from '../context/CartContext';
 
@@ -25,11 +26,12 @@ const AIChatPage: React.FC = () => {
   const navigate = useNavigate();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
-  const [isThinking, setIsThinking] = useState(false);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { isStreaming, streamingText, sendMessage: sendStreamMessage } = useAIChatStream();
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const scrollToBottom = () => {
@@ -67,7 +69,7 @@ const AIChatPage: React.FC = () => {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, isThinking]);
+  }, [messages, isStreaming]);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -100,12 +102,10 @@ const AIChatPage: React.FC = () => {
 
   const sendMessage = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if ((!inputText.trim() && selectedImages.length === 0) || isThinking) return;
+    if ((!inputText.trim() && selectedImages.length === 0) || isStreaming) return;
 
     const userText = inputText.trim() || (selectedImages.length > 0 ? 'Attached images for analysis.' : '');
     
-    // Greeting check removed to rely on backend saving and logic
-
     const userMsg: ChatMessage = { 
       id: Date.now().toString(), 
       role: 'user', 
@@ -118,40 +118,31 @@ const AIChatPage: React.FC = () => {
     const filesToSend = [...selectedImages];
     setSelectedImages([]);
     setImagePreviews([]);
-    setIsThinking(true);
 
-    try {
-      const formData = new FormData();
-      if (userText) formData.append('message', userText);
-      if (filesToSend.length > 0) {
-        filesToSend.forEach(file => {
-          formData.append('images', file);
-        });
+    sendStreamMessage(
+      userText,
+      filesToSend,
+      (result) => {
+        const aiMsg: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          role: 'ai',
+          text: result.message || "I found some options for you!",
+          products: result.products || []
+        };
+        setMessages(prev => [...prev, aiMsg]);
+      },
+      (error) => {
+        const is413 = error?.response?.status === 413;
+        const aiMsg: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          role: 'ai',
+          text: is413
+            ? "That image is too large (max 5MB). Please compress it or use a smaller photo and try again! 📸"
+            : "I'm having trouble connecting to the garage network. Please try again in a moment! ⚠️"
+        };
+        setMessages(prev => [...prev, aiMsg]);
       }
-
-      const response = await apiClient.post('/assistant/chat', formData);
-      const result = response.data;
-
-      const aiMsg: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: 'ai',
-        text: result.message || "I found some options for you!",
-        products: result.products || []
-      };
-      setMessages(prev => [...prev, aiMsg]);
-    } catch (error: any) {
-      const is413 = error?.response?.status === 413;
-      const aiMsg: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: 'ai',
-        text: is413
-          ? "That image is too large (max 5MB). Please compress it or use a smaller photo and try again! 📸"
-          : "I'm having trouble connecting to the garage network. Please try again in a moment! ⚠️"
-      };
-      setMessages(prev => [...prev, aiMsg]);
-    } finally {
-      setIsThinking(false);
-    }
+    );
   };
 
   return (
@@ -238,19 +229,21 @@ const AIChatPage: React.FC = () => {
             </div>
           </div>
         ))}
-        {isThinking && (
-          <div className="flex justify-start">
-            <div className="flex gap-4 items-center">
-              <div className="h-10 w-10 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center">
-                <Bot size={20} className="text-primary animate-pulse" />
+
+          {/* Streaming Bubble */}
+          {isStreaming && (
+            <div className="flex gap-4 justify-start">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border bg-gradient-to-br from-primary/20 to-red-900/20 border-primary/20">
+                <Bot size={20} className="text-primary" />
               </div>
-              <div className="px-6 py-4 bg-[#121216] border border-white/5 rounded-3xl rounded-tl-none flex items-center gap-3">
-                <Loader2 size={16} className="text-primary animate-spin" />
-                <span className="text-[10px] font-black uppercase text-gray-500 tracking-[0.3em] italic">Analyzing Mechanical Soul...</span>
+              <div className="flex-1 max-w-[85%]">
+                <div className="p-5 rounded-2xl rounded-tl-none bg-white/5 border border-white/5 backdrop-blur-sm text-sm leading-relaxed whitespace-pre-wrap font-medium">
+                  {streamingText}
+                  <span className="inline-block w-2 h-4 bg-primary ml-1 animate-pulse" />
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
         <div ref={messagesEndRef} />
       </div>
 
@@ -309,7 +302,7 @@ const AIChatPage: React.FC = () => {
             />
             <button 
               type="submit"
-              disabled={isThinking || (!inputText.trim() && selectedImages.length === 0)}
+              disabled={isStreaming || (!inputText.trim() && selectedImages.length === 0)}
               className="h-12 w-12 shrink-0 bg-primary rounded-full flex items-center justify-center text-white hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100 transition-all shadow-lg shadow-red-600/30"
             >
               <Send size={20} />

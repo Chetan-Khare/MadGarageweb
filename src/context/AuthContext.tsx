@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import apiClient from '../services/apiClient';
+import { webSocketService } from '../services/webSocketService';
 
 export type UserRole = 'ROLE_ADMIN' | 'ROLE_SELLER' | 'ROLE_CUSTOMER' | 'ROLE_GARAGE' | 'ROLE_WORKER';
 
@@ -53,6 +54,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(updatedUser);
         setRole(standardizedRole);
         setToken("COOKIE_MANAGED");
+        webSocketService.connect();
       }
     } catch (error: any) {
       console.error('Failed to sync user profile:', error);
@@ -87,7 +89,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         profileImageUrl: userData.profileImageUrl || null
     });
 
-    // Sync full profile
+    // Sync full profile and connect WebSocket
+    webSocketService.connect();
     refreshUserProfile();
   };
 
@@ -95,12 +98,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await apiClient.post('/auth/logout');
     } catch (e) {
-      console.error('Logout sync failed');
+      console.warn("Logout request failed, clearing local state anyway");
+    } finally {
+      setUser(null);
+      setToken(null);
+      setRole(null);
+      webSocketService.disconnect();
     }
-    localStorage.removeItem('token'); // Clear legacy token if present
-    setUser(null);
-    setToken(null);
-    setRole(null);
   };
 
   return (

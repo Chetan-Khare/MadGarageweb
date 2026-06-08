@@ -7,11 +7,13 @@ const PartRequestPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
-    vehicleDetails: '',
+    make: '',
+    model: '',
+    year: '',
     partName: '',
     description: '',
-    contactName: '',
-    contactEmail: ''
+    customerName: '',
+    customerPhone: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -20,13 +22,18 @@ const PartRequestPage: React.FC = () => {
     setError('');
     try {
       await apiClient.post('/requests', {
-          ...formData,
-          source: 'WEB_PORTAL'
+          make: formData.make.trim(),
+          model: formData.model.trim(),
+          year: formData.year ? parseInt(formData.year) : null,
+          partName: formData.partName.trim(),
+          description: formData.description.trim(),
+          customerName: formData.customerName.trim(),
+          customerPhone: formData.customerPhone.trim(),
       });
       setSubmitted(true);
     } catch (err: any) {
       console.error(err);
-      setError(err.response?.data?.message || 'Failed to submit request. Please try again.');
+      setError(err.response?.data?.error || err.response?.data?.message || 'Failed to submit request. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -98,29 +105,52 @@ const PartRequestPage: React.FC = () => {
                 <form className="space-y-6" onSubmit={handleSubmit}>
                     {error && <div className="p-4 bg-red-50 text-primary text-xs font-bold rounded-xl border border-primary/10">{error}</div>}
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                         <div className="flex flex-col">
-                            <label className="text-[10px] font-black uppercase text-gray-400 mb-3 ml-2">Vehicle (e.g. 2024 Tata Nexon)</label>
+                            <label className="text-[10px] font-black uppercase text-gray-400 mb-3 ml-2">Make *</label>
                             <input 
                                 required
                                 type="text"
                                 className="bg-gray-50 border border-gray-100 p-4 rounded-2xl text-sm font-bold outline-none focus:border-primary transition-all"
-                                placeholder="Year, Make, Model"
-                                value={formData.vehicleDetails}
-                                onChange={e => setFormData({...formData, vehicleDetails: e.target.value})}
+                                placeholder="e.g. Tata"
+                                value={formData.make}
+                                onChange={e => setFormData({...formData, make: e.target.value})}
                             />
                         </div>
                         <div className="flex flex-col">
-                            <label className="text-[10px] font-black uppercase text-gray-400 mb-3 ml-2">Part Name</label>
+                            <label className="text-[10px] font-black uppercase text-gray-400 mb-3 ml-2">Model *</label>
                             <input 
                                 required
                                 type="text"
                                 className="bg-gray-50 border border-gray-100 p-4 rounded-2xl text-sm font-bold outline-none focus:border-primary transition-all"
-                                placeholder="e.g. Front Brake Pads"
-                                value={formData.partName}
-                                onChange={e => setFormData({...formData, partName: e.target.value})}
+                                placeholder="e.g. Nexon"
+                                value={formData.model}
+                                onChange={e => setFormData({...formData, model: e.target.value})}
                             />
                         </div>
+                        <div className="flex flex-col col-span-2 md:col-span-1">
+                            <label className="text-[10px] font-black uppercase text-gray-400 mb-3 ml-2">Year</label>
+                            <input 
+                                type="number"
+                                min="1980" max="2030"
+                                className="bg-gray-50 border border-gray-100 p-4 rounded-2xl text-sm font-bold outline-none focus:border-primary transition-all"
+                                placeholder="e.g. 2024"
+                                value={formData.year}
+                                onChange={e => setFormData({...formData, year: e.target.value})}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col">
+                        <label className="text-[10px] font-black uppercase text-gray-400 mb-3 ml-2">Part Name *</label>
+                        <input 
+                            required
+                            type="text"
+                            className="bg-gray-50 border border-gray-100 p-4 rounded-2xl text-sm font-bold outline-none focus:border-primary transition-all"
+                            placeholder="e.g. Front Brake Pads"
+                            value={formData.partName}
+                            onChange={e => setFormData({...formData, partName: e.target.value})}
+                        />
                     </div>
 
                     <div className="flex flex-col">
@@ -137,25 +167,25 @@ const PartRequestPage: React.FC = () => {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-gray-50">
                         <div className="flex flex-col">
-                            <label className="text-[10px] font-black uppercase text-gray-400 mb-3 ml-2">Your Name</label>
+                            <label className="text-[10px] font-black uppercase text-gray-400 mb-3 ml-2">Your Name *</label>
                             <input 
                                 required
                                 type="text"
                                 className="bg-gray-50 border border-gray-100 p-4 rounded-2xl text-sm font-bold outline-none focus:border-primary transition-all"
                                 placeholder="Full Name"
-                                value={formData.contactName}
-                                onChange={e => setFormData({...formData, contactName: e.target.value})}
+                                value={formData.customerName}
+                                onChange={e => setFormData({...formData, customerName: e.target.value})}
                             />
                         </div>
                         <div className="flex flex-col">
-                            <label className="text-[10px] font-black uppercase text-gray-400 mb-3 ml-2">Email Address</label>
+                            <label className="text-[10px] font-black uppercase text-gray-400 mb-3 ml-2">Phone Number *</label>
                             <input 
                                 required
-                                type="email"
+                                type="tel"
                                 className="bg-gray-50 border border-gray-100 p-4 rounded-2xl text-sm font-bold outline-none focus:border-primary transition-all"
-                                placeholder="name@company.com"
-                                value={formData.contactEmail}
-                                onChange={e => setFormData({...formData, contactEmail: e.target.value})}
+                                placeholder="+91 98765 43210"
+                                value={formData.customerPhone}
+                                onChange={e => setFormData({...formData, customerPhone: e.target.value})}
                             />
                         </div>
                     </div>

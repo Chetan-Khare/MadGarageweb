@@ -8,6 +8,7 @@ import {
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import apiClient from '../services/apiClient';
+import { useSellerOrderFeed } from '../hooks/useSellerOrderFeed';
 
 const SellerOrderManagement: React.FC = () => {
     useAuth();
@@ -16,9 +17,24 @@ const SellerOrderManagement: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('ALL');
+    const [newOrderToast, setNewOrderToast] = useState(false);
 
     const location = useLocation();
     useEffect(() => { fetchOrders(); }, [location]);
+
+    useSellerOrderFeed((newOrder) => {
+        setOrders(prev => {
+            // Check if order already exists to prevent duplicates
+            if (prev.some(o => o.id === newOrder.id)) {
+                // If it exists, update it in place
+                return prev.map(o => o.id === newOrder.id ? newOrder : o);
+            }
+            // Otherwise prepend it
+            setNewOrderToast(true);
+            setTimeout(() => setNewOrderToast(false), 5000);
+            return [newOrder, ...prev];
+        });
+    });
 
     const fetchOrders = async () => {
         setLoading(true);
@@ -67,7 +83,13 @@ const SellerOrderManagement: React.FC = () => {
                         <ArrowLeft size={20} />
                     </Link>
                     <div>
-                        <h1 className="text-2xl font-black italic uppercase tracking-tighter text-app-bg-dark">Sales <span className="text-primary italic">Revenue</span></h1>
+                        <div className="flex items-center gap-3">
+                            <h1 className="text-2xl font-black italic uppercase tracking-tighter text-app-bg-dark">Sales <span className="text-primary italic">Revenue</span></h1>
+                            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-50 border border-red-100">
+                                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                                <span className="text-[9px] font-black tracking-widest text-red-600 uppercase">Live</span>
+                            </div>
+                        </div>
                         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Merchant Payouts & Order History</p>
                     </div>
                 </div>
@@ -86,7 +108,15 @@ const SellerOrderManagement: React.FC = () => {
                 </div>
             </div>
 
-            <div className="p-8 md:p-12 pt-44 md:pt-48 max-w-7xl mx-auto space-y-10 pb-20">
+            <div className="p-8 md:p-12 pt-44 md:pt-48 max-w-7xl mx-auto space-y-10 pb-20 relative">
+                {/* Toast Notification */}
+                {newOrderToast && (
+                    <div className="fixed top-32 left-1/2 -translate-x-1/2 z-50 bg-primary text-white px-6 py-3 rounded-full shadow-2xl shadow-primary/30 flex items-center gap-3 animate-in fade-in slide-in-from-top-4">
+                        <Package size={16} />
+                        <span className="text-xs font-black uppercase tracking-widest">New Order Received!</span>
+                    </div>
+                )}
+                
                 {/* Fulfillment Stats */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <QuickStat label="Active Orders" value={orders.filter(o => o.status === 'PENDING').length} icon={<Clock size={16}/>} color="text-orange-500" />

@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import apiClient from '../services/apiClient';
 import { useAuth } from '../context/AuthContext';
+import { useOrderUpdates } from '../hooks/useOrderUpdates';
 
 const OrderDetailsPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -34,6 +35,22 @@ const OrderDetailsPage: React.FC = () => {
     // Reject Modal State
     const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
     const [rejectionNote, setRejectionNote] = useState('');
+
+    useOrderUpdates(id, (updatedOrder) => {
+        setOrder(updatedOrder);
+        if (updatedOrder.activeReturnId) {
+            setActiveReturn({
+                id: updatedOrder.activeReturnId,
+                status: updatedOrder.returnStatus,
+                reason: updatedOrder.returnReason,
+                description: updatedOrder.returnDescription,
+                requestType: updatedOrder.returnRequestType,
+                orderId: updatedOrder.id,
+                requestedAt: updatedOrder.orderDate,
+                adminNote: updatedOrder.adminNote
+            });
+        }
+    });
 
     useEffect(() => {
         fetchOrder();

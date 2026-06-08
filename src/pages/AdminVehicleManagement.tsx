@@ -7,6 +7,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../services/apiClient';
 import { useAuth } from '../context/AuthContext';
+import { useVehicleUpdates } from '../hooks/useVehicleUpdates';
 
 const AdminVehicleManagement: React.FC = () => {
     const navigate = useNavigate();
@@ -23,6 +24,22 @@ const AdminVehicleManagement: React.FC = () => {
     const [success, setSuccess] = useState('');
 
     useEffect(() => { fetchVehicles(); }, []);
+
+    useVehicleUpdates((update) => {
+        if (update.type === 'ADD') {
+            setVehicles(prev => {
+                const index = prev.findIndex(v => v.id === update.payload.id);
+                if (index !== -1) {
+                    const copy = [...prev];
+                    copy[index] = update.payload;
+                    return copy;
+                }
+                return [update.payload, ...prev];
+            });
+        } else if (update.type === 'DELETE') {
+            setVehicles(prev => prev.filter(v => v.id !== update.payload));
+        }
+    });
 
     const fetchVehicles = async () => {
         setLoading(true);
@@ -41,21 +58,26 @@ const AdminVehicleManagement: React.FC = () => {
         }
     };
 
+    const runCleanup = async () => {
+        try {
+            const res = await apiClient.get('/vehicles/admin/cleanup');
+            alert(res.data);
+            fetchVehicles();
+        } catch (err: any) {
+            alert(err.response?.data?.error || err.response?.data?.message || 'Cleanup failed');
+        }
+    };
+
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSaving(true); setError(''); setSuccess('');
         try {
-            if (editingVehicle.id) {
-                await apiClient.put(`/vehicles/${editingVehicle.id}`, editingVehicle);
-                setSuccess('Vehicle updated successfully!');
-            } else {
-                const res = await apiClient.post('/vehicles', editingVehicle);
-                setVehicles([...vehicles, res.data]);
-                setSuccess('New vehicle record established.');
-            }
+            await apiClient.post('/vehicles/admin', editingVehicle);
+            setSuccess('Vehicle record saved successfully.');
+
             setTimeout(() => { setShowModal(false); fetchVehicles(); }, 1500);
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Transaction failed. Check root logs.');
+            setError(err.response?.data?.error || err.response?.data?.message || 'Transaction failed. Check root logs.');
         } finally {
             setIsSaving(false);
         }
@@ -64,15 +86,19 @@ const AdminVehicleManagement: React.FC = () => {
     const handleDelete = async (id: number) => {
         if (!window.confirm('Are you sure you want to purge this vehicle record?')) return;
         try {
-            await apiClient.delete(`/vehicles/${id}`);
-            setVehicles(vehicles.filter(v => v.id !== id));
+            await apiClient.delete(`/vehicles/admin/${id}`);
+            // Note: We don't manually filter the list anymore because the WebSocket hook will handle it!
         } catch (err) {
             alert('Purge failed. Constraint violation?');
         }
     };
 
-    const openEdit = (vehicle: any = { make: '', model: '', year: (new Date().getFullYear()).toString(), fuel: 'PETROL', trim: '', engineSize: '' }) => {
-        setEditingVehicle(vehicle);
+    const openEdit = (vehicle: any = { make: '', model: '', year: (new Date().getFullYear()).toString(), fuelType: 'PETROL', trim: '', engineType: '' }) => {
+        setEditingVehicle({
+            ...vehicle,
+            fuelType: vehicle.fuelType || vehicle.fuel || 'PETROL',
+            engineType: vehicle.engineType || vehicle.engineSize || ''
+        });
         setShowModal(true);
         setError(''); setSuccess('');
     };
@@ -107,6 +133,12 @@ const AdminVehicleManagement: React.FC = () => {
                             onChange={e => setSearchTerm(e.target.value)}
                         />
                     </div>
+                    <button 
+                        onClick={runCleanup}
+                        className="bg-orange-500/10 border border-orange-500/20 text-orange-500 h-12 px-6 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center gap-2 hover:bg-orange-500 hover:text-white transition-all"
+                    >
+                        <AlertCircle size={18} /> Run Cleanup
+                    </button>
                     <button 
                         onClick={() => openEdit()}
                         className="bg-primary text-white h-12 px-6 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center gap-2 hover:bg-red-700 transition-all shadow-xl shadow-red-500/20"
@@ -153,8 +185,8 @@ const AdminVehicleManagement: React.FC = () => {
                                             <p className="text-[10px] font-black text-primary uppercase tracking-tighter">{v.trim}</p>
                                         </td>
                                         <td className="p-6">
-                                            <p className="font-bold text-xs text-gray-400">{v.fuel}</p>
-                                            <p className="text-[10px] font-black text-gray-600 uppercase italic">{v.engineSize}</p>
+                                            <p className="font-bold text-xs text-gray-400">{v.fuelType || v.fuel}</p>
+                                            <p className="text-[10px] font-black text-gray-600 uppercase italic">{v.engineType || v.engineSize}</p>
                                         </td>
                                         <td className="p-6">
                                             <div className="flex gap-3">
@@ -196,20 +228,20 @@ const AdminVehicleManagement: React.FC = () => {
                                 <FormGroup label="Vehicle Model" value={editingVehicle.model} onChange={v => setEditingVehicle({...editingVehicle, model: v})} placeholder="e.g. Swift" />
                              </div>
                              <div className="grid grid-cols-3 gap-6">
-                                <FormGroup label="Year" value={editingVehicle.year} onChange={v => setEditingVehicle({...editingVehicle, year: v})} placeholder="2024" />
+                                <FormGroup label="Year(s)" value={editingVehicle.year} onChange={v => setEditingVehicle({...editingVehicle, year: v})} placeholder="2024, 2025" />
                                 <div className="flex flex-col">
                                     <label className="text-[10px] font-black uppercase text-gray-500 mb-3 ml-2">Fuel Protocol</label>
                                     <select 
                                         className="bg-black/40 border border-white/10 p-4 rounded-2xl text-xs font-black uppercase tracking-widest text-white outline-none focus:border-primary transition-all appearance-none cursor-pointer"
-                                        value={editingVehicle.fuel}
-                                        onChange={e => setEditingVehicle({...editingVehicle, fuel: e.target.value})}
+                                        value={editingVehicle.fuelType || editingVehicle.fuel}
+                                        onChange={e => setEditingVehicle({...editingVehicle, fuelType: e.target.value})}
                                     >
                                         {['PETROL', 'DIESEL', 'ELECTRIC', 'CNG', 'HYBRID'].map(f => <option key={f} value={f}>{f}</option>)}
                                     </select>
                                 </div>
-                                <FormGroup label="Engine / Spec" value={editingVehicle.engineSize} onChange={v => setEditingVehicle({...editingVehicle, engineSize: v})} placeholder="1.2L VVT" />
+                                <FormGroup label="Engine / Spec" value={editingVehicle.engineType || editingVehicle.engineSize} onChange={v => setEditingVehicle({...editingVehicle, engineType: v})} placeholder="1.2L VVT" />
                              </div>
-                             <FormGroup label="Trim Configuration" value={editingVehicle.trim} onChange={v => setEditingVehicle({...editingVehicle, trim: v})} placeholder="VXi(O) / ZXi+ Dark Edition" />
+                             <FormGroup label="Trim Configuration(s)" value={editingVehicle.trim} onChange={v => setEditingVehicle({...editingVehicle, trim: v})} placeholder="VXi, ZXi+ (Comma separated)" />
                         </div>
 
                         <div className="p-10 bg-black/40 border-t border-white/5 flex gap-4">

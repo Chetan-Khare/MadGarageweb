@@ -7,6 +7,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../services/apiClient';
 import { useAuth } from '../context/AuthContext';
+import { usePartRequestUpdates } from '../hooks/usePartRequestUpdates';
 
 const AdminPartRequestReview: React.FC = () => {
     const navigate = useNavigate();
@@ -19,6 +20,19 @@ const AdminPartRequestReview: React.FC = () => {
     const [syncError, setSyncError] = useState('');
 
     useEffect(() => { fetchRequests(); }, []);
+
+    usePartRequestUpdates((update) => {
+        if (update.type === 'NEW') {
+            setRequests(prev => {
+                if (prev.some(r => r.id === update.payload.id)) return prev;
+                return [update.payload, ...prev];
+            });
+        } else if (update.type === 'STATUS_UPDATE') {
+            setRequests(prev => prev.map(r => 
+                r.id === update.payload.id ? { ...r, status: update.payload.status } : r
+            ));
+        }
+    });
 
     const fetchRequests = async () => {
         setLoading(true);

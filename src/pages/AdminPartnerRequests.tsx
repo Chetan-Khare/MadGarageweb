@@ -7,6 +7,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../services/apiClient';
 import { useAuth } from '../context/AuthContext';
+import { usePartnerRequestUpdates } from '../hooks/usePartnerRequestUpdates';
 
 const AdminPartnerRequests: React.FC = () => {
     const navigate = useNavigate();
@@ -26,6 +27,19 @@ const AdminPartnerRequests: React.FC = () => {
     const [currentNotes, setCurrentNotes] = useState('');
 
     useEffect(() => { fetchRequests(); }, []);
+
+    usePartnerRequestUpdates((update) => {
+        if (update.type === 'NEW') {
+            setRequests(prev => {
+                if (prev.some((r: any) => r.id === update.payload.id)) return prev;
+                return [update.payload, ...prev];
+            });
+        } else if (update.type === 'STATUS_UPDATE') {
+            setRequests(prev => prev.map((r: any) =>
+                r.id === update.payload.id ? { ...r, status: update.payload.status } : r
+            ));
+        }
+    });
 
     const fetchRequests = async () => {
         setLoading(true);
@@ -129,8 +143,11 @@ const AdminPartnerRequests: React.FC = () => {
                         </button>
                         <div>
                             <h1 className="text-2xl font-black italic uppercase tracking-tighter">Partner <span className="text-primary italic">Audits</span></h1>
-                            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500 italic">Merchant & Garage Onboarding</p>
+                            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500 italic">Merchant &amp; Garage Onboarding</p>
                         </div>
+                        <span className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-green-500 bg-green-500/10 border border-green-500/20 px-3 py-1 rounded-full">
+                            <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse"></span>Live
+                        </span>
                     </div>
 
                     <div className="flex items-center gap-4 w-full md:w-auto">
