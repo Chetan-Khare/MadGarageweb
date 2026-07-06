@@ -64,6 +64,17 @@ const GarageDashboard: React.FC = () => {
     }
   };
 
+  // Handles Java LocalDateTime arrays [year, month, day, hour, min, sec] and ISO strings
+  const parseServerDate = (dateVal: any): Date => {
+    if (!dateVal) return new Date();
+    if (Array.isArray(dateVal)) {
+      // Java months are 1-indexed; JS Date months are 0-indexed
+      return new Date(dateVal[0], dateVal[1] - 1, dateVal[2], dateVal[3] || 0, dateVal[4] || 0);
+    }
+    const d = new Date(dateVal);
+    return isNaN(d.getTime()) ? new Date() : d;
+  };
+
   // Derived Stats Logic
   const activeBuildsCount = orders.filter(o => o.status !== 'DELIVERED').length;
   const savingsAmount = totalSpend > 0 ? Math.round(totalSpend * 0.03) : 0; // Dynamic Average Estimate
@@ -322,7 +333,7 @@ const GarageDashboard: React.FC = () => {
                              : 'Bulk Performance Parts'}
                          </h4>
                          <p className="text-[9px] sm:text-[10px] font-medium text-gray-500 mt-1 flex items-center gap-2">
-                           <Clock size={12} /> {new Date(order.createdAt).toLocaleDateString()} • ₹{order.grandTotal.toLocaleString()}
+                           <Clock size={12} /> {parseServerDate(order.createdAt).toLocaleDateString()} • ₹{order.grandTotal.toLocaleString()}
                          </p>
                        </div>
                      </div>

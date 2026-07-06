@@ -121,8 +121,7 @@ const WorkerDashboard: React.FC = () => {
                 <div className="space-y-2">
                     <p className="text-[10px] font-black uppercase text-primary tracking-[0.4em]">Active Duty Station</p>
                     <h1 className="text-4xl md:text-5xl font-black italic tracking-tighter uppercase leading-none">
-                        Welcome, <br />
-                        <span className="text-gray-400 inline-block ml-28 md:ml-28 mt-6">Operator</span>
+                        Welcome <span className="text-gray-400">Operator</span>
                     </h1>
                 </div>
 

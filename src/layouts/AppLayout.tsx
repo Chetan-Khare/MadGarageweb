@@ -152,6 +152,13 @@ const AppLayout: React.FC = () => {
                   <LayoutDashboard size={14} />
                   <span className="text-[10px] font-black uppercase tracking-widest">{t('nav.dashboard')}</span>
                 </Link>
+                <button
+                  onClick={() => { logout(); navigate('/'); }}
+                  title="Logout"
+                  className="hidden sm:flex h-10 w-10 items-center justify-center bg-white/5 border border-white/10 rounded-full text-gray-400 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/20 transition-all"
+                >
+                  <LogOut size={18} />
+                </button>
               </div>
             ) : (
               <Link to="/login" className="bg-primary text-white px-4 md:px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-red-700 transition-all shadow-lg shadow-red-500/20">
